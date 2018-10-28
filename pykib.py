@@ -67,7 +67,7 @@ class MainWindow(QWidget):
         self.web.setPage(self.page)
         
         if(args.whiteList):
-            self.web.urlChanged['QUrl'].connect(self.checkList)        
+            self.web.urlChanged['QUrl'].connect(self.checkWhitelist)        
         
         # self.web.page().setForwardUnsupportedContent(True)
         
@@ -151,21 +151,37 @@ class MainWindow(QWidget):
     def adjustAdressbar(self):
         self.addressBar.setText(self.web.url().toString())
         
-    def checkList(self):       
-        currentUrl = self.web.url().toString()
+    def checkWhitelist(self, url): 
+        currentUrl = url.toString()
         if "about:warning" not in args.whiteList:
             args.whiteList.append("about:warning")
         for x in args.whiteList:
             if(currentUrl.startswith(x)):
                 return True;
-        print("Site "+ currentUrl +" is not white-listed")
-
-        if not (args.url.startswith('http://') or args.url.startswith('https://') or args.url.startswith('file:///')):
-            args.url = 'http://' + args.url
+        print("Site "+ currentUrl +" is not whitelisted")
+        
+        self.web.setHtml("", QUrl("about:warning"))
+        
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Warning)
+        msg.setText( "Site "+ currentUrl +" is not white-listed")
+        msg.setWindowTitle("Whitelist Error")
+        
             
-        self.web.setHtml("Seite "+ currentUrl +" ist nicht freigegeben <br><a href='"+args.url+"'>Start</a><a href='#' onclick='window.history.back()'>Zurück</a> ", QUrl("about:warning"))  
-
-        return True;
+        backButton = QtWidgets.QPushButton("Go Back")
+        backButton.setIcon(QIcon("icons/back.png"));
+        backButton.setIconSize(QSize(24, 24));
+        backButton.setObjectName("backButton")
+        
+        msg.addButton(backButton, QtWidgets.QMessageBox.NoRole )
+        
+             
+        msg.show()
+        retval = msg.exec_()
+        
+        if(retval == 0):
+            self.web.back()
+        
         
 class WebView(QWebEngineView):
     def __init__(self):
