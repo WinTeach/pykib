@@ -36,6 +36,7 @@ class MainWindow(QWidget):
         self.setupUi(self)
         self.web.setGeometry(0,0,400,500)
         self.setWindowTitle(args.title)
+        self.setWindowIcon(QIcon("icon.ico"))  
         
         if(args.removeTitleBar):
             self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
@@ -64,16 +65,11 @@ class MainWindow(QWidget):
         self.web.setObjectName("view")
         
         self.page = WebViewPage(self.web)
+        
         self.web.setPage(self.page)
+        #self.page.setView(self.web)
         
-        if(args.whiteList):
-            self.web.urlChanged['QUrl'].connect(self.checkWhitelist)        
-        
-        # self.web.page().setForwardUnsupportedContent(True)
-        
-        # self.web.page().downloadRequested.connect(self.download_requested)
-        # self.web.page().unsupportedContent.connect(self.download_requested)
-        
+              
         navGridLayoutHorizontalPosition = 0;
         if (args.showNavigationButtons):
             self.backButton = QtWidgets.QPushButton(Form)
@@ -147,40 +143,42 @@ class MainWindow(QWidget):
 
     def adjustTitle(self):
         self.setWindowTitle(self.web.title())     
+        icon = self.web.icon()
+        self.setWindowIcon(QIcon(icon))       
         
     def adjustAdressbar(self):
         self.addressBar.setText(self.web.url().toString())
         
-    def checkWhitelist(self, url): 
-        currentUrl = url.toString()
-        if "about:warning" not in args.whiteList:
-            args.whiteList.append("about:warning")
-        for x in args.whiteList:
-            if(currentUrl.startswith(x)):
-                return True;
-        print("Site "+ currentUrl +" is not whitelisted")
+    # def checkWhitelist(self, url): 
+        # currentUrl = url.toString()
+        # if "about:warning" not in args.whiteList:
+            # args.whiteList.append("about:warning")
+        # for x in args.whiteList:
+            # if(currentUrl.startswith(x)):
+                # return True;
+        # print("Site "+ currentUrl +" is not whitelisted")
         
-        self.web.setHtml("", QUrl("about:warning"))
+        # self.web.setHtml("", QUrl("about:warning"))
         
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Warning)
-        msg.setText( "Site "+ currentUrl +" is not white-listed")
-        msg.setWindowTitle("Whitelist Error")
+        # msg = QtWidgets.QMessageBox()
+        # msg.setIcon(QtWidgets.QMessageBox.Warning)
+        # msg.setText( "Site "+ currentUrl +" is not white-listed")
+        # msg.setWindowTitle("Whitelist Error")
         
             
-        backButton = QtWidgets.QPushButton("Go Back")
-        backButton.setIcon(QIcon("icons/back.png"));
-        backButton.setIconSize(QSize(24, 24));
-        backButton.setObjectName("backButton")
+        # backButton = QtWidgets.QPushButton("Go Back")
+        # backButton.setIcon(QIcon("icons/back.png"));
+        # backButton.setIconSize(QSize(24, 24));
+        # backButton.setObjectName("backButton")
         
-        msg.addButton(backButton, QtWidgets.QMessageBox.NoRole )
+        # msg.addButton(backButton, QtWidgets.QMessageBox.NoRole )
         
              
-        msg.show()
-        retval = msg.exec_()
+        # msg.show()
+        # retval = msg.exec_()
         
-        if(retval == 0):
-            self.web.back()
+        # if(retval == 0):
+            # self.web.back()
         
         
 class WebView(QWebEngineView):
@@ -193,7 +191,8 @@ class WebView(QWebEngineView):
             url = args.url
         if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file:///')):
             url = 'http://' + url        
-        self.setUrl(QUrl(url))
+        self.setUrl(QUrl(url))      
+    
 
 class WebViewPage(QWebEnginePage):
     def __init__(self, *args, **kwargs):
@@ -202,6 +201,10 @@ class WebViewPage(QWebEnginePage):
         #Do not persist Cookies
         self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
     
+    def javaScriptConsoleMessage(self, msg, lineNumber, sourceID, category):
+        #Ignore JS Failures
+        pass
+        
     #Certificate Error handling
     def certificateError(self, error):
         if(args.ingoreCertificates):
@@ -233,7 +236,50 @@ class WebViewPage(QWebEnginePage):
         print(download.isFinished())
         print("Executing:" +handle[1] +" "+filepath);
         subprocess.Popen(handle[1] +" "+filepath, shell=True)
- 
+    
+    def acceptNavigationRequest(self, url: QUrl, typ: QWebEnginePage.NavigationType, is_main_frame: bool):
+        if(args.whiteList):
+            return self.checkWhitelist(url)
+        else:
+            return True
+        
+    def checkWhitelist(self, url:QUrl): 
+        currentUrl = url.toString()
+        for x in args.whiteList:
+            if(currentUrl.startswith(x)):
+                return True;
+        print("Site "+ currentUrl +" is not whitelisted")       
+        
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Warning)
+        msg.setText( "Site "+ currentUrl +" is not white-listed")
+        msg.setWindowTitle("Whitelist Error")
+        
+            
+        backButton = QtWidgets.QPushButton("Go Back")
+        backButton.setIcon(QIcon("icons/back.png"));
+        backButton.setIconSize(QSize(24, 24));
+        backButton.setObjectName("backButton")
+        
+        msg.addButton(backButton, QtWidgets.QMessageBox.NoRole )
+        
+        homeButton = QtWidgets.QPushButton("Go Home")
+        homeButton.setIcon(QIcon("icons/home.png"));
+        homeButton.setIconSize(QSize(24, 24));
+        homeButton.setObjectName("homeButton")
+        
+        msg.addButton(homeButton, QtWidgets.QMessageBox.NoRole )
+        
+        msg.show()
+        retval = msg.exec_()
+        
+        if(retval == 0):            
+            self.view().stop()
+        else:
+            self.view().load(args.url)
+        
+        return False
+
 parser = ArgumentParser(
       prog='pykib',
       formatter_class= RawDescriptionHelpFormatter,
