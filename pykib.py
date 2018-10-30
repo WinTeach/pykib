@@ -36,7 +36,7 @@ class MainWindow(QWidget):
         self.setupUi(self)
         self.web.setGeometry(0,0,400,500)
         self.setWindowTitle(args.title)
-        self.setWindowIcon(QIcon("icon.ico"))  
+        #self.setWindowIcon(QIcon("icons/home.png"))  
         
         if(args.removeTitleBar):
             self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
@@ -142,45 +142,15 @@ class MainWindow(QWidget):
             event.ignore()
 
     def adjustTitle(self):
-        self.setWindowTitle(self.web.title())     
-        icon = self.web.icon()
-        self.setWindowIcon(QIcon(icon))       
+        self.setWindowTitle(self.web.title())    
+        
+        # icon = self.web.icon()
+        # self.setWindowIcon(self.web.icon())      
         
     def adjustAdressbar(self):
         self.addressBar.setText(self.web.url().toString())
         
-    # def checkWhitelist(self, url): 
-        # currentUrl = url.toString()
-        # if "about:warning" not in args.whiteList:
-            # args.whiteList.append("about:warning")
-        # for x in args.whiteList:
-            # if(currentUrl.startswith(x)):
-                # return True;
-        # print("Site "+ currentUrl +" is not whitelisted")
-        
-        # self.web.setHtml("", QUrl("about:warning"))
-        
-        # msg = QtWidgets.QMessageBox()
-        # msg.setIcon(QtWidgets.QMessageBox.Warning)
-        # msg.setText( "Site "+ currentUrl +" is not white-listed")
-        # msg.setWindowTitle("Whitelist Error")
-        
-            
-        # backButton = QtWidgets.QPushButton("Go Back")
-        # backButton.setIcon(QIcon("icons/back.png"));
-        # backButton.setIconSize(QSize(24, 24));
-        # backButton.setObjectName("backButton")
-        
-        # msg.addButton(backButton, QtWidgets.QMessageBox.NoRole )
-        
-             
-        # msg.show()
-        # retval = msg.exec_()
-        
-        # if(retval == 0):
-            # self.web.back()
-        
-        
+   
 class WebView(QWebEngineView):
     def __init__(self):
         self.browser = QWebEngineView.__init__(self)        
@@ -210,6 +180,8 @@ class WebViewPage(QWebEnginePage):
         if(args.ingoreCertificates):
             print("Certificate Error")
             return True
+        else:
+            return False
     
     #Download Handle
     @QtCore.pyqtSlot(QtWebEngineWidgets.QWebEngineDownloadItem)
