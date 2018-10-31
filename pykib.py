@@ -20,7 +20,7 @@ import os
 import textwrap
 from functools import partial
 from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets
-from PyQt5.QtCore import QSize, QUrl
+from PyQt5.QtCore import QSize, QUrl, QFile
 from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage, QWebEngineProfile
 from PyQt5.QtWidgets import QApplication, QWidget 
@@ -29,6 +29,9 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 __version_info__ = ('beta', '0.9')
 __version__ = '-'.join(__version_info__)
 
+#Workaround for Problem with relative File Paths
+dirname = os.path.dirname(__file__)
+
 class MainWindow(QWidget):
     def __init__(self, parent=None): 
         super(MainWindow, self).__init__(parent)
@@ -36,7 +39,9 @@ class MainWindow(QWidget):
         self.setupUi(self)
         self.web.setGeometry(0,0,400,500)
         self.setWindowTitle(args.title)
-        #self.setWindowIcon(QIcon("icons/home.png"))  
+        
+        
+        self.setWindowIcon(QIcon(os.path.join(dirname, 'icons/home.png')))  
         
         if(args.removeTitleBar):
             self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
@@ -73,7 +78,7 @@ class MainWindow(QWidget):
         navGridLayoutHorizontalPosition = 0;
         if (args.showNavigationButtons):
             self.backButton = QtWidgets.QPushButton(Form)
-            self.backButton.setIcon(QIcon("icons/back.png"));
+            self.backButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')));
             self.backButton.setIconSize(QSize(24, 24));
             self.backButton.setObjectName("backButton")
             self.backButton.clicked.connect(self.web.back)
@@ -82,7 +87,7 @@ class MainWindow(QWidget):
             navGridLayoutHorizontalPosition += 1
             
             self.forwardButton = QtWidgets.QPushButton(Form)
-            self.forwardButton.setIcon(QIcon("icons/forward.png"));
+            self.forwardButton.setIcon(QIcon(os.path.join(dirname, 'icons/forward.png')));
             self.forwardButton.setIconSize(QSize(24, 24));
             self.forwardButton.setObjectName("forwardButton")
             self.forwardButton.clicked.connect(self.web.forward)
@@ -91,7 +96,7 @@ class MainWindow(QWidget):
             navGridLayoutHorizontalPosition += 1            
      
             self.homeButton = QtWidgets.QPushButton(Form)
-            self.homeButton.setIcon(QIcon("icons/home.png"));
+            self.homeButton.setIcon(QIcon(os.path.join(dirname, 'icons/home.png')));
             self.homeButton.setIconSize(QSize(24, 24));
             self.homeButton.setObjectName("homeButton")
             self.homeButton.clicked.connect(self.web.load)
@@ -229,14 +234,14 @@ class WebViewPage(QWebEnginePage):
         
             
         backButton = QtWidgets.QPushButton("Go Back")
-        backButton.setIcon(QIcon("icons/back.png"));
+        backButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')));
         backButton.setIconSize(QSize(24, 24));
         backButton.setObjectName("backButton")
         
         msg.addButton(backButton, QtWidgets.QMessageBox.NoRole )
         
         homeButton = QtWidgets.QPushButton("Go Home")
-        homeButton.setIcon(QIcon("icons/home.png"));
+        homeButton.setIcon(QIcon(os.path.join(dirname, 'icons/home.png')));
         homeButton.setIconSize(QSize(24, 24));
         homeButton.setObjectName("homeButton")
         
