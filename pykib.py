@@ -40,13 +40,13 @@ class MainWindow(QWidget):
         self.web.setGeometry(0,0,400,500)
         self.setWindowTitle(args.title)
         
-        
-        self.setWindowIcon(QIcon(os.path.join(dirname, 'icons/home.png')))  
+        self.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))  
         
         if(args.removeTitleBar):
             self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         elif(args.dynamicTitle):
             self.web.titleChanged.connect(self.adjustTitle)
+            self.web.iconUrlChanged.connect(self.adjustTitleIcon)
           
         self.web.load(args.url)         
       
@@ -147,13 +147,15 @@ class MainWindow(QWidget):
             event.ignore()
 
     def adjustTitle(self):
-        self.setWindowTitle(self.web.title())    
+        self.setWindowTitle(self.web.title())   
         
-        # icon = self.web.icon()
-        # self.setWindowIcon(self.web.icon())      
+    def adjustTitleIcon(self):
+        self.setWindowIcon(self.web.icon()) 
         
     def adjustAdressbar(self):
         self.addressBar.setText(self.web.url().toString())
+    
+
         
    
 class WebView(QWebEngineView):
