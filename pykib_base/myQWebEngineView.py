@@ -22,7 +22,10 @@ from PyQt5.QtCore import QUrl
 
 
 class myQWebEngineView(QWebEngineView):
-    def __init__(self):
+    args = 0
+    def __init__(self, argsparsed):
+        global args
+        args = argsparsed
         self.browser = QWebEngineView.__init__(self)        
         self.setContextMenuPolicy( QtCore.Qt.NoContextMenu )
         

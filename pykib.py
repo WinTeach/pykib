@@ -17,11 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import subprocess
 import os
 import textwrap
-from functools import partial
-from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import QSize, QUrl
 from PyQt5.QtGui import QIcon, QKeyEvent
 #from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage, QWebEngineProfile
@@ -71,10 +69,10 @@ class MainWindow(QWidget):
         self.navGridLayout.setContentsMargins(9, 9, 9, 0)
         self.navGridLayout.setObjectName("navGridLayout")        
         
-        self.web = myQWebEngineView()
+        self.web = myQWebEngineView(args)
         self.web.setObjectName("view")
         
-        self.page = myQWebEnginePage(self.web)
+        self.page = myQWebEnginePage(args, dirname)
         
         self.web.setPage(self.page)
         #self.page.setView(self.web)

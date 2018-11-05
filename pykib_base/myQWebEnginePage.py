@@ -16,13 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 
+import subprocess
+import os
+from functools import partial
 from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile
-from PyQt5 import QtCore, QtWebEngineWidgets
+from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
+from PyQt5.QtGui import QIcon, QKeyEvent
+from PyQt5.QtWidgets import QApplication, QWidget 
 from PyQt5.QtCore import QSize, QUrl, QFile
 
 class myQWebEnginePage(QWebEnginePage):
-    def __init__(self, *args, **kwargs):
-        QtWebEngineWidgets.QWebEnginePage.__init__(self, *args, **kwargs)
+    args = 0
+    dirname = 0
+    def __init__(self, argsparsed, currentdirt):
+        global args 
+        args = argsparsed
+        global dirname
+        dirname = currentdirt
+        QtWebEngineWidgets.QWebEnginePage.__init__(self)
         self.profile().downloadRequested.connect(self.on_downloadRequested)
         #Do not persist Cookies
         self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
@@ -45,14 +56,15 @@ class myQWebEnginePage(QWebEnginePage):
         downloadHandleHit = False
         old_path = download.path()
         suffix = QtCore.QFileInfo(old_path).suffix()
-        for x in args.downloadHandle:
-            handle = x.split("|")
-            if(suffix == handle[0]):    
-                downloadHandleHit = True
-                filepath = handle[2]+"/tmp."+suffix                
-                download.setPath(filepath)
-                download.accept()
-                download.finished.connect(partial(self.runProcess, handle, filepath, download))                
+        if(args.downloadHandle):
+            for x in args.downloadHandle:
+                handle = x.split("|")
+                if(suffix == handle[0]):    
+                    downloadHandleHit = True
+                    filepath = handle[2]+"/tmp."+suffix                
+                    download.setPath(filepath)
+                    download.accept()
+                    download.finished.connect(partial(self.runProcess, handle, filepath, download))                
                 
         if(args.download and not downloadHandleHit):            
             path, _ = QtWidgets.QFileDialog.getSaveFileName(self.view(), "Save File", old_path, "*."+suffix)
@@ -72,6 +84,7 @@ class myQWebEnginePage(QWebEnginePage):
             return True
         
     def checkWhitelist(self, url:QUrl): 
+        global dirname
         currentUrl = url.toString()
         for x in args.whiteList:
             if(currentUrl.startswith(x)):
