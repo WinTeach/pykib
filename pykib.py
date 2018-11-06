@@ -21,10 +21,10 @@ import sys
 import os
 import textwrap
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import QSize, QUrl
+from PyQt5.QtCore import QSize, QUrl, QCoreApplication
 from PyQt5.QtGui import QIcon, QKeyEvent
 #from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage, QWebEngineProfile
-from PyQt5.QtWidgets import QApplication, QWidget 
+from PyQt5.QtWidgets import QApplication, QWidget
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 from pykib_base.myQWebEngineView import myQWebEngineView
@@ -34,7 +34,7 @@ __version_info__ = ('beta', '0.9')
 __version__ = '-'.join(__version_info__)
 
 #Workaround for Problem with relative File Paths
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.realpath(__file__))
 
 class MainWindow(QWidget):
     def __init__(self, parent=None): 
@@ -199,7 +199,6 @@ if(len(args.geometry) is not 4):
     sys.exit()
     
 app = QApplication(sys.argv)
- 
 view = MainWindow ()
 
 #Set Dimensions
