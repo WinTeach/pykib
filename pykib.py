@@ -41,7 +41,6 @@ class MainWindow(QWidget):
         super(MainWindow, self).__init__(parent)
         
         self.setupUi(self)
-        self.web.setGeometry(0,0,400,500)
         self.setWindowTitle(args.title)
         
         self.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))  
@@ -186,7 +185,7 @@ parser.add_argument("-v", "--version", action="version", version='%(prog)s {vers
 parser.add_argument("--no-sandbox", dest="no-sandbox", nargs='?', const=True, default=False, help="Allows to run as root")
 parser.add_argument("-sa", "--showAddressBar", dest="showAddressBar", nargs='?', const=True, default=False, help="Shows a Address Bar when set")
 parser.add_argument("-sn", "--showNavigationButtons", dest="showNavigationButtons", nargs='?', const=True, default=False, help="Shows Navigation Buttons when set")
-parser.add_argument("-g", "--geometry", dest="geometry", default=[100,100,1024,600], nargs="+", type=int, help="Set window geomety #left# #top# #width# #height#")
+parser.add_argument("-g", "--geometry", dest="geometry", default=[100,100,1024,600], nargs="+", type=int, help="Set window geomety #left# #top# #width# #height#, when using a multimonitor envireoment you can define the monitor for fullscreen or maximized mode with #left# #top#")
 
 parser.add_argument("-a", "--enableAdminKey",  dest="adminKey", help="Enables the admin key SHIFT+STRG+ALT+A and defines a Application which will be started when pushed")
 parser.add_argument("-wl", "--whiteList",  dest="whiteList", nargs="+", help="Enables the white List function. Only Urls which start with elemtens from this list could be opend")
@@ -194,19 +193,26 @@ parser.add_argument("-l", "--logFile", dest="logFile", help="Dummy Argument for 
 
 args = parser.parse_args()
 
-if(len(args.geometry) is not 4):
-    print("When geometry ist set, you have to define the whole position an screen #left# #top# #width# #height#")
-    sys.exit()
-    
 app = QApplication(sys.argv)
 view = MainWindow ()
 
 #Set Dimensions
 if (args.fullscreen):
+    if(len(args.geometry) is not 2 and len(args.geometry) is not 4):
+        print("When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
+        sys.exit()
+    view.move(args.geometry[0], args.geometry[1])
     view.showFullScreen()
 elif(args.maximized):
-    view.showMaximized()
+    if(len(args.geometry) is not 2 and len(args.geometry) is not 4):
+        print("When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
+        sys.exit()
+    view.move(args.geometry[0], args.geometry[1])
+    view.showMaximized()    
 else:    
+    if(len(args.geometry) is not 4):
+        print("When geometry without maximized or fullsreen is set, you have to define the whole position an screen #left# #top# #width# #height#")
+        sys.exit()
     view.show()     
     view.setGeometry(args.geometry[0], args.geometry[1], args.geometry[2], args.geometry[3])
   
