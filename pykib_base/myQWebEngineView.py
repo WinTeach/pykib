@@ -22,7 +22,7 @@ from PyQt5.QtCore import QUrl
 
 
 class myQWebEngineView(QWebEngineView):
-    args = 0
+    
     def __init__(self, argsparsed):
         global args
         args = argsparsed
@@ -34,4 +34,5 @@ class myQWebEngineView(QWebEngineView):
             url = args.url
         if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file:///')):
             url = 'http://' + url        
-        self.setUrl(QUrl(url))     
+        self.setUrl(QUrl(url))  
+   

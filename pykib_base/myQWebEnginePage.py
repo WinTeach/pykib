@@ -21,18 +21,18 @@ import os
 from functools import partial
 from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
-from PyQt5.QtGui import QIcon, QKeyEvent
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget 
 from PyQt5.QtCore import QSize, QUrl, QFile
 
 class myQWebEnginePage(QWebEnginePage):
     args = 0
     dirname = 0
-    def __init__(self, argsparsed, currentdirt):
+    def __init__(self, argsparsed, currentdir):
         global args 
         args = argsparsed
         global dirname
-        dirname = currentdirt
+        dirname = currentdir
         QtWebEngineWidgets.QWebEnginePage.__init__(self)
         self.profile().downloadRequested.connect(self.on_downloadRequested)
         #Do not persist Cookies
