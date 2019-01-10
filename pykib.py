@@ -43,7 +43,7 @@ class MainWindow(QWidget):
         
     def pressed(self):
         self.web.load(self.addressBar.displayText())
-        
+    
     #catch defined Shortcuts
     def keyPressEvent(self, event):
         keyEvent = QKeyEvent(event)

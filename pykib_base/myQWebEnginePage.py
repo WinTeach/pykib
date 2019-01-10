@@ -22,8 +22,10 @@ from functools import partial
 from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QWidget 
+from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 from PyQt5.QtCore import QSize, QUrl, QFile
+
+from pprint import pprint
 
 class myQWebEnginePage(QWebEnginePage):
     args = 0
@@ -34,10 +36,38 @@ class myQWebEnginePage(QWebEnginePage):
         global dirname
         dirname = currentdir
         QtWebEngineWidgets.QWebEnginePage.__init__(self)
+        
         self.profile().downloadRequested.connect(self.on_downloadRequested)
         #Do not persist Cookies
         self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
-    
+       
+        
+        
+    def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):            
+        #Format acceptedMimeTypes
+        nameFiltersString = ""
+        for x in acceptedMimeTypes:
+            nameFiltersString += "*"+x+" "
+        uploadDialog = QFileDialog()
+        #uploadDialog.setDirectory("C:\\")
+        uploadDialog.setNameFilters([nameFiltersString])
+        uploadDialog.setFileMode(QFileDialog.ExistingFile)
+        uploadDialog.setAcceptMode(QFileDialog.AcceptOpen)
+        
+        options = QFileDialog.Options()
+        options |= QFileDialog.ReadOnly
+        options |= QFileDialog.DontUseNativeDialog
+        
+        uploadDialog.setOptions(options)
+        
+        if uploadDialog.exec_():
+            fileName = uploadDialog.selectedFiles()
+            return fileName            
+            
+        return [""]
+
+        
+        
     def javaScriptConsoleMessage(self, msg, lineNumber, sourceID, category):
         #Ignore JS Failures
         pass
