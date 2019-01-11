@@ -42,14 +42,16 @@ class myQWebEnginePage(QWebEnginePage):
         self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
        
         
-        
+     #Overrite the default Upload Dialog with a smaller, more limited one   
     def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):            
         #Format acceptedMimeTypes
         nameFiltersString = ""
         for x in acceptedMimeTypes:
             nameFiltersString += "*"+x+" "
         uploadDialog = QFileDialog()
-        #uploadDialog.setDirectory("C:\\")
+        if(args.downloadPath):
+            uploadDialog.setDirectory(args.downloadPath)
+            
         uploadDialog.setNameFilters([nameFiltersString])
         uploadDialog.setFileMode(QFileDialog.ExistingFile)
         uploadDialog.setAcceptMode(QFileDialog.AcceptOpen)

@@ -21,6 +21,7 @@ def getArgumentParser():
     parser.add_argument("-u", "--url", dest="url", help="Start and Home URL", default="https://github.com/WinTeach/pykib")
     parser.add_argument("-d", "--download", dest="download", nargs='?', const=True, default=False, help="Enables download function")
     parser.add_argument("-dh", "--downloadHandle", dest="downloadHandle", nargs='+', help="With this option, default behaviour for special file extensions can be defined, this will also work when -d is not defined. Format: #extension#|#app_to_start#|#tmpdownloadpath#")
+    parser.add_argument("-dp", "--downloadPath", dest="downloadPath", help="Defines the start path for any download and upload dialog")
 
     parser.add_argument("-t", "--title", dest="title", help="Defines the Window Title", default="pykib")
     parser.add_argument("-dt", "--dynamicTitle", dest="dynamicTitle", nargs='?', const=True, default=False, help="When enabled the window title will display the current websites title")
@@ -39,3 +40,6 @@ def getArgumentParser():
     parser.add_argument("-l", "--logFile", dest="logFile", help="Dummy Argument for LogFile Path")
     
     return parser
+
+ 
+        
