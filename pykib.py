@@ -81,9 +81,10 @@ def startPykib():
     
     view = MainWindow (args)
     
-    if(os.path.isdir(args.downloadPath) != True):
-        print("The folder for downloadPath ("+args.downloadPath+") does not exists or is unreachable")
-        sys.exit()    
+    if(args.downloadPath ):
+        if(os.path.isdir(args.downloadPath) != True):
+            print("The folder for downloadPath ("+args.downloadPath+") does not exists or is unreachable")
+            sys.exit()    
         
  
     #Set Dimensions

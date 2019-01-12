@@ -49,6 +49,7 @@ class myQWebEnginePage(QWebEnginePage):
         for x in acceptedMimeTypes:
             nameFiltersString += "*"+x+" "
         uploadDialog = QFileDialog()
+        uploadDialog.setLabelText("Upload...")
         if(args.downloadPath):
             uploadDialog.setDirectory(args.downloadPath)
             
@@ -99,7 +100,33 @@ class myQWebEnginePage(QWebEnginePage):
                     download.finished.connect(partial(self.runProcess, handle, filepath, download))                
                 
         if(args.download and not downloadHandleHit):            
-            path, _ = QtWidgets.QFileDialog.getSaveFileName(self.view(), "Save File", old_path, "*."+suffix)
+            #path, _ = QtWidgets.QFileDialog.getSaveFileName(self.view(), "Save File", old_path, "*."+suffix)
+            path = ""
+            suffix = QtCore.QFileInfo(old_path).suffix()
+            downloadDialog = QFileDialog()
+            
+            
+            if(args.downloadPath):
+                downloadDialog.setDirectory(args.downloadPath)
+                downloadDialog.selectFile(os.path.basename(old_path))
+            else:
+                downloadDialog.selectFile(old_path)
+            
+            downloadDialog.setFileMode(QFileDialog.AnyFile)
+            downloadDialog.setAcceptMode(QFileDialog.AcceptSave)
+            downloadDialog.setNameFilters(["*."+suffix])
+            
+            options = QFileDialog.Options()
+            options |= QFileDialog.DontUseNativeDialog            
+            downloadDialog.setOptions(options)
+                                   
+            # dialogLabel = QFileDialog.DialogLabel()
+            # dialogLabel |= QFileDialog.FileName
+            # downloadDialog.setLabelText(dialogLabel, "Download")
+        
+            if downloadDialog.exec_():
+                path = downloadDialog.selectedFiles()[0]                
+                        
             if path:
                 download.setPath(path)
                 download.accept()
