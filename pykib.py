@@ -19,6 +19,7 @@
 
 import sys
 import os
+import subprocess
 import pykib_base.ui
 import pykib_base.arguments
 
@@ -55,7 +56,7 @@ class MainWindow(QWidget):
             sys.exit()
         if (args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key_A):
             print("Hit admin key")
-            subprocess.Popen([args.adminKey, ""])
+            subprocess.Popen([args.adminKey])
         if (keyEvent.key() == QtCore.Qt.Key_F4):	
             print("Alt +F4 is disabled")	
             
@@ -108,3 +109,5 @@ def startPykib():
         view.setGeometry(args.geometry[0], args.geometry[1], args.geometry[2], args.geometry[3])
       
     sys.exit(app.exec_())
+    
+startPykib()

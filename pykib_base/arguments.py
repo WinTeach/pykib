@@ -2,7 +2,7 @@
 import textwrap
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
-__version_info__ = ('beta', '0.9')
+__version_info__ = ('master', '1.0')
 __version__ = '-'.join(__version_info__)
 
 def getArgumentParser():
@@ -37,7 +37,7 @@ def getArgumentParser():
 
     parser.add_argument("-a", "--enableAdminKey",  dest="adminKey", help="Enables the admin key SHIFT+STRG+ALT+A and defines a Application which will be started when pushed")
     parser.add_argument("-wl", "--whiteList",  dest="whiteList", nargs="+", help="Enables the white List function. Only Urls which start with elemtens from this list could be opend")
-    parser.add_argument("-l", "--logFile", dest="logFile", help="Dummy Argument for LogFile Path")
+    #parser.add_argument("-l", "--logFile", dest="logFile", help="Dummy Argument for LogFile Path")
     
     return parser
 
