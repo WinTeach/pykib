@@ -29,7 +29,13 @@ from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWidgets import QApplication, QWidget
 
 #Workaround for Problem with relative File Paths
-dirname = os.path.dirname(os.path.realpath(__file__))
+
+# determine if application is a script file or frozen exe
+if getattr(sys, 'frozen', False):
+    dirname = os.path.dirname(sys.executable)
+elif __file__:
+    dirname = os.path.dirname(os.path.realpath(__file__))
+    
 
 class MainWindow(QWidget):
     
