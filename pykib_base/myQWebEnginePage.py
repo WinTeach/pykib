@@ -49,7 +49,7 @@ class myQWebEnginePage(QWebEnginePage):
         for x in acceptedMimeTypes:
             nameFiltersString += "*"+x+" "
         uploadDialog = QFileDialog()
-        uploadDialog.setLabelText("Upload...")
+        
         if(args.downloadPath):
             uploadDialog.setDirectory(args.downloadPath)
             
@@ -104,8 +104,7 @@ class myQWebEnginePage(QWebEnginePage):
             path = ""
             suffix = QtCore.QFileInfo(old_path).suffix()
             downloadDialog = QFileDialog()
-            
-            
+                        
             if(args.downloadPath):
                 downloadDialog.setDirectory(args.downloadPath)
                 downloadDialog.selectFile(os.path.basename(old_path))
