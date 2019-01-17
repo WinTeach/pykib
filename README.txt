@@ -4,13 +4,13 @@ QtWebEngine based minimal kiosk browser
 This is only the output of --help
 -----
 
-Starting the Browser with python3 pykib.py [-h] [-u URL] [-d ]
-             [-dh DOWNLOADHANDLE [DOWNLOADHANDLE ...]] [-t TITLE]
-             [-dt [DYNAMICTITLE]] [-rt] [-f ]
-             [-ic ] [-m ] [-v]
-             [--no-sandbox ] [-sa ]
-             [-sn ] [-g GEOMETRY [GEOMETRY ...]]
-             [-a ADMINKEY] [-wl WHITELIST [WHITELIST ...]] [-l LOGFILE]
+usage: pykib [-h] [-u URL] [-d [DOWNLOAD]]
+             [-dh DOWNLOADHANDLE [DOWNLOADHANDLE ...]] [-dp DOWNLOADPATH]
+             [-t TITLE] [-dt [DYNAMICTITLE]] [-rt [REMOVETITLEBAR]]
+             [-f [FULLSCREEN]] [-ic [INGORECERTIFICATES]] [-m [MAXIMIZED]]
+             [-v] [--no-sandbox [NO-SANDBOX]] [-sa [SHOWADDRESSBAR]]
+             [-sn [SHOWNAVIGATIONBUTTONS]] [-g GEOMETRY [GEOMETRY ...]]
+             [-a ADMINKEY] [-wl WHITELIST [WHITELIST ...]]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -22,6 +22,9 @@ optional arguments:
                         extensions can be defined, this will also work when -d
                         is not defined. Format:
                         #extension#|#app_to_start#|#tmpdownloadpath#
+  -dp DOWNLOADPATH, --downloadPath DOWNLOADPATH
+                        Defines the start path for any download and upload
+                        dialog
   -t TITLE, --title TITLE
                         Defines the Window Title
   -dt [DYNAMICTITLE], --dynamicTitle [DYNAMICTITLE]
@@ -43,21 +46,21 @@ optional arguments:
   -sn [SHOWNAVIGATIONBUTTONS], --showNavigationButtons [SHOWNAVIGATIONBUTTONS]
                         Shows Navigation Buttons when set
   -g GEOMETRY [GEOMETRY ...], --geometry GEOMETRY [GEOMETRY ...]
-                        Set window geomety #left# #top# #width# #height#
+                        Set window geomety #left# #top# #width# #height#, when
+                        using a multimonitor envireoment you can define the
+                        monitor for fullscreen or maximized mode with #left#
+                        #top#
   -a ADMINKEY, --enableAdminKey ADMINKEY
                         Enables the admin key SHIFT+STRG+ALT+A and defines a
                         Application which will be started when pushed
   -wl WHITELIST [WHITELIST ...], --whiteList WHITELIST [WHITELIST ...]
                         Enables the white List function. Only Urls which start
                         with elemtens from this list could be opend
-  -l LOGFILE, --logFile LOGFILE
-                        Dummy Argument for LogFile Path
-
 
 example Usage:
         Save all .rdp files to /tmp/tmp.rdp and execute the script"/home/xfreerdp.sh /tmp/tmp.rdp", after that the file will be deleted:
-            	python3 pykib.py -df "rdp|/home/xfreerdp.sh|/tmp" "rdp|rm|/tmp"
-	Open the site www.winteach.de in fullscreen. With the Whiteliste Option no one will be able to leave this site
-		python3 pykib.py -u https://www.winteach.de -f -wl "https://www.winteach.de"
-	Open the site www.winteach.de maximized and show Addressbar and navigation Buttons.
-		python3 pykib.py -u https://www.winteach.de -m -sn -sa
+            python3 pykib.py -df "rdp|/home/xfreerdp.sh|/tmp" "rdp|rm|/tmp"
+        Open the site www.winteach.de in fullscreen. With the Whiteliste Option no one will be able to leave this site
+            python3 pykib.py -u https://www.winteach.de -f -wl "https://www.winteach.de"
+        Open the site www.winteach.de maximized and show Addressbar and navigation Buttons.
+            python3 pykib.py -u https://www.winteach.de -m -sn -sa
