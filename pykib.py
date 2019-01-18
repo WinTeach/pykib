@@ -18,13 +18,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import signal
 import os
 import subprocess
 import pykib_base.ui
 import pykib_base.arguments
 
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import QSize, QUrl, QCoreApplication
+from PyQt5.QtCore import QSize, QUrl, QCoreApplication, QTimer
 from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWidgets import QApplication, QWidget
 
@@ -36,9 +37,16 @@ if getattr(sys, 'frozen', False):
 elif __file__:
     dirname = os.path.dirname(os.path.realpath(__file__))
     
+# def signal_handler(signal, frame):
+    # os.kill()
+# signal.signal(signal.SIGINT, signal_handler)  
+#signal.signal(signal.SIGINT, signal.SIG_DFL)  
+
+
 
 class MainWindow(QWidget):
-    
+
+
     def __init__(self, transferargs, parent=None): 
         global args 
         args = transferargs
@@ -78,15 +86,28 @@ class MainWindow(QWidget):
         
     def adjustAdressbar(self):
         self.addressBar.setText(self.web.url().toString())
- 
 
+#Handle for Sigterm (CTRL+C)        
+def sigint_handler(*args):
+        """Handler for the SIGINT signal."""    
+        QApplication.quit()
+        
 def startPykib():
-    app = QApplication(sys.argv)
     
+    app = QApplication(sys.argv)   
+    
+    #Register Sigterm command
+    signal.signal(signal.SIGINT, sigint_handler)
+    
+    #Timer for calling the python interpreter every 1000, without this the Sigterm command won't be handled while the QT Loop is running
+    timer = QTimer()
+    timer.start(1000)  # You may change this if you wish.
+    timer.timeout.connect(lambda: None)
+
     parser = pykib_base.arguments.getArgumentParser()
     args = parser.parse_args()
     
-    view = MainWindow (args)
+    view = MainWindow (args)   
     
     if(args.downloadPath ):
         if(os.path.isdir(args.downloadPath) != True):
@@ -113,7 +134,8 @@ def startPykib():
             sys.exit()
         view.show()     
         view.setGeometry(args.geometry[0], args.geometry[1], args.geometry[2], args.geometry[3])
-      
-    sys.exit(app.exec_())
+    
+    sys.exit(app.exec_())   
+  
     
 startPykib()
