@@ -94,7 +94,11 @@ class myQWebEnginePage(QWebEnginePage):
                 handle = x.split("|")
                 if(suffix == handle[0]):    
                     downloadHandleHit = True
-                    filepath = handle[2]+"/tmp."+suffix                
+                    if os.name == 'nt':
+                        print(handle[1])
+                        filepath = handle[2]+"\\tmp."+suffix    
+                    else:
+                        filepath = handle[2]+"/tmp."+suffix  
                     download.setPath(filepath)
                     download.accept()
                     download.finished.connect(partial(self.runProcess, handle, filepath, download))                
@@ -132,8 +136,8 @@ class myQWebEnginePage(QWebEnginePage):
                 
     def runProcess(self, handle, filepath, download):
         print(download.isFinished())
-        print("Executing:" +handle[1] +" "+filepath);
-        subprocess.Popen(handle[1] +" "+filepath, shell=True)
+        print("Executing:" + "\""+handle[1] +"\" "+filepath);
+        subprocess.Popen("\""+handle[1] +"\" "+filepath, shell=True)
     
     def acceptNavigationRequest(self, url: QUrl, typ: QWebEnginePage.NavigationType, is_main_frame: bool):
         if(args.whiteList):

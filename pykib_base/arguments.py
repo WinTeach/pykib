@@ -12,7 +12,7 @@ def getArgumentParser():
           epilog=textwrap.dedent('''\
     example Usage:
             Save all .rdp files to /tmp/tmp.rdp and execute the script"/home/xfreerdp.sh /tmp/tmp.rdp", after that the file will be deleted:
-                python3 pykib.py -df "rdp|/home/xfreerdp.sh|/tmp" "rdp|rm|/tmp"
+                python3 pykib.py -dh "rdp|/home/xfreerdp.sh|/tmp" "rdp|rm|/tmp"
             Open the site www.winteach.de in fullscreen. With the Whiteliste Option no one will be able to leave this site
                 python3 pykib.py -u https://www.winteach.de -f -wl "https://www.winteach.de"
             Open the site www.winteach.de maximized and show Addressbar and navigation Buttons.
