@@ -27,7 +27,7 @@ def getArgumentParser():
     parser.add_argument("-dt", "--dynamicTitle", dest="dynamicTitle", nargs='?', const=True, default=False, help="When enabled the window title will display the current websites title")
     parser.add_argument("-rt", "--removeTitleBar", dest="removeTitleBar", nargs='?', const=True, default=False, help="Removes the window title bar")
     parser.add_argument("-f", "--fullscreen", dest="fullscreen", nargs='?', const=True, default=False, help="Start browser in fullscreen mode")
-    parser.add_argument("-ic", "--ingoreCertificates", dest="ingoreCertificates", nargs='?', const=True, default=False, help="with this option HTTPS Warninigs will be ignored")
+    parser.add_argument("-ic", "--ignoreCertificates", dest="ignoreCertificates", nargs='?', const=True, default=False, help="with this option HTTPS Warninigs will be ignored")
     parser.add_argument("-m", "--maximized", dest="maximized", nargs='?', const=True, default=False, help="Start browser in a maximized window")
     parser.add_argument("-v", "--version", action="version", version='%(prog)s {version}'.format(version=__version__))
     parser.add_argument("--no-sandbox", dest="no-sandbox", nargs='?', const=True, default=False, help="Allows to run as root")
