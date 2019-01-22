@@ -77,7 +77,7 @@ class myQWebEnginePage(QWebEnginePage):
         
     #Certificate Error handling
     def certificateError(self, error):
-        if(args.ingoreCertificates):
+        if(args.ignoreCertificates):
             print("Certificate Error")
             return True
         else:

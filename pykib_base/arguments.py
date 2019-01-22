@@ -2,7 +2,7 @@
 import textwrap
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
-__version_info__ = ('master', '1.0')
+__version_info__ = ('master', '1.0.1')
 __version__ = '-'.join(__version_info__)
 
 def getArgumentParser():
@@ -40,6 +40,3 @@ def getArgumentParser():
     #parser.add_argument("-l", "--logFile", dest="logFile", help="Dummy Argument for LogFile Path")
     
     return parser
-
- 
-        
