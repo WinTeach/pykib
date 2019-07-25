@@ -40,6 +40,10 @@ class myQWebEnginePage(QWebEnginePage):
         self.profile().downloadRequested.connect(self.on_downloadRequested)
         #Do not persist Cookies
         self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
+        
+        if(args.enableSpellcheck):       
+            self.profile().setSpellCheckEnabled(True)
+            self.profile().setSpellCheckLanguages({args.spellCheckingLanguage})
        
         
      #Overrite the default Upload Dialog with a smaller, more limited one   

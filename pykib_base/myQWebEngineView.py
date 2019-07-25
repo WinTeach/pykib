@@ -23,11 +23,14 @@ from PyQt5.QtCore import QUrl
 
 class myQWebEngineView(QWebEngineView):
     
+
     def __init__(self, argsparsed):
         global args
         args = argsparsed
         self.browser = QWebEngineView.__init__(self)        
         self.setContextMenuPolicy( QtCore.Qt.NoContextMenu )
+        #self.setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
+        #self.customContextMenuRequested.connect(self.showMenu)
         
     def load(self,url):
         if not url:
@@ -35,4 +38,4 @@ class myQWebEngineView(QWebEngineView):
         if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file:///')):
             url = 'http://' + url        
         self.setUrl(QUrl(url))  
-   
+    

@@ -68,6 +68,9 @@ class MainWindow(QWidget):
         if (shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key_B):
             print("leave by shortcut")
             sys.exit()
+        if ((keyEvent.key() == QtCore.Qt.Key_F5) or(ctrl and keyEvent.key() == QtCore.Qt.Key_R)):
+            self.web.reload()
+            print("Refresh")
         if (args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key_A):
             print("Hit admin key")
             subprocess.Popen([args.adminKey])
