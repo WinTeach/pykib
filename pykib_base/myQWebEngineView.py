@@ -19,6 +19,7 @@
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5 import QtCore
 from PyQt5.QtCore import QUrl
+from PyQt5.QtWidgets import QTextEdit
 
 
 class myQWebEngineView(QWebEngineView):
@@ -29,8 +30,10 @@ class myQWebEngineView(QWebEngineView):
         args = argsparsed
         self.browser = QWebEngineView.__init__(self)        
         self.setContextMenuPolicy( QtCore.Qt.NoContextMenu )
-        #self.setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
-        #self.customContextMenuRequested.connect(self.showMenu)
+        
+        # self.setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
+        # self.customContextMenuRequested.connect(self.show_custom_context_menu)
+        
         
     def load(self,url):
         if not url:
@@ -38,4 +41,5 @@ class myQWebEngineView(QWebEngineView):
         if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file:///')):
             url = 'http://' + url        
         self.setUrl(QUrl(url))  
-    
+
+        

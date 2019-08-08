@@ -21,18 +21,20 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize
 
+
 from pykib_base.myQWebEngineView import myQWebEngineView
 from pykib_base.myQWebEnginePage import myQWebEnginePage
+from pykib_base.myQProgressBar import myQProgressBar
 
 def setupUi(form, args, dirname):        
     form.setWindowTitle(args.title)        
     form.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))  
-    
+            
     form.pageGridLayout = QtWidgets.QGridLayout(form)                
     form.pageGridLayout.setObjectName("pageGridLayout")
     
     form.pageGridLayout.setContentsMargins(0, 0, 0, 0)
-    
+       
     #Create Navbar
     form.navbar = QtWidgets.QWidget(form)
     form.navbar.setMaximumHeight(40)
@@ -49,7 +51,9 @@ def setupUi(form, args, dirname):
     form.page = myQWebEnginePage(args, dirname)
     
     form.web.setPage(form.page)
-    #form.page.setView(form.web)
+    
+    #Added progress Handling   
+    form.web.loadProgress.connect(form.loadingProgressChanged)
     
           
     navGridLayoutHorizontalPosition = 0;
@@ -97,7 +101,14 @@ def setupUi(form, args, dirname):
         form.web.titleChanged.connect(form.adjustTitle)
         form.web.iconUrlChanged.connect(form.adjustTitleIcon)
             
+    
+    form.progress = myQProgressBar(form)    
+    form.progress.setMaximum(100)
+    form.progress.setTextVisible(False)
+    
     form.pageGridLayout.addWidget(form.web, 1, 0, 1, 0)
+    
+    form.pageGridLayout.addWidget(form.progress, 2, 0, 1, 0)
     
     retranslateUi(form)
     QtCore.QMetaObject.connectSlotsByName(form)

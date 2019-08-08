@@ -41,12 +41,20 @@ class myQWebEnginePage(QWebEnginePage):
         #Do not persist Cookies
         self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
         
+        #When Autologin is enabled, se Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces which will otherwise show the Client detection which fails.
+        if(args.enableAutoLogon):
+            self.profile().setHttpUserAgent("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
+        
+        
+        #Clears the Cache on Load
+        self.profile().clearHttpCache();
+                
         if(args.enableSpellcheck):       
             self.profile().setSpellCheckEnabled(True)
             self.profile().setSpellCheckLanguages({args.spellCheckingLanguage})
-       
-        
-     #Overrite the default Upload Dialog with a smaller, more limited one   
+
+    
+    #Overrite the default Upload Dialog with a smaller, more limited one   
     def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):            
         #Format acceptedMimeTypes
         nameFiltersString = ""

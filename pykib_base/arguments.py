@@ -2,7 +2,7 @@
 import textwrap
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
-__version_info__ = ('devel', '1.0.2')
+__version_info__ = ('devel', '1.0.4')
 __version__ = '-'.join(__version_info__)
 
 def getArgumentParser():
@@ -23,6 +23,14 @@ def getArgumentParser():
     parser.add_argument("-dh", "--downloadHandle", dest="downloadHandle", nargs='+', help="With this option, default behaviour for special file extensions can be defined, this will also work when -d is not defined. Format: #extension#|#app_to_start#|#tmpdownloadpath#")
     parser.add_argument("-dp", "--downloadPath", dest="downloadPath", help="Defines the start path for any download and upload dialog")
 	
+    parser.add_argument("-eal", "--enableAutoLogon", dest="enableAutoLogon", nargs='?', const=True, default=False, help="Enables the autologon functionality, this function requires at leats autoLogonUser and autoLogonUser to be set. The Browser is preconfigured to work with Citrix Webinterface, Citrix Storefront and RDWeb Servers")
+    parser.add_argument("-alu", "--autoLogonUser", dest="autoLogonUser", help="Defines the username used for autologon")
+    parser.add_argument("-alp", "--autoLogonPassword", dest="autoLogonPassword", default=False, help="Defines the password used for autologon")
+    parser.add_argument("-ald", "--autoLogonDomain", dest="autoLogonDomain", default=False, help="Defines the domain name used for autologon. If a domain name is set, but no value for autoLogonDomainID, the domain will bei merged with the username to domain\\username")
+    parser.add_argument("-aluid", "--autoLogonUserID", dest="autoLogonUserID", default=False, help="Defines the ID of the HTML Element in which the username should be put in")
+    parser.add_argument("-alpid", "--autoLogonPasswordID", dest="autoLogonPasswordID", default=False, help="Defines the ID of the HTML Element in which the password should be put in")
+    parser.add_argument("-aldid", "--autoLogonDomainID", dest="autoLogonDomainID", default=False, help="Defines the ID of the HTML Element in which the domain should be put in")
+    
     parser.add_argument("-es", "--enablespellcheck", dest="enableSpellcheck", nargs='?', const=True, default=False, help="Enables spellchecking when set")
     parser.add_argument("-sl", "--spellcheckinglanguage", dest="spellCheckingLanguage", default="de_DE", help="Defines the language for the spellcheck dictionary. Default de_DE")
  

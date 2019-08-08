@@ -50,17 +50,99 @@ class MainWindow(QWidget):
     def __init__(self, transferargs, parent=None): 
         global args 
         args = transferargs
+        global firstrun
+        firstrun = True
         super(MainWindow, self).__init__(parent)
         
         pykib_base.ui.setupUi(self, args, dirname)
         
-        self.web.load(args.url)               
+        self.web.load(args.url) 
         
     def pressed(self):
         self.web.load(self.addressBar.displayText())
-    
+        
+    def loadingProgressChanged(self, percent):   
+        global firstrun
+        self.progress.show()
+        self.progress.setValue(percent)
+        self.progress.changeStyle("loading")
+        
+        if(percent == 100):
+            self.progress.hide()
+            
+            if(args.enableAutoLogon and firstrun == True):
+                firstrun = False
+                # if(len(autologin) >= 2):
+                username = args.autoLogonUser.replace("\\","\\\\")
+                password = args.autoLogonPassword.replace("\\","\\\\")
+                domain = args.autoLogonDomain
+                usernameID = args.autoLogonUserID
+                passwordID = args.autoLogonPasswordID
+                domainID = args.autoLogonDomainID
+                # if(len(autologin) >= 3):
+                    # if(autologin[2]):
+                        # domain = autologin[2].replace("\\","\\\\")
+                # if(len(autologin) == 6):                        
+                    # usernameID = autologin[3].replace("\\","\\\\")
+                    # passwordID = autologin[4].replace("\\","\\\\")
+                    # if(autologin[5]):
+                        # domainID = autologin[5].replace("\\","\\\\")
+                
+               
+               # """+len(autologin)+"""<=3
+                script =r"""
+                        document.onload=login();
+                        async function login(){{
+                        usernameID = "None";
+                        passwordID = "None";
+                        domainID = "None";
+                            if('{usernameID}' == "False"){{                         
+                                if(document.getElementById('FrmLogin') && document.getElementById('DomainUserName') && document.getElementById('UserPass')){{ 
+                                    usernameID = "DomainUserName";
+                                    passwordID = "UserPass";                               
+                                }}else if(document.getElementById('user')){{
+                                    usernameID = "user";
+                                    passwordID = "password";
+                                }}else{{
+                                    usernameID = "username";
+                                    passwordID = "password";
+                                }}
+                            }}else if('{usernameID}' != 'False'){{
+                                usernameID = "{usernameID}";
+                                passwordID = "{passwordID}";
+                                domainID = "{domainID}";
+                            }}
+                                  
+                            //Wait until usernameID and PasswordID is loaded
+                            while(!document.getElementById(usernameID) && !document.getElementById(passwordID)) {{
+                              await new Promise(r => setTimeout(r, 50));
+                            }}
+                                
+                            if('{domain}' != 'False' && domainID == 'False'){{                            
+                                document.getElementById(usernameID).value='{domain}\\{username}';
+                                document.getElementById(passwordID).value='{password}';
+                            }}else if('{domain}' != 'False' && domainID != 'False'){{                                
+                                document.getElementById(usernameID).value='{username}';
+                                document.getElementById(passwordID).value='{password}';
+                                document.getElementById(domainID).value='{domain}';
+                            }}else{{                                
+                                document.getElementById(usernameID).value='{username}';
+                                document.getElementById(passwordID).value='{password}';
+                            }}    
+                            //for the Storefront Login the Login Button had to be clicked
+                            if(document.getElementById("loginBtn")){{
+                                document.getElementById("loginBtn").click();
+                            }}else{{
+                                document.forms[0].submit();
+                            }}
+                        }}
+                        """.format(username=username, password=password, domain=domain, usernameID=usernameID, passwordID=passwordID, domainID=domainID)    
+                self.page.runJavaScript(script)
+           
+        
     #catch defined Shortcuts
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event):        
+        
         keyEvent = QKeyEvent(event)
         shift = event.modifiers() & QtCore.Qt.ShiftModifier
         ctrl = event.modifiers() & QtCore.Qt.ControlModifier
@@ -76,6 +158,10 @@ class MainWindow(QWidget):
             subprocess.Popen([args.adminKey])
         if (keyEvent.key() == QtCore.Qt.Key_F4):	
             print("Alt +F4 is disabled")	
+    
+    def test(self, event):
+        if (args.fullscreen):
+            event.ignore()
             
     def closeEvent(self, event):
         if (args.fullscreen):
