@@ -203,7 +203,12 @@ def startPykib():
             print("The folder for downloadPath ("+args.downloadPath+") does not exists or is unreachable")
             sys.exit()    
         
- 
+    #Check autologin Data
+    if (args.enableAutoLogon and not (args.autoLogonUser and args.autoLogonPassword)):
+        print("When Autologin is enabled at least autoLogonUser and autoLogonPassword has to be set also")
+        sys.exit()
+        
+        
     #Set Dimensions
     if (args.fullscreen):
         if(len(args.geometry) is not 2 and len(args.geometry) is not 4):

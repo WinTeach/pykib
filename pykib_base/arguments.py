@@ -23,7 +23,7 @@ def getArgumentParser():
     parser.add_argument("-dh", "--downloadHandle", dest="downloadHandle", nargs='+', help="With this option, default behaviour for special file extensions can be defined, this will also work when -d is not defined. Format: #extension#|#app_to_start#|#tmpdownloadpath#")
     parser.add_argument("-dp", "--downloadPath", dest="downloadPath", help="Defines the start path for any download and upload dialog")
 	
-    parser.add_argument("-eal", "--enableAutoLogon", dest="enableAutoLogon", nargs='?', const=True, default=False, help="Enables the autologon functionality, this function requires at leats autoLogonUser and autoLogonUser to be set. The Browser is preconfigured to work with Citrix Webinterface, Citrix Storefront and RDWeb Servers")
+    parser.add_argument("-eal", "--enableAutoLogon", dest="enableAutoLogon", nargs='?', const=True, default=False, help="Enables the autologon functionality, this function requires at least autoLogonUser and autoLogonPassword to be set. The Browser is preconfigured to work with Citrix Webinterface, Citrix Storefront and RDWeb Servers")
     parser.add_argument("-alu", "--autoLogonUser", dest="autoLogonUser", help="Defines the username used for autologon")
     parser.add_argument("-alp", "--autoLogonPassword", dest="autoLogonPassword", default=False, help="Defines the password used for autologon")
     parser.add_argument("-ald", "--autoLogonDomain", dest="autoLogonDomain", default=False, help="Defines the domain name used for autologon. If a domain name is set, but no value for autoLogonDomainID, the domain will bei merged with the username to domain\\username")
