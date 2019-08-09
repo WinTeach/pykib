@@ -93,9 +93,9 @@ class MainWindow(QWidget):
                 script =r"""
                         document.onload=login();
                         async function login(){{
-                        usernameID = "None";
-                        passwordID = "None";
-                        domainID = "None";
+                        usernameID = "False";
+                        passwordID = "False";
+                        domainID = "False";
                             if('{usernameID}' == "False"){{                         
                                 if(document.getElementById('FrmLogin') && document.getElementById('DomainUserName') && document.getElementById('UserPass')){{ 
                                     usernameID = "DomainUserName";
@@ -118,7 +118,7 @@ class MainWindow(QWidget):
                               await new Promise(r => setTimeout(r, 50));
                             }}
                                 
-                            if('{domain}' != 'False' && domainID == 'False'){{                            
+                            if('{domain}' != 'False' && domainID == 'False'){{ 
                                 document.getElementById(usernameID).value='{domain}\\{username}';
                                 document.getElementById(passwordID).value='{password}';
                             }}else if('{domain}' != 'False' && domainID != 'False'){{                                
