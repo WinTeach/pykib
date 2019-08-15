@@ -23,7 +23,7 @@ from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
-from PyQt5.QtCore import QSize, QUrl, QFile
+from PyQt5.QtCore import QSize, QUrl, QFile, QMimeType
 
 from pprint import pprint
 
@@ -57,15 +57,30 @@ class myQWebEnginePage(QWebEnginePage):
     #Overrite the default Upload Dialog with a smaller, more limited one   
     def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):            
         #Format acceptedMimeTypes
-        nameFiltersString = ""
+        mimeFiltersString = []
+        nameFiltersString = []
+        
         for x in acceptedMimeTypes:
-            nameFiltersString += "*"+x+" "
-        uploadDialog = QFileDialog()
+             if('/' in x):
+                mimeFiltersString.append(x)
+             else:
+                nameFiltersString.append("*"+x)
+                
+        uploadDialog = QFileDialog()        
+        
         
         if(args.downloadPath):
             uploadDialog.setDirectory(args.downloadPath)
-            
-        uploadDialog.setNameFilters([nameFiltersString])
+        
+        print(len(mimeFiltersString));
+        if(len(mimeFiltersString) != 0):
+            mimeFiltersString.append("application/octet-stream");        
+            uploadDialog.setMimeTypeFilters(mimeFiltersString) 
+        else:       
+            nameFiltersString.append("All files (*.*)");
+            uploadDialog.setNameFilters(nameFiltersString)
+                    
+        
         uploadDialog.setFileMode(QFileDialog.ExistingFile)
         uploadDialog.setAcceptMode(QFileDialog.AcceptOpen)
         
