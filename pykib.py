@@ -23,7 +23,8 @@ import os
 import subprocess
 import pykib_base.ui
 import pykib_base.arguments
-
+import time
+#
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import QSize, QUrl, QCoreApplication, QTimer
 from PyQt5.QtGui import QIcon, QKeyEvent
@@ -45,21 +46,47 @@ elif __file__:
 
 
 class MainWindow(QWidget):
-
-
+    
     def __init__(self, transferargs, parent=None): 
         global args 
         args = transferargs
         global firstrun
         firstrun = True
+        
         super(MainWindow, self).__init__(parent)
         
-        pykib_base.ui.setupUi(self, args, dirname)
-        
+        pykib_base.ui.setupUi(self, args, dirname)        
         self.web.load(args.url) 
         
+        self.removeDownloadBarTimer = QTimer(self)
+                
+            
     def pressed(self):
         self.web.load(self.addressBar.displayText())
+    
+    def downloadProgressChanged(self, bytesReceived, bytesTotal): 
+        self.downloadProgress.show()
+        percent = round(100/bytesTotal*bytesReceived)
+        self.downloadProgress.setValue(percent)
+        
+        self.downloadProgress.setFormat(str(round(bytesReceived/1024/1024,2))+"MB / "+str(round(bytesTotal/1024/1024,2))+"MB completed")            
+     
+    def downloadFinished(self):
+        self.downloadProgress.show()
+        self.downloadProgress.setValue(100)            
+        
+        self.timeToHideDownloadBar = 10
+        
+        self.removeDownloadBarTimer.setInterval(1000)
+        self.removeDownloadBarTimer.timeout.connect(self.onRemoveDownloadBarTimout)
+        self.removeDownloadBarTimer.start()
+        
+    def onRemoveDownloadBarTimout(self):
+        self.downloadProgress.setFormat("Download finished....("+str(self.timeToHideDownloadBar)+")") 
+        self.timeToHideDownloadBar -= 1
+        if(self.timeToHideDownloadBar  == -1):
+            self.removeDownloadBarTimer.stop() 
+            self.downloadProgress.hide()
         
     def loadingProgressChanged(self, percent):   
         global firstrun
@@ -100,6 +127,9 @@ class MainWindow(QWidget):
                                 if(document.getElementById('FrmLogin') && document.getElementById('DomainUserName') && document.getElementById('UserPass')){{ 
                                     usernameID = "DomainUserName";
                                     passwordID = "UserPass";                               
+                                }}else if(document.getElementById('Enter user name')){{
+                                    usernameID = "Enter user name";
+                                    passwordID = "passwd";
                                 }}else if(document.getElementById('user')){{
                                     usernameID = "user";
                                     passwordID = "password";
@@ -188,10 +218,6 @@ def startPykib():
     #Register Sigterm command
     signal.signal(signal.SIGINT, sigint_handler)
     
-    #Timer for calling the python interpreter every 1000, without this the Sigterm command won't be handled while the QT Loop is running
-    timer = QTimer()
-    timer.start(1000)  # You may change this if you wish.
-    timer.timeout.connect(lambda: None)
 
     parser = pykib_base.arguments.getArgumentParser()
     args = parser.parse_args()

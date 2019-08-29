@@ -32,6 +32,18 @@ QProgressBar::chunk {
 }
 """
 
+DOWNLOAD = """
+QProgressBar{
+    border: 0px;
+    border-radius: 0px;
+    text-align: right; 
+}
+
+QProgressBar::chunk {
+    color: blue;
+    background-color: #f2b059;
+}
+"""
 
 class myQProgressBar(QProgressBar):
     def __init__(self, parent = None):
@@ -41,3 +53,5 @@ class myQProgressBar(QProgressBar):
     def changeStyle(self, style):
         if(style == "loading"):
             self.setStyleSheet(LOADING)
+        elif(style == "download"):
+            self.setStyleSheet(DOWNLOAD)

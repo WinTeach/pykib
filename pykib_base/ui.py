@@ -18,7 +18,7 @@
 import os
 
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import QSize
 
 
@@ -28,8 +28,9 @@ from pykib_base.myQProgressBar import myQProgressBar
 
 def setupUi(form, args, dirname):        
     form.setWindowTitle(args.title)        
-    form.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))  
-            
+    form.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png'))) 
+    font = QFont("arial", 10)
+    form.setFont(font)        
     form.pageGridLayout = QtWidgets.QGridLayout(form)                
     form.pageGridLayout.setObjectName("pageGridLayout")
     
@@ -48,7 +49,7 @@ def setupUi(form, args, dirname):
     form.web = myQWebEngineView(args)
     form.web.setObjectName("view")
     
-    form.page = myQWebEnginePage(args, dirname)
+    form.page = myQWebEnginePage(args, dirname, form)
     
     form.web.setPage(form.page)
     
@@ -106,9 +107,21 @@ def setupUi(form, args, dirname):
     form.progress.setMaximum(100)
     form.progress.setTextVisible(False)
     
+    form.downloadProgress = myQProgressBar(form)    
+    form.downloadProgress.setMaximum(100)
+    form.downloadProgress.setTextVisible(True)    
+    form.downloadProgress.changeStyle("download")
+    
+    # form.downloadProgress.setValue(75)    
+    # form.downloadProgress.setFormat("Download finished....")
+    
+    form.downloadProgress.hide()
+    
     form.pageGridLayout.addWidget(form.web, 1, 0, 1, 0)
     
-    form.pageGridLayout.addWidget(form.progress, 2, 0, 1, 0)
+    
+    form.pageGridLayout.addWidget(form.downloadProgress, 2, 0, 1, 0)
+    form.pageGridLayout.addWidget(form.progress, 3, 0, 1, 0)
     
     retranslateUi(form)
     QtCore.QMetaObject.connectSlotsByName(form)

@@ -23,18 +23,21 @@ from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
-from PyQt5.QtCore import QSize, QUrl, QFile, QMimeType
+from PyQt5.QtCore import QSize, QUrl, QFile, QMimeType, pyqtSignal
 
 from pprint import pprint
 
 class myQWebEnginePage(QWebEnginePage):
     args = 0
     dirname = 0
-    def __init__(self, argsparsed, currentdir):
+    downloadProgressChange = pyqtSignal(QWidget)
+    
+    def __init__(self, argsparsed, currentdir, form):
         global args 
         args = argsparsed
         global dirname
         dirname = currentdir
+        self.form = form
         QtWebEngineWidgets.QWebEnginePage.__init__(self)
         
         self.profile().downloadRequested.connect(self.on_downloadRequested)
@@ -52,10 +55,10 @@ class myQWebEnginePage(QWebEnginePage):
         if(args.enableSpellcheck):       
             self.profile().setSpellCheckEnabled(True)
             self.profile().setSpellCheckLanguages({args.spellCheckingLanguage})
-
-    
+ 
+        
     #Overrite the default Upload Dialog with a smaller, more limited one   
-    def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):            
+    def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):       
         #Format acceptedMimeTypes
         mimeFiltersString = []
         nameFiltersString = []
@@ -95,11 +98,9 @@ class myQWebEnginePage(QWebEnginePage):
             return fileName            
             
         return [""]
-
-        
-        
+    
     def javaScriptConsoleMessage(self, msg, lineNumber, sourceID, category):
-        #Ignore JS Failures
+        # #Ignore JS Failures
         pass
         
     #Certificate Error handling
@@ -160,7 +161,16 @@ class myQWebEnginePage(QWebEnginePage):
             if path:
                 download.setPath(path)
                 download.accept()
-                
+                download.downloadProgress.connect(self.onDownloadProgressChange)
+                download.finished.connect(self.onDownloadFinished)
+                 
+    def onDownloadProgressChange(self, bytesReceived, bytesTotal):
+        self.form.downloadProgressChanged(bytesReceived, bytesTotal)
+        
+    def onDownloadFinished(self):
+        self.form.downloadFinished()
+        print("download finished")
+        
     def runProcess(self, handle, filepath, download):
         print(download.isFinished())
         print("Executing:" + "\""+handle[1] +"\" "+filepath);
