@@ -210,6 +210,8 @@ class myQWebEnginePage(QWebEnginePage):
             else:
                 return False
         else:
+            if(args.enablepdfsupport):                    
+                    self.showPDFNavigation(url) 
             return True
             
     def showPDFNavigation(self, url:QUrl):
