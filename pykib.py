@@ -37,11 +37,6 @@ if getattr(sys, 'frozen', False):
     dirname = os.path.dirname(sys.executable)
 elif __file__:
     dirname = os.path.dirname(os.path.realpath(__file__))
-    
-# def signal_handler(signal, frame):
-    # os.kill()
-# signal.signal(signal.SIGINT, signal_handler)  
-#signal.signal(signal.SIGINT, signal.SIG_DFL)  
 
 
 
@@ -82,7 +77,7 @@ class MainWindow(QWidget):
         self.removeDownloadBarTimer.start()
         
     def onRemoveDownloadBarTimout(self):
-        self.downloadProgress.setFormat("Download finished....("+str(self.timeToHideDownloadBar)+")") 
+        self.downloadProgress.setFormat("Download finished....(closing in" +str(self.timeToHideDownloadBar)+"s)") 
         self.timeToHideDownloadBar -= 1
         if(self.timeToHideDownloadBar  == -1):
             self.removeDownloadBarTimer.stop() 

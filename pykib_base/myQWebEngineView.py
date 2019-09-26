@@ -38,8 +38,7 @@ class myQWebEngineView(QWebEngineView):
     def load(self,url):
         if not url:
             url = args.url
-        if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file:///')):
+        if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file:///') or url.startswith('chrome-extension://')):
             url = 'http://' + url        
-        self.setUrl(QUrl(url))  
-
+        self.setUrl(QUrl(url))
         

@@ -19,7 +19,7 @@
 import subprocess
 import os
 from functools import partial
-from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile
+from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
@@ -30,7 +30,7 @@ from pprint import pprint
 class myQWebEnginePage(QWebEnginePage):
     args = 0
     dirname = 0
-    downloadProgressChange = pyqtSignal(QWidget)
+    #downloadProgressChange = pyqtSignal(QWidget)
     
     def __init__(self, argsparsed, currentdir, form):
         global args 
@@ -40,9 +40,16 @@ class myQWebEnginePage(QWebEnginePage):
         self.form = form
         QtWebEngineWidgets.QWebEnginePage.__init__(self)
         
+        
         self.profile().downloadRequested.connect(self.on_downloadRequested)
+        
         #Do not persist Cookies
         self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
+        
+        if(args.enablepdfsupport):
+            self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, 1)
+            self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, 1)
+        
         
         #When Autologin is enabled, se Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces which will otherwise show the Client detection which fails.
         if(args.enableAutoLogon):
@@ -56,6 +63,21 @@ class myQWebEnginePage(QWebEnginePage):
             self.profile().setSpellCheckEnabled(True)
             self.profile().setSpellCheckLanguages({args.spellCheckingLanguage})
  
+    def createWindow(self, _type):
+        page = QWebEnginePage(self) 
+        if(args.enablepdfsupport):
+            page.settings().setAttribute(QWebEngineSettings.PluginsEnabled, 1)
+            page.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, 1)
+            
+        page.urlChanged.connect(self.openInSameWindow)
+        return page;
+    
+    @QtCore.pyqtSlot(QtCore.QUrl)
+    def openInSameWindow(self, url):
+        page = self.sender()
+        self.form.web.load(url.toString())
+        
+        page.deleteLater()    
         
     #Overrite the default Upload Dialog with a smaller, more limited one   
     def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):       
@@ -114,6 +136,9 @@ class myQWebEnginePage(QWebEnginePage):
     #Download Handle
     @QtCore.pyqtSlot(QtWebEngineWidgets.QWebEngineDownloadItem)
     def on_downloadRequested(self, download):
+        #If PDF-Support ist used on each Download Request it will be enabled
+        if(args.enablepdfsupport):
+            self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, 1)            
         downloadHandleHit = False
         old_path = download.path()
         suffix = QtCore.QFileInfo(old_path).suffix()
@@ -178,15 +203,38 @@ class myQWebEnginePage(QWebEnginePage):
     
     def acceptNavigationRequest(self, url: QUrl, typ: QWebEnginePage.NavigationType, is_main_frame: bool):
         if(args.whiteList):
-            return self.checkWhitelist(url)
+            if(self.checkWhitelist(url)):                
+                if(args.enablepdfsupport):                    
+                    self.showPDFNavigation(url)                    
+                return True
+            else:
+                return False
         else:
             return True
+            
+    def showPDFNavigation(self, url:QUrl):
+        currentUrl = url.toString()
+        if(currentUrl.endswith(".pdf")):            
+            self.form.PDFnavbar.show()                
+        else:
+            self.form.PDFnavbar.hide()
+            
+    def pdfDownloadAction(self):       
+        #Remove Extension From URL
+        self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, 0)
+        try:
+            downloadURL = self.form.web.url().toString().split('?')[1]
+            self.form.web.load(downloadURL)  
+            print("Downloading: "+downloadURL)
+        except:
+            print("An exception occurred")
         
     def checkWhitelist(self, url:QUrl): 
         global dirname
-        currentUrl = url.toString()
+        currentUrl = url.toString()      
+                        
         for x in args.whiteList:
-            if(currentUrl.startswith(x)):
+            if(currentUrl.startswith(x) or currentUrl.startswith("chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/index.html?"+x)):                
                 return True;
         print("Site "+ currentUrl +" is not whitelisted")       
         

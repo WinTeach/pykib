@@ -44,7 +44,18 @@ def setupUi(form, args, dirname):
     #Create Navbar Grid Layout
     form.navGridLayout = QtWidgets.QGridLayout(form.navbar)
     form.navGridLayout.setContentsMargins(9, 9, 9, 0)
-    form.navGridLayout.setObjectName("navGridLayout")        
+    form.navGridLayout.setObjectName("navGridLayout")      
+    
+    if(args.enablepdfsupport):
+        #Create PDF Navbar
+        form.PDFnavbar = QtWidgets.QWidget(form)
+        form.PDFnavbar.setMaximumHeight(40)
+        form.PDFnavbar.setObjectName("PDFnavbar")
+        
+         #Create PDF Navbar Grid Layout
+        form.PDFGridLayout = QtWidgets.QGridLayout(form.PDFnavbar)
+        form.PDFGridLayout.setContentsMargins(3, 0, 3, 3)
+        form.PDFGridLayout.setObjectName("PDFGridLayout")      
     
     form.web = myQWebEngineView(args)
     form.web.setObjectName("view")
@@ -102,11 +113,32 @@ def setupUi(form, args, dirname):
         form.web.titleChanged.connect(form.adjustTitle)
         form.web.iconUrlChanged.connect(form.adjustTitleIcon)
             
+    ##Buttons for PDF Support
+    if(args.enablepdfsupport):
+        form.PDFbackButton = QtWidgets.QPushButton(form)
+        form.PDFbackButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')));
+        form.PDFbackButton.setIconSize(QSize(24, 24));
+        form.PDFbackButton.setObjectName("PDFbackButton")
+        form.PDFbackButton.setText("Back")
+        form.PDFbackButton.clicked.connect(form.web.back)
+        form.PDFGridLayout.addWidget(form.PDFbackButton, 0, 0, 1, 1)        
+        if(args.download):
+            form.PDFDownloadButton = QtWidgets.QPushButton(form)
+            form.PDFDownloadButton.setIcon(QIcon(os.path.join(dirname, 'icons/download.png')));
+            form.PDFDownloadButton.setIconSize(QSize(24, 24));
+            form.PDFDownloadButton.setObjectName("PDFDownloadButton")
+            form.PDFDownloadButton.setText("Download")
+            form.PDFDownloadButton.clicked.connect(form.page.pdfDownloadAction)   
+            form.PDFGridLayout.addWidget(form.PDFDownloadButton, 0, 1, 1, 1)  
+        form.pageGridLayout.addWidget(form.PDFnavbar, 4, 0, 1, 0)
+        form.PDFnavbar.hide()
+            
     
     form.progress = myQProgressBar(form)    
     form.progress.setMaximum(100)
     form.progress.setTextVisible(False)
     
+    #Download Progress Bar
     form.downloadProgress = myQProgressBar(form)    
     form.downloadProgress.setMaximum(100)
     form.downloadProgress.setTextVisible(True)    
@@ -117,8 +149,7 @@ def setupUi(form, args, dirname):
     
     form.downloadProgress.hide()
     
-    form.pageGridLayout.addWidget(form.web, 1, 0, 1, 0)
-    
+    form.pageGridLayout.addWidget(form.web, 1, 0, 1, 0)    
     
     form.pageGridLayout.addWidget(form.downloadProgress, 2, 0, 1, 0)
     form.pageGridLayout.addWidget(form.progress, 3, 0, 1, 0)
