@@ -46,6 +46,8 @@ QProgressBar::chunk {
 """
 
 class myQProgressBar(QProgressBar):
+    disabled = False
+    
     def __init__(self, parent = None):
         QProgressBar.__init__(self, parent)
         self.changeStyle("loading")

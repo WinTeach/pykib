@@ -2,7 +2,7 @@
 import textwrap
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
-__version_info__ = ('devel', '1.0.8')
+__version_info__ = ('devel', '1.0.9')
 __version__ = '-'.join(__version_info__)
 
 def getArgumentParser():

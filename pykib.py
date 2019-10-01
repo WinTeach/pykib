@@ -49,7 +49,6 @@ class MainWindow(QWidget):
         firstrun = True
         
         super(MainWindow, self).__init__(parent)
-        
         pykib_base.ui.setupUi(self, args, dirname)        
         self.web.load(args.url) 
         
@@ -77,7 +76,7 @@ class MainWindow(QWidget):
         self.removeDownloadBarTimer.start()
         
     def onRemoveDownloadBarTimout(self):
-        self.downloadProgress.setFormat("Download finished....(closing in" +str(self.timeToHideDownloadBar)+"s)") 
+        self.downloadProgress.setFormat("Download finished....(closing in " +str(self.timeToHideDownloadBar)+"s)") 
         self.timeToHideDownloadBar -= 1
         if(self.timeToHideDownloadBar  == -1):
             self.removeDownloadBarTimer.stop() 
@@ -85,84 +84,85 @@ class MainWindow(QWidget):
         
     def loadingProgressChanged(self, percent):   
         global firstrun
-        self.progress.show()
-        self.progress.setValue(percent)
-        self.progress.changeStyle("loading")
-        
-        if(percent == 100):
-            self.progress.hide()
+        if(not self.progress.disabled):
+            self.progress.show()
+            self.progress.setValue(percent)
+            self.progress.changeStyle("loading")
             
-            if(args.enableAutoLogon and firstrun == True):
-                firstrun = False
-                # if(len(autologin) >= 2):
-                username = args.autoLogonUser.replace("\\","\\\\")
-                password = args.autoLogonPassword.replace("\\","\\\\")
-                domain = args.autoLogonDomain
-                usernameID = args.autoLogonUserID
-                passwordID = args.autoLogonPasswordID
-                domainID = args.autoLogonDomainID
-                # if(len(autologin) >= 3):
-                    # if(autologin[2]):
-                        # domain = autologin[2].replace("\\","\\\\")
-                # if(len(autologin) == 6):                        
-                    # usernameID = autologin[3].replace("\\","\\\\")
-                    # passwordID = autologin[4].replace("\\","\\\\")
-                    # if(autologin[5]):
-                        # domainID = autologin[5].replace("\\","\\\\")
+            if(percent == 100):
+                self.progress.hide()
                 
-               
-               # """+len(autologin)+"""<=3
-                script =r"""
-                        document.onload=login();
-                        async function login(){{
-                        usernameID = "False";
-                        passwordID = "False";
-                        domainID = "False";
-                            if('{usernameID}' == "False"){{                         
-                                if(document.getElementById('FrmLogin') && document.getElementById('DomainUserName') && document.getElementById('UserPass')){{ 
-                                    usernameID = "DomainUserName";
-                                    passwordID = "UserPass";                               
-                                }}else if(document.getElementById('Enter user name')){{
-                                    usernameID = "Enter user name";
-                                    passwordID = "passwd";
-                                }}else if(document.getElementById('user')){{
-                                    usernameID = "user";
-                                    passwordID = "password";
-                                }}else{{
-                                    usernameID = "username";
-                                    passwordID = "password";
+                if(args.enableAutoLogon and firstrun == True):
+                    firstrun = False
+                    # if(len(autologin) >= 2):
+                    username = args.autoLogonUser.replace("\\","\\\\")
+                    password = args.autoLogonPassword.replace("\\","\\\\")
+                    domain = args.autoLogonDomain
+                    usernameID = args.autoLogonUserID
+                    passwordID = args.autoLogonPasswordID
+                    domainID = args.autoLogonDomainID
+                    # if(len(autologin) >= 3):
+                        # if(autologin[2]):
+                            # domain = autologin[2].replace("\\","\\\\")
+                    # if(len(autologin) == 6):                        
+                        # usernameID = autologin[3].replace("\\","\\\\")
+                        # passwordID = autologin[4].replace("\\","\\\\")
+                        # if(autologin[5]):
+                            # domainID = autologin[5].replace("\\","\\\\")
+                    
+                   
+                   # """+len(autologin)+"""<=3
+                    script =r"""
+                            document.onload=login();
+                            async function login(){{
+                            usernameID = "False";
+                            passwordID = "False";
+                            domainID = "False";
+                                if('{usernameID}' == "False"){{                         
+                                    if(document.getElementById('FrmLogin') && document.getElementById('DomainUserName') && document.getElementById('UserPass')){{ 
+                                        usernameID = "DomainUserName";
+                                        passwordID = "UserPass";                               
+                                    }}else if(document.getElementById('Enter user name')){{
+                                        usernameID = "Enter user name";
+                                        passwordID = "passwd";
+                                    }}else if(document.getElementById('user')){{
+                                        usernameID = "user";
+                                        passwordID = "password";
+                                    }}else{{
+                                        usernameID = "username";
+                                        passwordID = "password";
+                                    }}
+                                }}else if('{usernameID}' != 'False'){{
+                                    usernameID = "{usernameID}";
+                                    passwordID = "{passwordID}";
+                                    domainID = "{domainID}";
                                 }}
-                            }}else if('{usernameID}' != 'False'){{
-                                usernameID = "{usernameID}";
-                                passwordID = "{passwordID}";
-                                domainID = "{domainID}";
+                                      
+                                //Wait until usernameID and PasswordID is loaded
+                                while(!document.getElementById(usernameID) && !document.getElementById(passwordID)) {{
+                                  await new Promise(r => setTimeout(r, 50));
+                                }}
+                                    
+                                if('{domain}' != 'False' && domainID == 'False'){{ 
+                                    document.getElementById(usernameID).value='{domain}\\{username}';
+                                    document.getElementById(passwordID).value='{password}';
+                                }}else if('{domain}' != 'False' && domainID != 'False'){{                                
+                                    document.getElementById(usernameID).value='{username}';
+                                    document.getElementById(passwordID).value='{password}';
+                                    document.getElementById(domainID).value='{domain}';
+                                }}else{{                                
+                                    document.getElementById(usernameID).value='{username}';
+                                    document.getElementById(passwordID).value='{password}';
+                                }}    
+                                //for the Storefront Login the Login Button had to be clicked
+                                if(document.getElementById("loginBtn")){{
+                                    document.getElementById("loginBtn").click();
+                                }}else{{
+                                    document.forms[0].submit();
+                                }}
                             }}
-                                  
-                            //Wait until usernameID and PasswordID is loaded
-                            while(!document.getElementById(usernameID) && !document.getElementById(passwordID)) {{
-                              await new Promise(r => setTimeout(r, 50));
-                            }}
-                                
-                            if('{domain}' != 'False' && domainID == 'False'){{ 
-                                document.getElementById(usernameID).value='{domain}\\{username}';
-                                document.getElementById(passwordID).value='{password}';
-                            }}else if('{domain}' != 'False' && domainID != 'False'){{                                
-                                document.getElementById(usernameID).value='{username}';
-                                document.getElementById(passwordID).value='{password}';
-                                document.getElementById(domainID).value='{domain}';
-                            }}else{{                                
-                                document.getElementById(usernameID).value='{username}';
-                                document.getElementById(passwordID).value='{password}';
-                            }}    
-                            //for the Storefront Login the Login Button had to be clicked
-                            if(document.getElementById("loginBtn")){{
-                                document.getElementById("loginBtn").click();
-                            }}else{{
-                                document.forms[0].submit();
-                            }}
-                        }}
-                        """.format(username=username, password=password, domain=domain, usernameID=usernameID, passwordID=passwordID, domainID=domainID)    
-                self.page.runJavaScript(script)
+                            """.format(username=username, password=password, domain=domain, usernameID=usernameID, passwordID=passwordID, domainID=domainID)    
+                    self.page.runJavaScript(script)
            
         
     #catch defined Shortcuts

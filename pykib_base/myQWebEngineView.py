@@ -29,7 +29,7 @@ class myQWebEngineView(QWebEngineView):
         global args
         args = argsparsed
         self.browser = QWebEngineView.__init__(self)        
-        self.setContextMenuPolicy( QtCore.Qt.NoContextMenu )
+        self.setContextMenuPolicy( QtCore.Qt.NoContextMenu )        
         
         # self.setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
         # self.customContextMenuRequested.connect(self.show_custom_context_menu)
@@ -38,7 +38,8 @@ class myQWebEngineView(QWebEngineView):
     def load(self,url):
         if not url:
             url = args.url
-        if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file:///') or url.startswith('chrome-extension://')):
-            url = 'http://' + url        
+        if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file://')):
+            url = 'http://' + url
+        
         self.setUrl(QUrl(url))
         

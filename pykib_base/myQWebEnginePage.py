@@ -18,12 +18,16 @@
 
 import subprocess
 import os
+import urllib.parse
+import tempfile
+
 from functools import partial
 from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 from PyQt5.QtCore import QSize, QUrl, QFile, QMimeType, pyqtSignal
+from pykib_base.myQWebEngineView import myQWebEngineView
 
 from pprint import pprint
 
@@ -40,15 +44,15 @@ class myQWebEnginePage(QWebEnginePage):
         self.form = form
         QtWebEngineWidgets.QWebEnginePage.__init__(self)
         
-        
         self.profile().downloadRequested.connect(self.on_downloadRequested)
         
         #Do not persist Cookies
         self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
         
+        
         if(args.enablepdfsupport):
-            self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, 1)
-            self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, 1)
+            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
+            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, 1)
         
         
         #When Autologin is enabled, se Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces which will otherwise show the Client detection which fails.
@@ -66,8 +70,7 @@ class myQWebEnginePage(QWebEnginePage):
     def createWindow(self, _type):
         page = QWebEnginePage(self) 
         if(args.enablepdfsupport):
-            page.settings().setAttribute(QWebEngineSettings.PluginsEnabled, 1)
-            page.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, 1)
+            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
             
         page.urlChanged.connect(self.openInSameWindow)
         return page;
@@ -122,7 +125,7 @@ class myQWebEnginePage(QWebEnginePage):
         return [""]
     
     def javaScriptConsoleMessage(self, msg, lineNumber, sourceID, category):
-        # #Ignore JS Failures
+        # # #Ignore JS Failures
         pass
         
     #Certificate Error handling
@@ -135,14 +138,45 @@ class myQWebEnginePage(QWebEnginePage):
     
     #Download Handle
     @QtCore.pyqtSlot(QtWebEngineWidgets.QWebEngineDownloadItem)
-    def on_downloadRequested(self, download):
-        #If PDF-Support ist used on each Download Request it will be enabled
-        if(args.enablepdfsupport):
-            self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, 1)            
+    def on_downloadRequested(self, download):        
         downloadHandleHit = False
         old_path = download.path()
         suffix = QtCore.QFileInfo(old_path).suffix()
+        #If PDF Support is enabled        
+        if(args.enablepdfsupport and suffix == 'pdf' and not download.url().toString().startswith("blob:file://") and not download.url().toString().endswith("?downloadPdfFromPykib")): 
+            print("Loading PDF: "+os.path.basename(old_path))
+            global dirname
+            tempfolder = dirname+"/tmp"
+            if os.path.exists(tempfolder):
+                for the_file in os.listdir(tempfolder):
+                    file_path = os.path.join(tempfolder, the_file)
+                    try:
+                        if os.path.isfile(file_path):
+                            os.unlink(file_path)
+                    except Exception as e:
+                        print(e)
+            else:
+                os.makedirs(tempfolder)
+            
+            self.pdfFile = download.url().toString()
+            
+            if(download.url().toString().startswith("blob:")):
+                download.setPath(tempfolder+"/"+os.path.basename(old_path))
+                download.accept() 
+                self.pdfFile = "file:///"+download.path()   
+            
+            f = { 'file' : self.pdfFile}
+            pdfjsargs = urllib.parse.urlencode(f)
+            
+            pdfjsurl = "file:///"+dirname.replace("\\","/")+"/plugins/pdf.js/web/viewer.html?"+pdfjsargs.replace("+"," ")  
+             
+            self.loadPDFPage(pdfjsurl)               
+            return True     
+            
+        
+        #If Download Handle is hit
         if(args.downloadHandle):
+            print("Download Handle Hit "+os.path.basename(old_path))
             for x in args.downloadHandle:
                 handle = x.split("|")
                 if(suffix == handle[0]):    
@@ -154,9 +188,11 @@ class myQWebEnginePage(QWebEnginePage):
                         filepath = handle[2]+"/tmp."+suffix  
                     download.setPath(filepath)
                     download.accept()
-                    download.finished.connect(partial(self.runProcess, handle, filepath, download))                
+                    download.finished.connect(partial(self.runProcess, handle, filepath, download))
+            return True 
                 
-        if(args.download and not downloadHandleHit):            
+        if(args.download and not downloadHandleHit and download.state() == 0):   
+            print("File Download Request "+os.path.basename(old_path))
             #path, _ = QtWidgets.QFileDialog.getSaveFileName(self.view(), "Save File", old_path, "*."+suffix)
             path = ""
             suffix = QtCore.QFileInfo(old_path).suffix()
@@ -174,11 +210,7 @@ class myQWebEnginePage(QWebEnginePage):
             
             options = QFileDialog.Options()
             options |= QFileDialog.DontUseNativeDialog            
-            downloadDialog.setOptions(options)
-                                   
-            # dialogLabel = QFileDialog.DialogLabel()
-            # dialogLabel |= QFileDialog.FileName
-            # downloadDialog.setLabelText(dialogLabel, "Download")
+            downloadDialog.setOptions(options)                                   
         
             if downloadDialog.exec_():
                 path = downloadDialog.selectedFiles()[0]                
@@ -188,6 +220,8 @@ class myQWebEnginePage(QWebEnginePage):
                 download.accept()
                 download.downloadProgress.connect(self.onDownloadProgressChange)
                 download.finished.connect(self.onDownloadFinished)
+            return True 
+            
                  
     def onDownloadProgressChange(self, bytesReceived, bytesTotal):
         self.form.downloadProgressChanged(bytesReceived, bytesTotal)
@@ -203,49 +237,59 @@ class myQWebEnginePage(QWebEnginePage):
     
     def acceptNavigationRequest(self, url: QUrl, typ: QWebEnginePage.NavigationType, is_main_frame: bool):
         if(args.whiteList):
-            if(self.checkWhitelist(url)):                
-                if(args.enablepdfsupport):                    
-                    self.showPDFNavigation(url)                    
+            if(self.checkWhitelist(url)):
                 return True
             else:
                 return False
         else:
-            if(args.enablepdfsupport):                    
-                    self.showPDFNavigation(url) 
             return True
             
-    def showPDFNavigation(self, url:QUrl):
-        currentUrl = url.toString()
-        if(currentUrl.endswith(".pdf")):            
-            self.form.PDFnavbar.show()                
-        else:
-            self.form.PDFnavbar.hide()
+    def loadPDFPage(self, pdfjsurl):
+        global dirname
+        self.form.pdfpage = myQWebEnginePage(args, dirname, self.form)
+        
+        self.form.web.setPage(self.form.pdfpage)
+        self.form.web.load(pdfjsurl)
+        self.form.PDFnavbar.show()  
+        self.form.navbar.hide()  
+        self.form.progress.disabled = True  
+        
+    def closePDFPage(self):
+        self.form.web.setPage(self.form.page)
+        self.form.PDFnavbar.hide() 
+        if(args.showNavigationButtons or args.showAddressBar):
+            self.form.navbar.show() 
+        self.form.pdfpage.deleteLater()
+        self.form.progress.disabled = False        
             
     def pdfDownloadAction(self):       
         #Remove Extension From URL
-        self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, 0)
-        try:
-            downloadURL = self.form.web.url().toString().split('?')[1]
-            self.form.web.load(downloadURL)  
-            print("Downloading: "+downloadURL)
+        try:              
+            self.form.web.load(self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib")  
+            print("Downloading: "+ self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib")             
         except:
-            print("An exception occurred")
+            # self.form.web.load(self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib") 
+            print("An exception while downloading a pdf occurred")        
         
     def checkWhitelist(self, url:QUrl): 
         global dirname
         currentUrl = url.toString()      
                         
-        for x in args.whiteList:
-            if(currentUrl.startswith(x) or currentUrl.startswith("chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/index.html?"+x)):                
+        for x in args.whiteList:            
+            if(currentUrl.startswith(x)):                
                 return True;
+            elif(args.enablepdfsupport):  
+                global dirname            
+                if(currentUrl.startswith("file:///"+dirname.replace("\\","/")+"/plugins/pdf.js/web/viewer.html?") or (currentUrl.startswith("file:///") and currentUrl.endswith("?downloadPdfFromPykib"))):
+                    return True
+                
         print("Site "+ currentUrl +" is not whitelisted")       
         
         msg = QtWidgets.QMessageBox()
         msg.setIcon(QtWidgets.QMessageBox.Warning)
         msg.setText( "Site "+ currentUrl +" is not white-listed")
         msg.setWindowTitle("Whitelist Error")
-        
-            
+                    
         backButton = QtWidgets.QPushButton("Go Back")
         backButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')));
         backButton.setIconSize(QSize(24, 24));

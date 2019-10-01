@@ -60,8 +60,7 @@ def setupUi(form, args, dirname):
     form.web = myQWebEngineView(args)
     form.web.setObjectName("view")
     
-    form.page = myQWebEnginePage(args, dirname, form)
-    
+    form.page = myQWebEnginePage(args, dirname, form)    
     form.web.setPage(form.page)
     
     #Added progress Handling   
@@ -119,8 +118,8 @@ def setupUi(form, args, dirname):
         form.PDFbackButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')));
         form.PDFbackButton.setIconSize(QSize(24, 24));
         form.PDFbackButton.setObjectName("PDFbackButton")
-        form.PDFbackButton.setText("Back")
-        form.PDFbackButton.clicked.connect(form.web.back)
+        form.PDFbackButton.setText("Close PDF")
+        form.PDFbackButton.clicked.connect(form.page.closePDFPage)
         form.PDFGridLayout.addWidget(form.PDFbackButton, 0, 0, 1, 1)        
         if(args.download):
             form.PDFDownloadButton = QtWidgets.QPushButton(form)
@@ -129,7 +128,7 @@ def setupUi(form, args, dirname):
             form.PDFDownloadButton.setObjectName("PDFDownloadButton")
             form.PDFDownloadButton.setText("Download")
             form.PDFDownloadButton.clicked.connect(form.page.pdfDownloadAction)   
-            form.PDFGridLayout.addWidget(form.PDFDownloadButton, 0, 1, 1, 1)  
+            form.PDFGridLayout.addWidget(form.PDFDownloadButton, 0, 1, 1, 1) 
         form.pageGridLayout.addWidget(form.PDFnavbar, 4, 0, 1, 0)
         form.PDFnavbar.hide()
             
