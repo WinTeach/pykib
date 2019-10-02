@@ -220,6 +220,8 @@ class myQWebEnginePage(QWebEnginePage):
                 download.accept()
                 download.downloadProgress.connect(self.onDownloadProgressChange)
                 download.finished.connect(self.onDownloadFinished)
+            else:
+                download.cancel()
             return True 
             
                  
@@ -228,7 +230,7 @@ class myQWebEnginePage(QWebEnginePage):
         
     def onDownloadFinished(self):
         self.form.downloadFinished()
-        print("download finished")
+        print("Download finished")
         
     def runProcess(self, handle, filepath, download):
         print(download.isFinished())
@@ -254,12 +256,13 @@ class myQWebEnginePage(QWebEnginePage):
         self.form.navbar.hide()  
         self.form.progress.disabled = True  
         
-    def closePDFPage(self):
+    def closePDFPage(self):        
         self.form.web.setPage(self.form.page)
         self.form.PDFnavbar.hide() 
         if(args.showNavigationButtons or args.showAddressBar):
             self.form.navbar.show() 
-        self.form.pdfpage.deleteLater()
+        if(self.form.pdfpage):
+            self.form.pdfpage.deleteLater()
         self.form.progress.disabled = False        
             
     def pdfDownloadAction(self):       
@@ -279,9 +282,14 @@ class myQWebEnginePage(QWebEnginePage):
             if(currentUrl.startswith(x)):                
                 return True;
             elif(args.enablepdfsupport):  
-                global dirname            
-                if(currentUrl.startswith("file:///"+dirname.replace("\\","/")+"/plugins/pdf.js/web/viewer.html?") or (currentUrl.startswith("file:///") and currentUrl.endswith("?downloadPdfFromPykib"))):
+                global dirname
+                #Because of Crossplatform compatibility all the slashs and backslashes of local paths are removes           
+                pdfjsviewer_checkstring = ("file:///"+dirname+"/plugins/pdf.js/web/viewer.html?").replace("\\","/").replace("/","")               
+                checkurl_checkstring = currentUrl.replace("\\","/").replace("/","")
+                if(checkurl_checkstring.startswith(pdfjsviewer_checkstring) or (currentUrl.startswith("file:///") and currentUrl.endswith("?downloadPdfFromPykib"))):
                     return True
+                else:
+                    self.closePDFPage()
                 
         print("Site "+ currentUrl +" is not whitelisted")       
         

@@ -43,6 +43,7 @@ elif __file__:
 class MainWindow(QWidget):
     
     def __init__(self, transferargs, parent=None): 
+        print("running in: "+dirname)
         global args 
         args = transferargs
         global firstrun
