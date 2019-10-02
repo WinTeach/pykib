@@ -268,7 +268,7 @@ class myQWebEnginePage(QWebEnginePage):
     def pdfDownloadAction(self):       
         #Remove Extension From URL
         try:              
-            self.form.web.load(self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib")  
+            self.form.web.load((self.pdfFile+"?downloadPdfFromPykib").replace("\\","/").replace("////","///"))  
             print("Downloading: "+ self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib")             
         except:
             # self.form.web.load(self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib") 
