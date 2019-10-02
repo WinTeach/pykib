@@ -189,7 +189,7 @@ class myQWebEnginePage(QWebEnginePage):
                     download.setPath(filepath)
                     download.accept()
                     download.finished.connect(partial(self.runProcess, handle, filepath, download))
-            return True 
+            
                 
         if(args.download and not downloadHandleHit and download.state() == 0):   
             print("File Download Request "+os.path.basename(old_path))
@@ -253,7 +253,7 @@ class myQWebEnginePage(QWebEnginePage):
         self.form.web.setPage(self.form.pdfpage)
         self.form.web.load(pdfjsurl)
         self.form.PDFnavbar.show()  
-        self.form.navbar.hide()  
+        #self.form.navbar.hide()  
         self.form.progress.disabled = True  
         
     def closePDFPage(self):        
@@ -261,15 +261,18 @@ class myQWebEnginePage(QWebEnginePage):
         self.form.PDFnavbar.hide() 
         if(args.showNavigationButtons or args.showAddressBar):
             self.form.navbar.show() 
-        if(self.form.pdfpage):
-            self.form.pdfpage.deleteLater()
+        try:
+            if(self.form.pdfpage):
+                self.form.pdfpage.deleteLater()
+        except:
+            pass
         self.form.progress.disabled = False        
             
     def pdfDownloadAction(self):       
         #Remove Extension From URL
         try:              
             self.form.web.load((self.pdfFile+"?downloadPdfFromPykib").replace("\\","/").replace("////","///"))  
-            print("Downloading: "+ self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib")             
+            print("Downloading: "+ (self.pdfFile+"?downloadPdfFromPykib").replace("\\","/").replace("////","///"))             
         except:
             # self.form.web.load(self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib") 
             print("An exception while downloading a pdf occurred")        
