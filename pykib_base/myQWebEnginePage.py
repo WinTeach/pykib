@@ -161,7 +161,7 @@ class myQWebEnginePage(QWebEnginePage):
             self.pdfFile = download.url().toString()
             
             if(download.url().toString().startswith("blob:")):
-                download.setPath(tempfolder+"/"+os.path.basename(old_path))
+                download.setPath(tempfolder+"/"+os.path.basename(old_path).replace("////","///"))
                 download.accept() 
                 self.pdfFile = "file:///"+download.path()   
             
