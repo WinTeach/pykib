@@ -109,7 +109,7 @@ class myQWebEnginePage(QWebEnginePage):
             uploadDialog.setNameFilters(nameFiltersString)
                     
         
-        uploadDialog.setFileMode(QFileDialog.ExistingFile)
+        uploadDialog.setFileMode(QFileDialog.ExistingFiles)
         uploadDialog.setAcceptMode(QFileDialog.AcceptOpen)
         
         options = QFileDialog.Options()
