@@ -24,6 +24,7 @@ import subprocess
 import pykib_base.ui
 import pykib_base.arguments
 import time
+import platform
 #
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import QSize, QUrl, QCoreApplication, QTimer
@@ -66,8 +67,14 @@ class MainWindow(QWidget):
         
         self.downloadProgress.setFormat(str(round(bytesReceived/1024/1024,2))+"MB / "+str(round(bytesTotal/1024/1024,2))+"MB completed")            
      
-    def downloadFinished(self):
+    def downloadFinished(self):        
         self.downloadProgress.show()
+        if(platform.system().lower() == "linux"):
+            self.downloadProgress.setFormat("Download finished....(Syncing File System)") 
+            print("Running 'sync' after download")
+            os.system("sync")
+
+            
         self.downloadProgress.setValue(100)            
         
         self.timeToHideDownloadBar = 10
