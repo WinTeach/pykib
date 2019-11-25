@@ -2,7 +2,7 @@
 import textwrap
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
-__version_info__ = ('devel', '1.0.14')
+__version_info__ = ('devel', '1.0.15')
 __version__ = '-'.join(__version_info__)
 
 def getArgumentParser():
@@ -34,6 +34,8 @@ def getArgumentParser():
     parser.add_argument("-es", "--enablespellcheck", dest="enableSpellcheck", nargs='?', const=True, default=False, help="Enables spellchecking when set")
     parser.add_argument("-sl", "--spellcheckinglanguage", dest="spellCheckingLanguage", default="de_DE", help="Defines the language for the spellcheck dictionary. Default de_DE")
     parser.add_argument("-eps", "--enablepdfsupport", dest="enablepdfsupport", nargs='?', const=True, default=False, help="Enables the Option of viewing PDFs in the BrowserWindow")
+    
+    parser.add_argument("-sbl", "--setbrowserlanguage", dest="setBrowserLanguage", nargs='?', help="Overrides the default Browser Language in format de (for German), en (for English)....")
  
     parser.add_argument("-t", "--title", dest="title", help="Defines the Window Title", default="pykib")
     parser.add_argument("-dt", "--dynamicTitle", dest="dynamicTitle", nargs='?', const=True, default=False, help="When enabled the window title will display the current websites title")

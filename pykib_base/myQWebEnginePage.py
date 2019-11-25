@@ -45,6 +45,9 @@ class myQWebEnginePage(QWebEnginePage):
         QtWebEngineWidgets.QWebEnginePage.__init__(self)
         
         self.profile().downloadRequested.connect(self.on_downloadRequested)
+        if(args.setBrowserLanguage):
+            self.profile().setHttpAcceptLanguage(args.setBrowserLanguage)
+        
         
         #Do not persist Cookies
         self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
@@ -57,7 +60,10 @@ class myQWebEnginePage(QWebEnginePage):
         
         #When Autologin is enabled, se Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces which will otherwise show the Client detection which fails.
         if(args.enableAutoLogon):
-            self.profile().setHttpUserAgent("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
+            if(args.setBrowserLanguage):
+                self.profile().setHttpUserAgent("Mozilla/5.0 (Windows; U; Windows NT 6.1; de) AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
+            else:
+                self.profile().setHttpUserAgent("Mozilla/5.0 (Windows; U; Windows NT 6.1; "+args.setBrowserLanguage+") AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
         
         
         #Clears the Cache on Load
