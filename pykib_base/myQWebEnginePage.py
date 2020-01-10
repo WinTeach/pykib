@@ -59,7 +59,7 @@ class myQWebEnginePage(QWebEnginePage):
         
         
         #When Autologin is enabled, se Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces which will otherwise show the Client detection which fails.
-        if(args.enableAutoLogon):
+        if(args.enableAutoLogon or args.setCitrixUserAgent):
             if(args.setBrowserLanguage):
                 self.profile().setHttpUserAgent("Mozilla/5.0 (Windows; U; Windows NT 6.1; de) AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
             else:
