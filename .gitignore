@@ -113,3 +113,13 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /.project
+/ca.pem
+/currentVersions.txt
+/foo.py
+/mowas.cmd
+/pdf.cmd
+/pyinstallerscript.cmd
+/rangee.cmd
+/vsphere.cmd
+/web.cmd
+/tmp/

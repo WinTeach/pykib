@@ -26,7 +26,7 @@ import pykib_base.arguments
 import time
 import platform
 #
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtNetwork
 from PyQt5.QtCore import QSize, QUrl, QCoreApplication, QTimer
 from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWidgets import QApplication, QWidget
@@ -224,7 +224,21 @@ def startPykib():
 
     parser = pykib_base.arguments.getArgumentParser()
     args = parser.parse_args()
-    
+    #Set Proxy
+    if(args.proxy):
+        proxy = QtNetwork.QNetworkProxy()
+        proxy.setType(QtNetwork.QNetworkProxy.HttpProxy)
+        proxy.setHostName(args.proxy)
+        proxy.setPort(args.proxyPort)
+        if (args.proxyUsername and args.proxyPassword):
+            proxy.setUser(args.proxyUsername);
+            proxy.setPassword(args.proxyPassword);
+        elif(args.proxyUsername or args.proxyPassword):
+            print("It is not possible to use a prxy username without password")
+            sys.exit()
+
+        QtNetwork.QNetworkProxy.setApplicationProxy(proxy)
+
     view = MainWindow (args)   
     
     if(args.downloadPath ):
@@ -240,19 +254,19 @@ def startPykib():
         
     #Set Dimensions
     if (args.fullscreen):
-        if(len(args.geometry) is not 2 and len(args.geometry) is not 4):
+        if(len(args.geometry) != 2 and len(args.geometry) != 4):
             print("When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
             sys.exit()
         view.move(args.geometry[0], args.geometry[1])
         view.showFullScreen()
     elif(args.maximized):
-        if(len(args.geometry) is not 2 and len(args.geometry) is not 4):
+        if(len(args.geometry) != 2 and len(args.geometry) != 4):
             print("When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
             sys.exit()
         view.move(args.geometry[0], args.geometry[1])
         view.showMaximized()    
     else:    
-        if(len(args.geometry) is not 4):
+        if(len(args.geometry) != 4):
             print("When geometry without maximized or fullsreen is set, you have to define the whole position an screen #left# #top# #width# #height#")
             sys.exit()
         view.show()     
