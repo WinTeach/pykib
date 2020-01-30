@@ -1,5 +1,7 @@
 import textwrap
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+import configparser
+import io
 
 __version_info__ = ('devel', '1.0.17')
 __version__ = '-'.join(__version_info__)
@@ -15,12 +17,13 @@ def getArgumentParser():
                 python3 pykib.py -dh "rdp|/home/xfreerdp.sh|/tmp" "rdp|rm|/tmp"
             Open the site www.winteach.de in fullscreen. With the Whiteliste Option no one will be able to leave this site
                 python3 pykib.py -u https://www.winteach.de -f -wl "https://www.winteach.de"
-            Open the site www.winteach.de maximized and show Addressbar and navigation Buttons.
+            Open the site www.winteach.de maximized and show Adressbar and Navigation Buttons.
                 python3 pykib.py -u https://www.winteach.de -m -sn -sa
              '''))
+    parser.add_argument("-c", "--configFile", dest="configFile", help="Use this as configuration file - configurred setting will override command line arguments")
+
     parser.add_argument("-u", "--url", dest="url", help="Start and Home URL",
                         default="https://github.com/WinTeach/pykib")
-
     parser.add_argument("-p", "--proxy", dest="proxy", help="Use this as HTTP Proxy")
     parser.add_argument("-ppo", "--proxyPort", dest="proxyPort", help="Proxy Port", default=8080, type=int)
     parser.add_argument("-pu", "--proxyUsername", dest="proxyUsername", help="Enter Proxy username if needed")
@@ -88,3 +91,38 @@ def getArgumentParser():
     # parser.add_argument("-l", "--logFile", dest="logFile", help="Dummy Argument for LogFile Path")
 
     return parser
+
+def parseConfigFile(args, parser):
+    print("config File '"+args.configFile+"' used")
+
+    config_arguments = {}
+
+    #first save all command line arguments into new arguments array
+    for val in vars(args):
+        config_arguments[val] = getattr(args, val)
+
+    #Load Values from Configuration File
+    config = configparser.ConfigParser()
+    config.optionxform = str
+    config.sections()
+    config.read(args.configFile)
+
+    #Override command line arguments
+    for key, val in config['PYKIB'].items():
+        print(key, val)
+        if(val.lower() == 'false'):
+            config_arguments[key] = False
+        elif(val.lower() == 'true'):
+            config_arguments[key] = True
+        elif(key == 'geometry'):
+            config_arguments[key] = list(map(int, val.split()))
+        elif(key == 'whiteList'):
+            config_arguments[key] = val.split()
+        elif(val != ''):
+            config_arguments[key] = val
+
+    #use the new configuration array as default values for argparse and parse again
+    parser.set_defaults(**config_arguments)
+    args = parser.parse_args({})
+
+    return args

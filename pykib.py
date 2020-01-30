@@ -224,6 +224,15 @@ def startPykib():
 
     parser = pykib_base.arguments.getArgumentParser()
     args = parser.parse_args()
+
+    if(args.configFile):
+        if(os.path.isfile(dirname+"/"+args.configFile)):
+            args.configFile = dirname+"/"+args.configFile
+        elif(not os.path.isfile(args.configFile)):
+            print("Configuration File "+args.configFile+" can't be found!")
+            sys.exit()
+        args = pykib_base.arguments.parseConfigFile(args, parser)
+
     #Set Proxy
     if(args.proxy):
         proxy = QtNetwork.QNetworkProxy()
