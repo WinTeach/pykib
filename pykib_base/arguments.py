@@ -3,7 +3,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import configparser
 import io
 
-__version_info__ = ('devel', '1.0.18')
+__version_info__ = ('devel', '1.0.19')
 __version__ = '-'.join(__version_info__)
 
 
