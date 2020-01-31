@@ -190,7 +190,11 @@ class MainWindow(QWidget):
             print("Hit admin key")
             subprocess.Popen([args.adminKey])
         if (keyEvent.key() == QtCore.Qt.Key_F4):	
-            print("Alt +F4 is disabled")	
+            print("Alt +F4 is disabled")
+        if(ctrl and keyEvent.key() == QtCore.Qt.Key_F):
+            self.page.openSearchBar()
+        if (keyEvent.key() == QtCore.Qt.Key_Escape):
+            self.page.closeSearchBar()
     
     def test(self, event):
         if (args.fullscreen):

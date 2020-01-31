@@ -29,11 +29,7 @@ class myQWebEngineView(QWebEngineView):
         global args
         args = argsparsed
         self.browser = QWebEngineView.__init__(self)        
-        self.setContextMenuPolicy( QtCore.Qt.NoContextMenu )        
-        
-        # self.setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
-        # self.customContextMenuRequested.connect(self.show_custom_context_menu)
-        
+        self.setContextMenuPolicy( QtCore.Qt.NoContextMenu )
         
     def load(self,url):
         if not url:
@@ -42,4 +38,3 @@ class myQWebEngineView(QWebEngineView):
             url = 'http://' + url
         
         self.setUrl(QUrl(url))
-        

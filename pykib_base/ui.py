@@ -38,18 +38,18 @@ def setupUi(form, args, dirname):
        
     #Create Navbar
     form.navbar = QtWidgets.QWidget(form)
-    form.navbar.setMaximumHeight(40)
+    form.navbar.setMaximumHeight(70)
     form.navbar.setObjectName("navbar")
-    
+
     #Create Navbar Grid Layout
     form.navGridLayout = QtWidgets.QGridLayout(form.navbar)
     form.navGridLayout.setContentsMargins(9, 9, 9, 0)
-    form.navGridLayout.setObjectName("navGridLayout")      
-    
+    form.navGridLayout.setObjectName("navGridLayout")
+
     if(args.enablepdfsupport):
         #Create PDF Navbar
         form.PDFnavbar = QtWidgets.QWidget(form)
-        form.PDFnavbar.setMaximumHeight(40)
+        form.PDFnavbar.setMaximumHeight(70)
         form.PDFnavbar.setObjectName("PDFnavbar")
         
          #Create PDF Navbar Grid Layout
@@ -65,13 +65,14 @@ def setupUi(form, args, dirname):
     
     #Added progress Handling   
     form.web.loadProgress.connect(form.loadingProgressChanged)
-    
-          
-    navGridLayoutHorizontalPosition = 0;
+
+    form.pageGridLayout.addWidget(form.web, 1, 0, 1, 0)
+
+    navGridLayoutHorizontalPosition = 0
     if (args.showNavigationButtons):
         form.backButton = QtWidgets.QPushButton(form)
-        form.backButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')));
-        form.backButton.setIconSize(QSize(24, 24));
+        form.backButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')))
+        form.backButton.setIconSize(QSize(24, 24))
         form.backButton.setObjectName("backButton")
         form.backButton.clicked.connect(form.web.back)
         
@@ -111,48 +112,95 @@ def setupUi(form, args, dirname):
     elif(args.dynamicTitle):
         form.web.titleChanged.connect(form.adjustTitle)
         form.web.iconUrlChanged.connect(form.adjustTitleIcon)
-            
+
+    # Download Progress Bar
+    form.downloadProgress = myQProgressBar(form)
+    form.downloadProgress.setMaximum(100)
+    form.downloadProgress.setTextVisible(True)
+    form.downloadProgress.changeStyle("download")
+
+    form.downloadProgress.hide()
+    form.pageGridLayout.addWidget(form.downloadProgress, 2, 0, 1, 0)
+
+    # Loading Progress Bar
+    form.progress = myQProgressBar(form)
+    form.progress.setMaximum(100)
+    form.progress.setTextVisible(False)
+    form.pageGridLayout.addWidget(form.progress, 3, 0, 1, 0)
+
     ##Buttons for PDF Support
     if(args.enablepdfsupport):
         form.PDFbackButton = QtWidgets.QPushButton(form)
-        form.PDFbackButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')));
-        form.PDFbackButton.setIconSize(QSize(24, 24));
+        form.PDFbackButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')))
+        form.PDFbackButton.setIconSize(QSize(24, 24))
         form.PDFbackButton.setObjectName("PDFbackButton")
         form.PDFbackButton.setText("Close PDF")
         form.PDFbackButton.clicked.connect(form.page.closePDFPage)
         form.PDFGridLayout.addWidget(form.PDFbackButton, 0, 0, 1, 1)        
         if(args.download):
             form.PDFDownloadButton = QtWidgets.QPushButton(form)
-            form.PDFDownloadButton.setIcon(QIcon(os.path.join(dirname, 'icons/download.png')));
-            form.PDFDownloadButton.setIconSize(QSize(24, 24));
+            form.PDFDownloadButton.setIcon(QIcon(os.path.join(dirname, 'icons/download.png')))
+            form.PDFDownloadButton.setIconSize(QSize(24, 24))
             form.PDFDownloadButton.setObjectName("PDFDownloadButton")
             form.PDFDownloadButton.setText("Download")
             form.PDFDownloadButton.clicked.connect(form.page.pdfDownloadAction)   
             form.PDFGridLayout.addWidget(form.PDFDownloadButton, 0, 1, 1, 1) 
         form.pageGridLayout.addWidget(form.PDFnavbar, 4, 0, 1, 0)
         form.PDFnavbar.hide()
-            
-    
-    form.progress = myQProgressBar(form)    
-    form.progress.setMaximum(100)
-    form.progress.setTextVisible(False)
-    
-    #Download Progress Bar
-    form.downloadProgress = myQProgressBar(form)    
-    form.downloadProgress.setMaximum(100)
-    form.downloadProgress.setTextVisible(True)    
-    form.downloadProgress.changeStyle("download")
-    
-    # form.downloadProgress.setValue(75)    
-    # form.downloadProgress.setFormat("Download finished....")
-    
-    form.downloadProgress.hide()
-    
-    form.pageGridLayout.addWidget(form.web, 1, 0, 1, 0)    
-    
-    form.pageGridLayout.addWidget(form.downloadProgress, 2, 0, 1, 0)
-    form.pageGridLayout.addWidget(form.progress, 3, 0, 1, 0)
-    
+
+    # ###########################################################
+    # Create Search Bar
+    form.searchBar = QtWidgets.QWidget(form)
+    form.searchBar.setMaximumHeight(70)
+    form.searchBar.setObjectName("searchBar")
+
+    #Create Search Bar Grid Layout
+    form.searchBarGridLayout = QtWidgets.QGridLayout(form.searchBar)
+    form.searchBarGridLayout.setContentsMargins(9, 9, 9, 9)
+    form.searchBarGridLayout.setObjectName("searchBarLayout")
+
+    #Add Search Field
+    form.searchText = QtWidgets.QLineEdit(form)
+    form.searchText.setObjectName("lineEdit")
+    form.searchText.textChanged.connect(form.page.searchOnPage)
+    form.searchText.returnPressed.connect(form.page.searchOnPage)
+    form.searchBarGridLayout.addWidget(form.searchText, 0, 0, 1, 1)
+
+    # Add Search Direction Buttons
+    form.searchDown = QtWidgets.QPushButton(form)
+    form.searchDown.setObjectName("searchDownButton")
+    form.searchDown.setIcon(QIcon(os.path.join(dirname, 'icons/down.png')))
+    form.searchDown.setIconSize(QSize(24, 24))
+    form.searchDown.clicked.connect(form.page.searchOnPage)
+
+    form.searchBarGridLayout.addWidget(form.searchDown, 0, 2, 1, 1)
+
+    form.searchUp = QtWidgets.QPushButton(form)
+    form.searchUp.setObjectName("searchUpButton")
+    form.searchUp.setIcon(QIcon(os.path.join(dirname, 'icons/up.png')))
+    form.searchUp.setIconSize(QSize(24, 24))
+    form.searchUp.clicked.connect(form.page.searchOnPage)
+
+    form.searchBarGridLayout.addWidget(form.searchUp, 0, 1, 1, 1)
+
+    #Add Spacer Item
+    spacerItem = QtWidgets.QSpacerItem(24, 24, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+    form.searchBarGridLayout.addItem(spacerItem, 0, 3, 1, 1)
+
+    #Add Close Button
+    form.closeSearchButton = QtWidgets.QPushButton(form)
+    form.closeSearchButton.setObjectName("closeSearchButton")
+    form.closeSearchButton.setIcon(QIcon(os.path.join(dirname, 'icons/close.png')))
+    form.closeSearchButton.setIconSize(QSize(24, 24))
+    form.closeSearchButton.clicked.connect(form.page.closeSearchBar)
+
+    form.searchBarGridLayout.addWidget(form.closeSearchButton, 0, 4, 1, 1)
+
+    # ###########################################################
+
+    form.pageGridLayout.addWidget(form.searchBar, 5, 0, 1, 0)
+    form.searchBar.hide()
+
     retranslateUi(form)
     QtCore.QMetaObject.connectSlotsByName(form)
 
