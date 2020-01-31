@@ -20,7 +20,7 @@ def getArgumentParser():
             Open the site www.winteach.de maximized and show Adressbar and Navigation Buttons.
                 python3 pykib.py -u https://www.winteach.de -m -sn -sa
              '''))
-    parser.add_argument("-c", "--configFile", dest="configFile", help="Use this as configuration file - configurred setting will override command line arguments")
+    parser.add_argument("-c", "--configFile", dest="configFile", help="Use this as configuration file - configured setting will override command line arguments. The ini file settings parameters are the same like the long form command line arguments")
 
     parser.add_argument("-u", "--url", dest="url", help="Start and Home URL",
                         default="https://github.com/WinTeach/pykib")
@@ -117,12 +117,17 @@ def parseConfigFile(args, parser):
         elif(key == 'geometry'):
             config_arguments[key] = list(map(int, val.split()))
         elif(key == 'whiteList'):
-            config_arguments[key] = val.split()
+            config_arguments[key] = val.split("")
+        elif(key == 'downloadHandle'):
+            config_arguments[key] = val.split("\"")
+            config_arguments[key] = filter(None, config_arguments[key])
+            config_arguments[key] = filter(bool, config_arguments[key])
+            config_arguments[key] = filter(len, config_arguments[key])
+            config_arguments[key] = filter(lambda item: item, config_arguments[key])
         elif(val != ''):
             config_arguments[key] = val
 
     #use the new configuration array as default values for argparse and parse again
     parser.set_defaults(**config_arguments)
     args = parser.parse_args({})
-
     return args
