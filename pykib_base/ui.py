@@ -30,15 +30,15 @@ def setupUi(form, args, dirname):
     form.setWindowTitle(args.title)        
     form.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png'))) 
     font = QFont("arial", 10)
-    form.setFont(font)        
+    form.setFont(font)
+    #form.setStyleSheet("background-color: rgb(77, 77, 77);")
     form.pageGridLayout = QtWidgets.QGridLayout(form)                
     form.pageGridLayout.setObjectName("pageGridLayout")
-    
     form.pageGridLayout.setContentsMargins(0, 0, 0, 0)
        
     #Create Navbar
     form.navbar = QtWidgets.QWidget(form)
-    form.navbar.setMaximumHeight(70)
+    form.navbar.setMaximumHeight(40)
     form.navbar.setObjectName("navbar")
 
     #Create Navbar Grid Layout
@@ -49,7 +49,7 @@ def setupUi(form, args, dirname):
     if(args.enablepdfsupport):
         #Create PDF Navbar
         form.PDFnavbar = QtWidgets.QWidget(form)
-        form.PDFnavbar.setMaximumHeight(70)
+        form.PDFnavbar.setMaximumHeight(40)
         form.PDFnavbar.setObjectName("PDFnavbar")
         
          #Create PDF Navbar Grid Layout
@@ -151,12 +151,12 @@ def setupUi(form, args, dirname):
     # ###########################################################
     # Create Search Bar
     form.searchBar = QtWidgets.QWidget(form)
-    form.searchBar.setMaximumHeight(70)
+    form.searchBar.setMaximumHeight(40)
     form.searchBar.setObjectName("searchBar")
 
     #Create Search Bar Grid Layout
     form.searchBarGridLayout = QtWidgets.QGridLayout(form.searchBar)
-    form.searchBarGridLayout.setContentsMargins(9, 9, 9, 9)
+    form.searchBarGridLayout.setContentsMargins(9, 0, 9, 9)
     form.searchBarGridLayout.setObjectName("searchBarLayout")
 
     #Add Search Field
