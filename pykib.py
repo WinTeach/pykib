@@ -237,6 +237,11 @@ def startPykib():
             sys.exit()
         args = pykib_base.arguments.parseConfigFile(args, parser)
 
+    if(args.url is None and args.defaultURL):
+        args.url = args.defaultURL;
+    elif(args.url is None and args.defaultURL is None):
+        args.url = "https://github.com/WinTeach/pykib";
+
     #Set Proxy
     if(args.proxy):
         proxy = QtNetwork.QNetworkProxy()
@@ -252,7 +257,7 @@ def startPykib():
 
         QtNetwork.QNetworkProxy.setApplicationProxy(proxy)
 
-    view = MainWindow (args)   
+    view = MainWindow(args)
     
     if(args.downloadPath ):
         if(os.path.isdir(args.downloadPath) != True):

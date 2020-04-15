@@ -22,6 +22,8 @@ import urllib.parse
 import tempfile
 
 from functools import partial
+
+from PyQt5.QtNetwork import QAuthenticator
 from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 from PyQt5.QtGui import QIcon
@@ -68,6 +70,8 @@ class myQWebEnginePage(QWebEnginePage):
 
         # Clears the Cache on Load
         self.profile().clearHttpCache();
+
+        self.authenticationRequired.connect(self.webAuthenticationRequired)
 
         if (args.enableSpellcheck):
             self.profile().setSpellCheckEnabled(True)
@@ -346,3 +350,10 @@ class myQWebEnginePage(QWebEnginePage):
             self.view().load(args.url)
 
         return False
+
+    def webAuthenticationRequired(self, uri: QUrl, cred: QAuthenticator):
+        print("Authentication Reqeust from " + uri.toString())
+        if(args.enableAutoLogon):
+            print("Using autologin credentials")
+            cred.setUser(args.autoLogonUser)
+            cred.setPassword(args.autoLogonPassword)

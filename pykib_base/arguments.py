@@ -3,7 +3,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import configparser
 import io
 
-__version_info__ = ('devel', '1.0.20')
+__version_info__ = ('devel', '1.0.21')
 __version__ = '-'.join(__version_info__)
 
 
@@ -20,10 +20,14 @@ def getArgumentParser():
             Open the site www.winteach.de maximized and show Adressbar and Navigation Buttons.
                 python3 pykib.py -u https://www.winteach.de -m -sn -sa
              '''))
+
+
     parser.add_argument("-c", "--configFile", dest="configFile", help="Use this as configuration file - configured setting will override command line arguments. The ini file settings parameters are the same like the long form command line arguments")
 
-    parser.add_argument("-u", "--url", dest="url", help="Start and Home URL",
-                        default="https://github.com/WinTeach/pykib")
+    parser.add_argument("-u", "--url", dest="url", help="Start and Home URL")
+
+    parser.add_argument('defaultURL', metavar='URL', nargs='?', type=str, help="alternative to -u, --url")
+
     parser.add_argument("-p", "--proxy", dest="proxy", help="Use this as HTTP Proxy")
     parser.add_argument("-ppo", "--proxyPort", dest="proxyPort", help="Proxy Port", default=8080, type=int)
     parser.add_argument("-pu", "--proxyUsername", dest="proxyUsername", help="Enter Proxy username if needed")
