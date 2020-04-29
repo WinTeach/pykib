@@ -22,11 +22,15 @@ import signal
 import os
 import subprocess
 import threading
+import logging
+
+from PyQt5.QtWebEngineWidgets import QWebEnginePage
 
 import pykib_base.ui
 import pykib_base.arguments
 import time
 import platform
+
 from pykib_base.memoryCap import MemoryCap
 
 #
@@ -58,11 +62,19 @@ class MainWindow(QWidget):
         
         super(MainWindow, self).__init__(parent)
         pykib_base.ui.setupUi(self, args, dirname)        
-        self.web.load(args.url) 
+        self.web.load(args.url)
+        self.web.renderProcessTerminated.connect(self.viewTerminated)
         
         self.removeDownloadBarTimer = QTimer(self)
-                
-            
+
+    # Handling crash of wegengineproc
+    def viewTerminated(self, status, exitCode):
+        if status == QWebEnginePage.NormalTerminationStatus:
+            return True
+        else:
+            logging.error("WebEngineProcess stopped working. Stopping pykib")
+            os._exit(1)
+
     def pressed(self):
         self.web.load(self.addressBar.displayText())
     
