@@ -156,7 +156,7 @@ class myQWebEnginePage(QWebEnginePage):
                 "blob:file://") and not download.url().toString().endswith("?downloadPdfFromPykib")):
             print("Loading PDF: " + os.path.basename(old_path))
             global dirname
-            tempfolder = dirname + "/tmp"
+            tempfolder = tempfile.gettempdir()+"/pykib/"
             if os.path.exists(tempfolder):
                 for the_file in os.listdir(tempfolder):
                     file_path = os.path.join(tempfolder, the_file)
