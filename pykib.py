@@ -21,19 +21,25 @@ import sys
 import signal
 import os
 import subprocess
+import threading
+
 import pykib_base.ui
 import pykib_base.arguments
 import time
 import platform
+from pykib_base.memoryCap import MemoryCap
+
 #
 from PyQt5 import QtCore, QtWidgets, QtNetwork
 from PyQt5.QtCore import QSize, QUrl, QCoreApplication, QTimer
 from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWidgets import QApplication, QWidget
 
+from PyQt5.QtWidgets import QApplication, QWidget
+
+
 #Workaround for Problem with relative File Paths
 
-# determine if application is a script file or frozen exe
 if getattr(sys, 'frozen', False):
     dirname = os.path.dirname(sys.executable)
 elif __file__:
@@ -225,7 +231,6 @@ def startPykib():
     #Register Sigterm command
     signal.signal(signal.SIGINT, sigint_handler)
     
-
     parser = pykib_base.arguments.getArgumentParser()
     args = parser.parse_args()
 
@@ -236,6 +241,12 @@ def startPykib():
             print("Configuration File "+args.configFile+" can't be found!")
             sys.exit()
         args = pykib_base.arguments.parseConfigFile(args, parser)
+
+    if(args.addMemoryCap):
+        print("Starting memory monitoring. Going to close browser when memory usage is over "+str(args.addMemoryCap)+"MB")
+        thread = threading.Thread(target=MemoryCap.run, args=(app, int(args.addMemoryCap),))
+        thread.daemon = True  # Daemonize thread
+        thread.start()
 
     if(args.url is None and args.defaultURL):
         args.url = args.defaultURL;
@@ -268,7 +279,6 @@ def startPykib():
     if (args.enableAutoLogon and not (args.autoLogonUser and args.autoLogonPassword)):
         print("When Autologin is enabled at least autoLogonUser and autoLogonPassword has to be set also")
         sys.exit()
-        
         
     #Set Dimensions
     if (args.fullscreen):

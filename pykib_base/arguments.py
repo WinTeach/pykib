@@ -3,7 +3,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import configparser
 import io
 
-__version_info__ = ('devel', '1.0.22')
+__version_info__ = ('devel', '1.0.23')
 __version__ = '-'.join(__version_info__)
 
 
@@ -32,6 +32,9 @@ def getArgumentParser():
     parser.add_argument("-ppo", "--proxyPort", dest="proxyPort", help="Proxy Port", default=8080, type=int)
     parser.add_argument("-pu", "--proxyUsername", dest="proxyUsername", help="Enter Proxy username if needed")
     parser.add_argument("-pp", "--proxyPassword", dest="proxyPassword", help="Enter Proxy password if needed")
+
+    parser.add_argument("-amc", "--addMemoryCap", dest="addMemoryCap", default=0,
+                        help="Can be set to a value in MB. If the browser needs more than this amount of memory he will kill itself")
 
     parser.add_argument("-d", "--download", dest="download", action='store_true',
                         help="Enables download function")
