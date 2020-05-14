@@ -64,8 +64,13 @@ class MainWindow(QWidget):
         pykib_base.ui.setupUi(self, args, dirname)        
         self.web.load(args.url)
         self.web.renderProcessTerminated.connect(self.viewTerminated)
-        
         self.removeDownloadBarTimer = QTimer(self)
+        if(args.addMemoryCap):
+            print("Starting memory monitoring. Going to close browser when memory usage is over "+str(args.addMemoryCap)+"MB")
+            self.memoryCapThread = MemoryCap(int(args.addMemoryCap))
+            self.memoryCapThread.daemon = True  # Daemonize thread
+            self.memoryCapThread.memoryCapExceeded.connect(self.closeBecauseMemoryCap)
+            self.memoryCapThread.start()
 
     # Handling crash of wegengineproc
     def viewTerminated(self, status, exitCode):
@@ -75,6 +80,16 @@ class MainWindow(QWidget):
             logging.error("WebEngineProcess stopped working. Stopping pykib")
             os._exit(1)
 
+    def closeBecauseMemoryCap(self, time_to_close, remaining_time_to_close):
+        progress_percent = 100 / time_to_close * remaining_time_to_close
+        self.memoryCapBar.show()
+        self.memoryCapCloseBar.setValue(int(progress_percent))
+        self.memoryCapCloseBar.setFormat("Speicherlimit überschritten, beende Anwendung automatisch in "+str(remaining_time_to_close)+" Sekunden")
+
+    def closeWindow(self):
+        logging.info("Closing Browser by Exit Call")
+        sys.exit(0)
+
     def pressed(self):
         self.web.load(self.addressBar.displayText())
     
@@ -83,13 +98,13 @@ class MainWindow(QWidget):
         percent = round(100/bytesTotal*bytesReceived)
         self.downloadProgress.setValue(percent)
         
-        self.downloadProgress.setFormat(str(round(bytesReceived/1024/1024,2))+"MB / "+str(round(bytesTotal/1024/1024,2))+"MB completed")            
-     
+        self.downloadProgress.setFormat(str(round(bytesReceived/1024/1024,2))+"MB / "+str(round(bytesTotal/1024/1024,2))+"MB completed")
+
     def downloadFinished(self):        
         self.downloadProgress.show()
         if(platform.system().lower() == "linux"):
             self.downloadProgress.setFormat("Download finished....(Syncing File System)") 
-            print("Running 'sync' after download")
+            logging.info("Running 'sync' after download")
             os.system("sync")
 
             
@@ -114,10 +129,10 @@ class MainWindow(QWidget):
             self.progress.show()
             self.progress.setValue(percent)
             self.progress.changeStyle("loading")
-            
+
             if(percent == 100):
                 self.progress.hide()
-                
+
                 if(args.enableAutoLogon and firstrun == True):
                     firstrun = False
                     # if(len(autologin) >= 2):
@@ -192,32 +207,27 @@ class MainWindow(QWidget):
            
         
     #catch defined Shortcuts
-    def keyPressEvent(self, event):        
-        
+    def keyPressEvent(self, event):
         keyEvent = QKeyEvent(event)
         shift = event.modifiers() & QtCore.Qt.ShiftModifier
         ctrl = event.modifiers() & QtCore.Qt.ControlModifier
         alt = event.modifiers() & QtCore.Qt.AltModifier
         if (shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key_B):
-            print("leave by shortcut")
+            logging.info("leave by shortcut")
             sys.exit()
         if ((keyEvent.key() == QtCore.Qt.Key_F5) or(ctrl and keyEvent.key() == QtCore.Qt.Key_R)):
             self.web.reload()
-            print("Refresh")
+            logging.info("Refresh")
         if (args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key_A):
-            print("Hit admin key")
+            logging.info("Hit admin key")
             subprocess.Popen([args.adminKey])
         if (keyEvent.key() == QtCore.Qt.Key_F4):	
-            print("Alt +F4 is disabled")
+            logging.info("Alt +F4 is disabled")
         if(ctrl and keyEvent.key() == QtCore.Qt.Key_F):
             self.page.openSearchBar()
         if (keyEvent.key() == QtCore.Qt.Key_Escape):
             self.page.closeSearchBar()
-    
-    def test(self, event):
-        if (args.fullscreen):
-            event.ignore()
-            
+
     def closeEvent(self, event):
         if (args.fullscreen):
             event.ignore()
@@ -238,8 +248,9 @@ def sigint_handler(*args):
         
 def startPykib():
     
-    app = QApplication(sys.argv)   
-    
+    app = QApplication(sys.argv)
+    logging.getLogger().setLevel(logging.INFO)
+
     #Register Sigterm command
     signal.signal(signal.SIGINT, sigint_handler)
     
@@ -253,12 +264,6 @@ def startPykib():
             print("Configuration File "+args.configFile+" can't be found!")
             sys.exit()
         args = pykib_base.arguments.parseConfigFile(args, parser)
-
-    if(args.addMemoryCap):
-        print("Starting memory monitoring. Going to close browser when memory usage is over "+str(args.addMemoryCap)+"MB")
-        thread = threading.Thread(target=MemoryCap.run, args=(app, int(args.addMemoryCap),))
-        thread.daemon = True  # Daemonize thread
-        thread.start()
 
     if(args.url is None and args.defaultURL):
         args.url = args.defaultURL;

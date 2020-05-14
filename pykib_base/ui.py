@@ -56,7 +56,17 @@ def setupUi(form, args, dirname):
         form.PDFGridLayout = QtWidgets.QGridLayout(form.PDFnavbar)
         form.PDFGridLayout.setContentsMargins(3, 0, 3, 3)
         form.PDFGridLayout.setObjectName("PDFGridLayout")      
-    
+
+    if(args.addMemoryCap):
+        # Create memoryCapBar
+        form.memoryCapBar = QtWidgets.QWidget(form)
+        form.memoryCapBar.setMaximumHeight(40)
+        form.memoryCapBar.setObjectName("memoryCapBar")
+
+        form.memoryCapGridLayout = QtWidgets.QGridLayout(form.memoryCapBar)
+        form.memoryCapGridLayout.setContentsMargins(0, 5, 0, 0)
+        form.memoryCapGridLayout.setObjectName("memoryCapGridLayout")
+
     form.web = myQWebEngineView(args)
     form.web.setObjectName("view")
     
@@ -66,7 +76,7 @@ def setupUi(form, args, dirname):
     #Added progress Handling   
     form.web.loadProgress.connect(form.loadingProgressChanged)
 
-    form.pageGridLayout.addWidget(form.web, 1, 0, 1, 0)
+    form.pageGridLayout.addWidget(form.web, 2, 0, 1, 0)
 
     navGridLayoutHorizontalPosition = 0
     if (args.showNavigationButtons):
@@ -113,6 +123,32 @@ def setupUi(form, args, dirname):
         form.web.titleChanged.connect(form.adjustTitle)
         form.web.iconUrlChanged.connect(form.adjustTitleIcon)
 
+    # Closing Browser because Memory Cap Bar
+    if (args.addMemoryCap):
+        form.memoryCapCloseBar = myQProgressBar(form)
+        form.memoryCapCloseBar.setMaximum(100)
+        form.memoryCapCloseBar.setTextVisible(True)
+        form.memoryCapCloseBar.setFixedHeight(40)
+
+        form.memoryCapCloseBar.setLayoutDirection(1)
+        alertFont = QFont("arial", 16)
+        form.memoryCapCloseBar.setFont(alertFont)
+        form.memoryCapCloseBar.changeStyle("memorycap")
+
+        #
+        form.memoryCapGridLayout.addWidget(form.memoryCapCloseBar, 0, 0, 1, 1)
+
+        form.MemoryCapCloseButton = QtWidgets.QPushButton(form)
+        form.MemoryCapCloseButton.setFixedHeight(35)
+        form.MemoryCapCloseButton.setObjectName("MemoryCapCloseButton")
+        form.MemoryCapCloseButton.setText("Browser schließen")
+        form.MemoryCapCloseButton.clicked.connect(form.closeWindow)
+
+        form.memoryCapGridLayout.addWidget(form.MemoryCapCloseButton, 0, 1, 1, 1)
+        form.pageGridLayout.addWidget(form.memoryCapBar, 1, 0, 1, 0)
+
+        form.memoryCapBar.hide()
+
     # Download Progress Bar
     form.downloadProgress = myQProgressBar(form)
     form.downloadProgress.setMaximum(100)
@@ -120,13 +156,13 @@ def setupUi(form, args, dirname):
     form.downloadProgress.changeStyle("download")
 
     form.downloadProgress.hide()
-    form.pageGridLayout.addWidget(form.downloadProgress, 2, 0, 1, 0)
+    form.pageGridLayout.addWidget(form.downloadProgress, 3, 0, 1, 0)
 
     # Loading Progress Bar
     form.progress = myQProgressBar(form)
     form.progress.setMaximum(100)
     form.progress.setTextVisible(False)
-    form.pageGridLayout.addWidget(form.progress, 3, 0, 1, 0)
+    form.pageGridLayout.addWidget(form.progress, 4, 0, 1, 0)
 
     ##Buttons for PDF Support
     if(args.enablepdfsupport):
@@ -136,7 +172,7 @@ def setupUi(form, args, dirname):
         form.PDFbackButton.setObjectName("PDFbackButton")
         form.PDFbackButton.setText("Close PDF")
         form.PDFbackButton.clicked.connect(form.page.closePDFPage)
-        form.PDFGridLayout.addWidget(form.PDFbackButton, 0, 0, 1, 1)        
+        form.PDFGridLayout.addWidget(form.PDFbackButton, 0, 0, 1, 1)
         if(args.download):
             form.PDFDownloadButton = QtWidgets.QPushButton(form)
             form.PDFDownloadButton.setIcon(QIcon(os.path.join(dirname, 'icons/download.png')))
@@ -145,7 +181,7 @@ def setupUi(form, args, dirname):
             form.PDFDownloadButton.setText("Download")
             form.PDFDownloadButton.clicked.connect(form.page.pdfDownloadAction)   
             form.PDFGridLayout.addWidget(form.PDFDownloadButton, 0, 1, 1, 1) 
-        form.pageGridLayout.addWidget(form.PDFnavbar, 4, 0, 1, 0)
+        form.pageGridLayout.addWidget(form.PDFnavbar, 5, 0, 1, 0)
         form.PDFnavbar.hide()
 
     # ###########################################################
@@ -198,7 +234,7 @@ def setupUi(form, args, dirname):
 
     # ###########################################################
 
-    form.pageGridLayout.addWidget(form.searchBar, 5, 0, 1, 0)
+    form.pageGridLayout.addWidget(form.searchBar, 6, 0, 1, 0)
     form.searchBar.hide()
 
     retranslateUi(form)

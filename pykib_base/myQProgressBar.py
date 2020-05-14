@@ -45,6 +45,19 @@ QProgressBar::chunk {
 }
 """
 
+MEMORYCAP = """
+QProgressBar{
+    border: 0px;
+    border-radius: 0px;
+    text-align: center; 
+}
+
+QProgressBar::chunk {
+    color: blue;
+    background-color: #FF5E71;
+}
+"""
+
 class myQProgressBar(QProgressBar):
     disabled = False
     
@@ -57,3 +70,5 @@ class myQProgressBar(QProgressBar):
             self.setStyleSheet(LOADING)
         elif(style == "download"):
             self.setStyleSheet(DOWNLOAD)
+        elif (style == "memorycap"):
+            self.setStyleSheet(MEMORYCAP)

@@ -5,14 +5,25 @@ import logging
 
 from datetime import datetime
 
-class MemoryCap(object):
+from PyQt5 import QtCore
+from PyQt5.QtCore import pyqtSignal
 
-    def run(app, memoryLimit):
+
+class MemoryCap(QtCore.QThread):
+    memoryCapExceeded = pyqtSignal(int, int)
+    memoryLimit = 0
+    def __init__(self, memoryLimit):
+        super(MemoryCap, self).__init__()
+        self.memoryLimit = memoryLimit
+
+
+    def run(self):
         process = psutil.Process(os.getpid())
-        counter = 0;
-        while True:
+        counter = 1
+        is_running = True
+        while(is_running):
             currentUsage = process.memory_info()[0] / 1024 / 1024
-            if(currentUsage > memoryLimit):
+            if(currentUsage > self.memoryLimit):
                 now = datetime.now()
                 timestamp = now.strftime("%m/%d/%Y, %H:%M:%S")
                 logging.warning(timestamp + ": Memory limit exeeded with current Usage of " + str(currentUsage) + "MB for the " + str(
@@ -20,7 +31,8 @@ class MemoryCap(object):
                 if(counter >= 5):
                     logging.error(timestamp + ": Memory limit exeeded with current Usage of " + str(currentUsage) + "MB for the " + str(
                         counter) + " time. Closing Application")
-                    os._exit(1)
+                    self.closeWithGraceTime()
+                    is_running = False
                 else:
                     counter = counter + 1
             elif(counter > 0):
@@ -29,3 +41,13 @@ class MemoryCap(object):
                 logging.info(timestamp + ": Memory usage is normal again, resetting counter")
                 counter = 0
             time.sleep(5)
+
+    def closeWithGraceTime(self):
+        time_to_close = 180
+        remaining_time_to_close = time_to_close
+
+        while(remaining_time_to_close > 0):
+            self.memoryCapExceeded.emit(time_to_close, remaining_time_to_close)
+            remaining_time_to_close = remaining_time_to_close -1
+            time.sleep(1)
+        os._exit(1)
