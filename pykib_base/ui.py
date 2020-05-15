@@ -237,6 +237,16 @@ def setupUi(form, args, dirname):
     form.pageGridLayout.addWidget(form.searchBar, 6, 0, 1, 0)
     form.searchBar.hide()
 
+    #Add the memory Debug bar
+    if(args.memoryDebug):
+        # Loading Progress Bar
+        form.memoryDebug = myQProgressBar(form)
+        form.memoryDebug.setMaximum(100)
+        form.memoryDebug.setValue(100)
+        form.memoryDebug.setTextVisible(True)
+        form.pageGridLayout.addWidget(form.memoryDebug, 7, 0, 1, 0)
+        form.memoryDebug.changeStyle("loading")
+
     retranslateUi(form)
     QtCore.QMetaObject.connectSlotsByName(form)
 

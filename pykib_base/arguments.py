@@ -3,7 +3,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import configparser
 import io
 
-__version_info__ = ('devel', '1.0.28')
+__version_info__ = ('devel', '1.0.29')
 __version__ = '-'.join(__version_info__)
 
 
@@ -81,14 +81,16 @@ def getArgumentParser():
     parser.add_argument("-m", "--maximized", dest="maximized", action='store_true',
                         help="Start browser in a maximized window")
     parser.add_argument("-v", "--version", action="version", version='%(prog)s {version}'.format(version=__version__))
+
     parser.add_argument("--no-sandbox", dest="no-sandbox", action='store_true',
                         help="Allows to run as root")
-
     parser.add_argument("--js-flags", dest="js-flags", help="Allows setting js-flags")
     parser.add_argument("--single-process", dest="single-process", action='store_true', help="Allows to run the browser in one thread")
-
     parser.add_argument("--remote-debugging-port", dest="remote-debugging-port",
                         help="Allows to run as root")
+    parser.add_argument("-md", "--memoryDebug", dest="memoryDebug", action='store_true',
+                        help="Show informations about the browser current memory usage")
+
     parser.add_argument("-sa", "--showAddressBar", dest="showAddressBar", action='store_true',
                         help="Shows a Address Bar when set")
     parser.add_argument("-sn", "--showNavigationButtons", dest="showNavigationButtons", action='store_true', help="Shows Navigation Buttons when set")

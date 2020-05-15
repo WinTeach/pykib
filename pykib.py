@@ -32,6 +32,7 @@ import time
 import platform
 
 from pykib_base.memoryCap import MemoryCap
+from pykib_base.memoryDebug import MemoryDebug
 
 #
 from PyQt5 import QtCore, QtWidgets, QtNetwork
@@ -66,11 +67,17 @@ class MainWindow(QWidget):
         self.web.renderProcessTerminated.connect(self.viewTerminated)
         self.removeDownloadBarTimer = QTimer(self)
         if(args.addMemoryCap):
-            print("Starting memory monitoring. Going to close browser when memory usage is over "+str(args.addMemoryCap)+"MB")
+            logging.info("Starting memory monitoring. Going to close browser when memory usage is over "+str(args.addMemoryCap)+"MB")
             self.memoryCapThread = MemoryCap(int(args.addMemoryCap))
             self.memoryCapThread.daemon = True  # Daemonize thread
             self.memoryCapThread.memoryCapExceeded.connect(self.closeBecauseMemoryCap)
             self.memoryCapThread.start()
+        if (args.memoryDebug):
+            logging.info("Starting memory monitoring")
+            self.memoryDebugThread = MemoryDebug()
+            self.memoryDebugThread.daemon = True  # Daemonize thread
+            self.memoryDebugThread.memoryDebugTick.connect(self.memoryDebugUpdate)
+            self.memoryDebugThread.start()
 
     # Handling crash of wegengineproc
     def viewTerminated(self, status, exitCode):
@@ -85,6 +92,24 @@ class MainWindow(QWidget):
         self.memoryCapBar.show()
         self.memoryCapCloseBar.setValue(int(progress_percent))
         self.memoryCapCloseBar.setFormat("Speicherlimit überschritten, beende Anwendung automatisch in "+str(remaining_time_to_close)+" Sekunden")
+
+    def memoryDebugUpdate(self, currentMemUse, currentSwapUse):
+        informationstring = "Current Memory Usage: "
+        if(currentMemUse > 0):
+            informationstring += "RAM: "+str(currentMemUse)+" MB "
+        if (currentSwapUse > 0):
+            informationstring += "| SWAP: "+str(currentSwapUse) + " MB "
+
+        informationstring += "| Total: " + str(currentSwapUse+currentMemUse) + " MB "
+
+        if(args.addMemoryCap):
+            if((currentSwapUse+currentMemUse) > int(args.addMemoryCap)):
+                self.memoryDebug.changeStyle('memorycap')
+            else:
+                self.memoryDebug.changeStyle('loading')
+            informationstring += "| MemoryCap: " + str(args.addMemoryCap) + " MB"
+
+        self.memoryDebug.setFormat(informationstring)
 
     def closeWindow(self):
         logging.info("Closing Browser by Exit Call")

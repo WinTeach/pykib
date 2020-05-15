@@ -2,6 +2,7 @@ import psutil
 import time
 import os
 import logging
+import platform
 
 from datetime import datetime
 
@@ -16,13 +17,15 @@ class MemoryCap(QtCore.QThread):
         super(MemoryCap, self).__init__()
         self.memoryLimit = memoryLimit
 
-
     def run(self):
         process = psutil.Process(os.getpid())
         counter = 1
         is_running = True
         while(is_running):
-            currentUsage = process.memory_info()[0] / 1024 / 1024
+            if (platform.system().lower() == "linux"):
+                currentUsage = (process.memory_full_info().rss + process.memory_full_info().swap) / 1024 / 1024
+            else:
+                currentUsage = process.memory_info().rss / 1024 / 1024
             if(currentUsage > self.memoryLimit):
                 now = datetime.now()
                 timestamp = now.strftime("%m/%d/%Y, %H:%M:%S")
