@@ -22,8 +22,6 @@ class AutoReload(QtCore.QThread):
         while(True):
             if(secondsLeft > 0):
                 secondsLeft = secondsLeft - 1;
-                logging.info(
-                    str(secondsLeft))
                 time.sleep(1)
             else:
                 self.autoRefresh.emit()
