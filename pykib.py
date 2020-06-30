@@ -33,6 +33,7 @@ import platform
 
 from pykib_base.memoryCap import MemoryCap
 from pykib_base.memoryDebug import MemoryDebug
+from pykib_base.autoReload import AutoReload
 
 #
 from PyQt5 import QtCore, QtWidgets, QtNetwork
@@ -78,6 +79,12 @@ class MainWindow(QWidget):
             self.memoryDebugThread.daemon = True  # Daemonize thread
             self.memoryDebugThread.memoryDebugTick.connect(self.memoryDebugUpdate)
             self.memoryDebugThread.start()
+        if (args.autoReloadTimer):
+            logging.info("AutoRefreshTimer is set. Going to reload the webpage each" + str(args.autoReloadTimer) + "seconds")
+            self.autoRefresher = AutoReload(int(args.autoReloadTimer))
+            self.autoRefresher.daemon = True  # Daemonize thread
+            self.autoRefresher.autoRefresh.connect(self.autoRefresh)
+            self.autoRefresher.start()
 
     # Handling crash of wegengineproc
     def viewTerminated(self, status, exitCode):
@@ -92,6 +99,10 @@ class MainWindow(QWidget):
         self.memoryCapBar.show()
         self.memoryCapCloseBar.setValue(int(progress_percent))
         self.memoryCapCloseBar.setFormat("Speicherlimit überschritten, beende Anwendung automatisch in "+str(remaining_time_to_close)+" Sekunden")
+
+    def autoRefresh(self):
+        self.web.reload()
+        logging.info("Auto reloading Webpage")
 
     def memoryDebugUpdate(self, currentMemUse, currentSwapUse):
         informationstring = "Current Memory Usage: "

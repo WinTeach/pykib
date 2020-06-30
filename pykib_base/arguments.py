@@ -3,7 +3,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import configparser
 import io
 
-__version_info__ = ('devel', '1.0.29')
+__version_info__ = ('devel', '1.0.30')
 __version__ = '-'.join(__version_info__)
 
 
@@ -102,6 +102,8 @@ def getArgumentParser():
     parser.add_argument("-wl", "--whiteList", dest="whiteList", nargs="+",
                         help="Enables the white List function. Only Urls which start with elemtens from this list could be opend")
     # parser.add_argument("-l", "--logFile", dest="logFile", help="Dummy Argument for LogFile Path")
+
+    parser.add_argument("-art", "--autoReloadTimer", dest="autoReloadTimer", help="Here you can configure a Timeout (in seconds) after which the actives site gets reloaded", default=0, type=int)
 
     return parser
 
