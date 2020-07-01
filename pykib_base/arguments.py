@@ -3,7 +3,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import configparser
 import io
 
-__version_info__ = ('devel', '1.0.30')
+__version_info__ = ('devel', '1.0.31')
 __version__ = '-'.join(__version_info__)
 
 
@@ -105,6 +105,9 @@ def getArgumentParser():
 
     parser.add_argument("-art", "--autoReloadTimer", dest="autoReloadTimer", help="Here you can configure a Timeout (in seconds) after which the actives site gets reloaded", default=0, type=int)
 
+    parser.add_argument("-ama", "--allowMicAccess", dest="allowMicAccess", action='store_true', help="Allows all Websites to use your Microfon")
+
+    parser.add_argument("-awa", "--allowWebcamAccess", dest="allowWebcamAccess", action='store_true', help="Allows all Websites to use your Webcam")
     return parser
 
 def parseConfigFile(args, parser):

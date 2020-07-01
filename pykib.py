@@ -37,6 +37,7 @@ from pykib_base.autoReload import AutoReload
 
 #
 from PyQt5 import QtCore, QtWidgets, QtNetwork
+from PyQt5.Qt import PYQT_VERSION_STR
 from PyQt5.QtCore import QSize, QUrl, QCoreApplication, QTimer
 from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWidgets import QApplication, QWidget
@@ -67,6 +68,8 @@ class MainWindow(QWidget):
         self.web.load(args.url)
         self.web.renderProcessTerminated.connect(self.viewTerminated)
         self.removeDownloadBarTimer = QTimer(self)
+        self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
+
         if(args.addMemoryCap):
             logging.info("Starting memory monitoring. Going to close browser when memory usage is over "+str(args.addMemoryCap)+"MB")
             self.memoryCapThread = MemoryCap(int(args.addMemoryCap))
@@ -85,6 +88,24 @@ class MainWindow(QWidget):
             self.autoRefresher.daemon = True  # Daemonize thread
             self.autoRefresher.autoRefresh.connect(self.autoRefresh)
             self.autoRefresher.start()
+
+    def onFeaturePermissionRequested(self, url, feature):
+        logging.info(
+            "Permission" + str(feature) + " requestet and...")
+        if(args.allowMicAccess and feature == QWebEnginePage.MediaAudioCapture):
+            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
+            return True
+        if(args.allowWebcamAccess and feature == QWebEnginePage.MediaVideoCapture):
+            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
+            return True
+        if(args.allowMicAccess and args.allowWebcamAccess and feature == QWebEnginePage.MediaAudioVideoCapture):
+            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
+            return True
+
+        self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionDeniedByUser)
+        logging.info(
+            "denied")
+        return False
 
     # Handling crash of wegengineproc
     def viewTerminated(self, status, exitCode):
@@ -322,11 +343,21 @@ def startPykib():
         QtNetwork.QNetworkProxy.setApplicationProxy(proxy)
 
     view = MainWindow(args)
-    
+
+    if(args.allowWebcamAccess ):
+        if(PYQT_VERSION_STR < "5.15.0"):
+            logging.info("Webcam Access is only supported with PyQt5 Version 5.15.0 and will be disabled. Currently installed Version:"+ PYQT_VERSION_STR)
+            args.allowWebcamAccess = False;
+
+    if (args.allowMicAccess):
+        if (PYQT_VERSION_STR < "5.15.0"):
+            logging.info("Microfon Access is only supported with PyQt5 Version 5.15.0 and will be disabled. . Currently installed Version:"+ PYQT_VERSION_STR)
+            args.allowMicAccess = False;
+
     if(args.downloadPath ):
         if(os.path.isdir(args.downloadPath) != True):
             print("The folder for downloadPath ("+args.downloadPath+") does not exists or is unreachable")
-            sys.exit()    
+            sys.exit()
         
     #Check autologin Data
     if (args.enableAutoLogon and not (args.autoLogonUser and args.autoLogonPassword)):
