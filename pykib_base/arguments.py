@@ -3,7 +3,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import configparser
 import io
 
-__version_info__ = ('devel', '1.0.31')
+__version_info__ = ('devel', '1.0.32')
 __version__ = '-'.join(__version_info__)
 
 
@@ -81,6 +81,8 @@ def getArgumentParser():
     parser.add_argument("-m", "--maximized", dest="maximized", action='store_true',
                         help="Start browser in a maximized window")
     parser.add_argument("-v", "--version", action="version", version='%(prog)s {version}'.format(version=__version__))
+    parser.add_argument("-szf", "--setZoomFactor", dest="setZoomFactor", help="Set Zoom Factor for Webpages in percent. Allowed Values between 25 and 500", default=100, type=int)
+
 
     parser.add_argument("--no-sandbox", dest="no-sandbox", action='store_true',
                         help="Allows to run as root")

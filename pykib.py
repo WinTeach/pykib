@@ -180,8 +180,11 @@ class MainWindow(QWidget):
             self.removeDownloadBarTimer.stop() 
             self.downloadProgress.hide()
         
-    def loadingProgressChanged(self, percent):   
+    def loadingProgressChanged(self, percent):
+        #Setting Zoomfactor
+        self.web.setZoomFactor(args.setZoomFactor / 100)
         global firstrun
+
         if(not self.progress.disabled):
             self.progress.show()
             self.progress.setValue(percent)
@@ -337,7 +340,7 @@ def startPykib():
             proxy.setUser(args.proxyUsername);
             proxy.setPassword(args.proxyPassword);
         elif(args.proxyUsername or args.proxyPassword):
-            print("It is not possible to use a prxy username without password")
+            print("It is not possible to use a proxy username without password")
             sys.exit()
 
         QtNetwork.QNetworkProxy.setApplicationProxy(proxy)
@@ -358,6 +361,10 @@ def startPykib():
         if(os.path.isdir(args.downloadPath) != True):
             print("The folder for downloadPath ("+args.downloadPath+") does not exists or is unreachable")
             sys.exit()
+
+    if(args.setZoomFactor < 25 or args.setZoomFactor > 500):
+        print("The Zoom factor must be a value between 25 and 500")
+        sys.exit()
         
     #Check autologin Data
     if (args.enableAutoLogon and not (args.autoLogonUser and args.autoLogonPassword)):
