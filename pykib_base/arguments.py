@@ -3,7 +3,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import configparser
 import io
 
-__version_info__ = ('devel', '1.0.32')
+__version_info__ = ('devel', '1.0.33')
 __version__ = '-'.join(__version_info__)
 
 
@@ -63,6 +63,8 @@ def getArgumentParser():
                         help="Defines the language for the spellcheck dictionary. Default de_DE")
     parser.add_argument("-eps", "--enablepdfsupport", dest="enablepdfsupport", action='store_true',
                         help="Enables the Option of viewing PDFs in the BrowserWindow")
+    parser.add_argument("-prm", "--pdfreadermode", dest="pdfreadermode", action='store_true',
+                        help="if set the close button will close pykib complete instead of only the pdf and the Download Button will be labeld with 'save'")
 
     parser.add_argument("-sbl", "--setbrowserlanguage", dest="setBrowserLanguage", default="en",
                         help="Overrides the default Browser Language in format de (for German), en (for English)....")
@@ -110,6 +112,12 @@ def getArgumentParser():
     parser.add_argument("-ama", "--allowMicAccess", dest="allowMicAccess", action='store_true', help="Allows all Websites to use your Microfon")
 
     parser.add_argument("-awa", "--allowWebcamAccess", dest="allowWebcamAccess", action='store_true', help="Allows all Websites to use your Webcam")
+
+    parser.add_argument("-emd", "--enableMouseDrag", dest="enableMouseDrag"
+                                                          ""
+                                                          ""
+                                                          "", action='store_true', help="Enable Single Click (Touch) website movement (js injection)")
+
     return parser
 
 def parseConfigFile(args, parser):

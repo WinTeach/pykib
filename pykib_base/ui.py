@@ -167,18 +167,24 @@ def setupUi(form, args, dirname):
     ##Buttons for PDF Support
     if(args.enablepdfsupport):
         form.PDFbackButton = QtWidgets.QPushButton(form)
-        form.PDFbackButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')))
-        form.PDFbackButton.setIconSize(QSize(24, 24))
         form.PDFbackButton.setObjectName("PDFbackButton")
-        form.PDFbackButton.setText("Close PDF")
+        if (args.pdfreadermode):
+            form.PDFbackButton.setText("Close")
+        else:
+            form.PDFbackButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')))
+            form.PDFbackButton.setIconSize(QSize(24, 24))
+            form.PDFbackButton.setText("Close PDF")
         form.PDFbackButton.clicked.connect(form.page.closePDFPage)
         form.PDFGridLayout.addWidget(form.PDFbackButton, 0, 0, 1, 1)
         if(args.download):
             form.PDFDownloadButton = QtWidgets.QPushButton(form)
-            form.PDFDownloadButton.setIcon(QIcon(os.path.join(dirname, 'icons/download.png')))
-            form.PDFDownloadButton.setIconSize(QSize(24, 24))
             form.PDFDownloadButton.setObjectName("PDFDownloadButton")
-            form.PDFDownloadButton.setText("Download")
+            if (args.pdfreadermode):
+                form.PDFDownloadButton.setText("Save")
+            else:
+                form.PDFDownloadButton.setText("Download")
+                form.PDFDownloadButton.setIcon(QIcon(os.path.join(dirname, 'icons/download.png')))
+                form.PDFDownloadButton.setIconSize(QSize(24, 24))
             form.PDFDownloadButton.clicked.connect(form.page.pdfDownloadAction)   
             form.PDFGridLayout.addWidget(form.PDFDownloadButton, 0, 1, 1, 1) 
         form.pageGridLayout.addWidget(form.PDFnavbar, 5, 0, 1, 0)

@@ -134,6 +134,10 @@ class myQWebEnginePage(QWebEnginePage):
         return [""]
 
     def javaScriptConsoleMessage(self, msg, lineNumber, sourceID, category):
+        #print(msg);
+        #print(category);
+        #print(lineNumber);
+        #print(sourceID);
         # # #Ignore JS Failures
         pass
 
@@ -265,6 +269,8 @@ class myQWebEnginePage(QWebEnginePage):
         self.form.progress.disabled = True
 
     def closePDFPage(self):
+        if(args.pdfreadermode):
+            self.form.closeWindow()
         self.form.web.setPage(self.form.page)
         self.form.PDFnavbar.hide()
         if (args.showNavigationButtons or args.showAddressBar):

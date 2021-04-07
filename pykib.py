@@ -193,7 +193,7 @@ class MainWindow(QWidget):
             if(percent == 100):
                 self.progress.hide()
 
-                if(args.enableAutoLogon and firstrun == True):
+        if(args.enableAutoLogon and firstrun == True):
                     firstrun = False
                     # if(len(autologin) >= 2):
                     username = args.autoLogonUser.replace("\\","\\\\")
@@ -264,9 +264,72 @@ class MainWindow(QWidget):
                             }}
                             """.format(username=username, password=password, domain=domain, usernameID=usernameID, passwordID=passwordID, domainID=domainID)    
                     self.page.runJavaScript(script)
-           
-        
-    #catch defined Shortcuts
+
+        if(args.enableMouseDrag and percent == 100):
+            #logging.info("Mouse Drag Mode is enabled")
+            script = r"""
+            
+document.body.addEventListener("mousedown", mouseDown);
+document.body.addEventListener("mousemove", mouseMove);
+document.body.addEventListener("mouseup", mouseUp);
+document.body.addEventListener("mouseout", mouseOut);
+
+var drag = false;
+var startx = 0;
+var starty = 0;
+
+function mouseDown(e) {{
+if (!e) {{ e = window.event; }}   
+    if (e.srcElement && e.srcElement.nodeName === 'IMG') {{
+        e.returnValue = e.preventDefault();
+    }}
+     e.preventDefault();
+    this.starty = e.clientY + document.body.scrollTop;
+    drag = true;
+}}
+
+function mouseUp(e) {{
+if (!e) {{ e = window.event; }}
+    drag = false;
+    var start = 1,
+        animate = function () {{
+            var step = Math.sin(start);           
+            
+            if (step <= 0) {{
+                window.cancelAnimationFrame(animate);
+            }} else {{
+                diffy = 0;
+                document.body.scrollTop += diffy * step;
+                document.documentElement.scrollTop += diffy * step;        
+                start -= 0.02;
+                window.requestAnimationFrame(animate);
+            }}
+        }};
+    animate();
+}}
+
+function mouseOut(e) {{
+     e = e ? e : window.event;
+    var from = e.relatedTarget || e.toElement;
+    if (!from || from.nodeName == "HTML") {{
+        drag = false;
+    }}
+}}
+
+function mouseMove(e) {{
+ if (drag === true) {{
+        if (!e) {{ e = window.event; }}
+        diffy = (this.starty - (e.clientY + document.body.scrollTop)) * 2;        
+        document.body.scrollTop += diffy;
+        document.documentElement.scrollTop += diffy;        
+        this.starty = e.clientY + document.body.scrollTop;
+    }}
+}}
+
+ """
+            self.page.runJavaScript(script)
+
+        #catch defined Shortcuts
     def keyPressEvent(self, event):
         keyEvent = QKeyEvent(event)
         shift = event.modifiers() & QtCore.Qt.ShiftModifier
