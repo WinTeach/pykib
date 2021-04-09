@@ -285,6 +285,7 @@ class myQWebEnginePage(QWebEnginePage):
     def openSearchBar(self):
         self.form.searchBar.show()
         self.form.searchText.setFocus()
+        self.form.searchText.setSelection(0, self.form.searchText.maxLength())
 
 
     def closeSearchBar(self):

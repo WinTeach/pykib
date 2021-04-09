@@ -204,6 +204,7 @@ def setupUi(form, args, dirname):
     #Add Search Field
     form.searchText = QtWidgets.QLineEdit(form)
     form.searchText.setObjectName("lineEdit")
+    form.searchText.setClearButtonEnabled(1)
     form.searchText.textChanged.connect(form.page.searchOnPage)
     form.searchText.returnPressed.connect(form.page.searchOnPage)
     form.searchBarGridLayout.addWidget(form.searchText, 0, 0, 1, 1)
