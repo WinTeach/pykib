@@ -19,10 +19,12 @@
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5 import QtCore
 from PyQt5.QtCore import QUrl
+from PyQt5.QtWidgets import QTextEdit
 
 
 class myQWebEngineView(QWebEngineView):
     
+
     def __init__(self, argsparsed):
         global args
         args = argsparsed
@@ -32,7 +34,7 @@ class myQWebEngineView(QWebEngineView):
     def load(self,url):
         if not url:
             url = args.url
-        if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file:///')):
-            url = 'http://' + url        
-        self.setUrl(QUrl(url))  
-   
+        if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file://')):
+            url = 'http://' + url
+        
+        self.setUrl(QUrl(url))
