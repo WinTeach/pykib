@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 # pykib - A PyQt5 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2018 Tobias Wintrich
+# Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -14,12 +15,13 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import subprocess
 import os
 import urllib.parse
 import tempfile
+import logging
 
 from functools import partial
 
@@ -27,12 +29,8 @@ from PyQt5.QtNetwork import QAuthenticator
 from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
-from PyQt5.QtCore import QSize, QUrl, QFile, QMimeType, pyqtSignal
-from pykib_base.myQWebEngineView import myQWebEngineView
-
-from pprint import pprint
-
+from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtCore import QSize, QUrl, Qt
 
 class myQWebEnginePage(QWebEnginePage):
     args = 0
@@ -49,8 +47,17 @@ class myQWebEnginePage(QWebEnginePage):
         QtWebEngineWidgets.QWebEnginePage.__init__(self)
 
         self.profile().downloadRequested.connect(self.on_downloadRequested)
+
+
+
+        #Allow Fullscreen
+        self.settings().setAttribute(QWebEngineSettings.FullScreenSupportEnabled, True)
+
         if (args.setBrowserLanguage):
             self.profile().setHttpAcceptLanguage(args.setBrowserLanguage)
+
+        if (args.allowDesktopSharing):
+            self.settings().setAttribute(QWebEngineSettings.ScreenCaptureEnabled, True)
 
         # Do not persist Cookies
         self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
@@ -76,6 +83,7 @@ class myQWebEnginePage(QWebEnginePage):
         if (args.enableSpellcheck):
             self.profile().setSpellCheckEnabled(True)
             self.profile().setSpellCheckLanguages({args.spellCheckingLanguage})
+
 
     def createWindow(self, _type):
         page = QWebEnginePage(self)
@@ -211,6 +219,9 @@ class myQWebEnginePage(QWebEnginePage):
             suffix = QtCore.QFileInfo(old_path).suffix()
             downloadDialog = QFileDialog()
 
+            if (args.alwaysOnTop or args.remoteBrowserDaemon):
+                downloadDialog.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.X11BypassWindowManagerHint)
+
             if (args.downloadPath):
                 downloadDialog.setDirectory(args.downloadPath)
                 downloadDialog.selectFile(os.path.basename(old_path))
@@ -327,7 +338,11 @@ class myQWebEnginePage(QWebEnginePage):
                 else:
                     self.closePDFPage()
 
-        print("Site " + currentUrl + " is not whitelisted")
+        logging.info("Site " + currentUrl + " is not whitelisted")
+
+        #If Remote Browser is used we will show no warning an won't open the page
+        if (args.remoteBrowserDaemon):
+            return False;
 
         msg = QtWidgets.QMessageBox()
         msg.setIcon(QtWidgets.QMessageBox.Warning)

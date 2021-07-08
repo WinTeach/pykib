@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 # pykib - A PyQt5 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2018 Tobias Wintrich
+# Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -19,8 +20,6 @@
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5 import QtCore
 from PyQt5.QtCore import QUrl
-from PyQt5.QtWidgets import QTextEdit
-
 
 class myQWebEngineView(QWebEngineView):
     
@@ -30,6 +29,7 @@ class myQWebEngineView(QWebEngineView):
         args = argsparsed
         self.browser = QWebEngineView.__init__(self)        
         self.setContextMenuPolicy( QtCore.Qt.NoContextMenu )
+
         
     def load(self,url):
         if not url:
