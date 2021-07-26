@@ -48,7 +48,6 @@ class RemotePykib():
     def startRemotePykib(self):
         logging.info("Pykib Remote Browser Daemon Mode")
 
-
         #Create Temp Session Token if Option is set
         if(self.args.useTemporarySessionToken):
             logging.info("Temporary Session Token is used:")
@@ -77,22 +76,6 @@ class RemotePykib():
         tray.setVisible(True)
         tray.setToolTip("Rangee Remote Browser Daemon")
 
-        #Build Configuration Array fpr Plugin
-        config = {
-            "remotingList": self.args.remotingList.split(" "),
-            "remoteBrowserMoveInterval": self.args.remoteBrowserMoveInterval,
-            "remoteDaemonProtocolVersion": self.args.remoteDaemonProtocolVersion,
-            }
-
-        # Create an Start the Websocket Server Thread
-        websocketServer = pykib_base.remotePykibWebsocketServer.RemotePykibWebsocketServer(config, self.args.remoteBrowserSessionToken, self.args.remoteBrowserPort)
-        websocketServer.daemon = True  # Daemonize thread
-        websocketServer.configureInstance.connect(self.configureInstance)
-        websocketServer.closeInstance.connect(self.closeInstance)
-        websocketServer.activateInstance.connect(self.activateInstance)
-        websocketServer.moveInstance.connect(self.moveInstance)
-        websocketServer.start()
-
         # Create the menu
         menu = QMenu()
 
@@ -100,6 +83,24 @@ class RemotePykib():
         quit = QAction("Close Rangee Remote Browser Daemon")
         quit.triggered.connect(sys.exit)
         menu.addAction(quit)
+
+        # Build Configuration Array fpr Plugin
+        config = {
+            "remotingList": self.args.remotingList.split(" "),
+            "remoteBrowserMoveInterval": self.args.remoteBrowserMoveInterval,
+            "remoteDaemonProtocolVersion": self.args.remoteDaemonProtocolVersion,
+        }
+
+        # Create an Start the Websocket Server Thread
+        websocketServer = pykib_base.remotePykibWebsocketServer.RemotePykibWebsocketServer(config,
+                                                                                           self.args.remoteBrowserSessionToken,
+                                                                                           self.args.remoteBrowserPort)
+        websocketServer.daemon = True  # Daemonize thread
+        websocketServer.configureInstance.connect(self.configureInstance)
+        websocketServer.closeInstance.connect(self.closeInstance)
+        websocketServer.activateInstance.connect(self.activateInstance)
+        websocketServer.moveInstance.connect(self.moveInstance)
+        websocketServer.start()
 
         # Add the menu to the tray
         tray.setContextMenu(menu)
@@ -129,7 +130,6 @@ class RemotePykib():
             self.args.url = url
             currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname)
             self.pykibInstances[windowId][tabId] = currentView
-            pprint("3")
 
         for key in self.pykibInstances[windowId]:
             if(key != tabId):
@@ -210,10 +210,10 @@ class RemotePykib():
         logging.info("------------------------------------------------------------")
 
     def moveInstance(self, tabId, windowId, geometry, zoomFactor = 1):
-        logging.info("RemotePykib:")
-        logging.info("  Moving/Resizing Tab")
-        logging.info("    TabID: " + str(tabId))
-        logging.info("    WindowID: " + str(windowId))
+        logging.debug("RemotePykib:")
+        logging.debug("  Moving/Resizing Tab")
+        logging.debug("    TabID: " + str(tabId))
+        logging.debug("    WindowID: " + str(windowId))
         try:
             if(tabId in self.pykibInstances[windowId]):
                 logging.debug("      Tab found. Moving/Resizing")

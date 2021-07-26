@@ -39,8 +39,6 @@ class RemotePykibWebsocketServer(QtCore.QThread):
         self.config = config
         self.port = port
         self.sessionToken = sessionToken
-        self.lastBeat = time.time()
-        self.heartbeatEnabled = False
         self.openSockets = {}
 
     def run(self):

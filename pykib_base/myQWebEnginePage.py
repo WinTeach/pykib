@@ -48,8 +48,6 @@ class myQWebEnginePage(QWebEnginePage):
 
         self.profile().downloadRequested.connect(self.on_downloadRequested)
 
-
-
         #Allow Fullscreen
         self.settings().setAttribute(QWebEngineSettings.FullScreenSupportEnabled, True)
 

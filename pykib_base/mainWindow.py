@@ -41,6 +41,8 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QWidget
 
 class MainWindow(QWidget):
+    fullScreenState = False
+
     def __init__(self, transferargs, dirname, parent=None):
         print("running in: " + dirname)
         global args
@@ -68,7 +70,7 @@ class MainWindow(QWidget):
         self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
 
         #Definde Action when Fullscreen ist choosen
-        #self.page.fullScreenRequested.connect(self.setFullscreen)
+        self.page.fullScreenRequested.connect(self.toggleFullscreen)
 
         if (args.addMemoryCap):
             logging.info("Starting memory monitoring. Going to close browser when memory usage is over " + str(
@@ -91,13 +93,19 @@ class MainWindow(QWidget):
             self.autoRefresher.autoRefresh.connect(self.autoRefresh)
             self.autoRefresher.start()
 
-    #Needs some more time to create a better FullscreenMode
-    # def setFullscreen(self, request):
-    #     if (request.toggleOn):
-    #         self.showFullScreen()
-    #     else:
-    #         self.showNormal()
-    #     request.accept()
+    def toggleFullscreen(self, request):
+         logging.info("Fullscren Request received")
+         logging.info(self.fullScreenState)
+         if(not args.fullscreen):
+             if (self.fullScreenState):
+                logging.info("leave Fullscreen")
+                self.fullScreenState = False
+                self.showNormal()
+             else:
+                 logging.info("set Fullscreen")
+                 self.fullScreenState = True
+                 self.showFullScreen()
+         request.accept()
 
     def enterEvent(self, event):
         self.activateWindow()
