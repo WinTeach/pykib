@@ -102,7 +102,7 @@ class Pykib():
 
         # Set Start URL
         if (self.args.url is None and self.args.defaultURL):
-            self.args.url = args.defaultURL;
+            self.args.url = self.args.defaultURL;
         elif (self.args.url is None and self.args.defaultURL is None):
             self.args.url = "https://github.com/WinTeach/pykib";
 
