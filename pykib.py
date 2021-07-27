@@ -23,6 +23,7 @@ import os
 import logging
 import tempfile
 import atexit
+import pprint
 
 import pykib_base.ui
 import pykib_base.arguments
@@ -151,6 +152,17 @@ class Pykib():
             print("The Zoom factor must be a value between 25 and 500")
             sys.exit()
 
+        # Calculate Screen Offset when normalizeGeometry is set
+        self.args.screenOffsetLeft = 0
+        try:
+            if (self.args.normalizeGeometry):
+                    screens = self.app.screens()
+                    for key in screens:
+                        if (self.app.primaryScreen() == key):
+                            self.args.screenOffsetLeft = key.availableGeometry().left()
+        except:
+            self.args.screenOffsetLeft = 0
+
         # ----------------------------------------------------------
         # Switch between Remote Daemon an Default Pykib
         # ----------------------------------------------------------
@@ -174,14 +186,14 @@ class Pykib():
                 print(
                     "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
                 sys.exit()
-            view.move(self.args.geometry[0], self.args.geometry[1])
+            view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
             view.showFullScreen()
         elif (self.args.maximized):
             if (len(self.args.geometry) != 2 and len(self.args.geometry) != 4):
                 print(
                     "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
                 sys.exit()
-            view.move(self.args.geometry[0], self.args.geometry[1])
+            view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
             view.showMaximized()
         else:
             if (len(self.args.geometry) != 4):
@@ -189,7 +201,7 @@ class Pykib():
                     "When geometry without maximized or fullsreen is set, you have to define the whole position an screen #left# #top# #width# #height#")
                 sys.exit()
             view.show()
-            view.setGeometry(self.args.geometry[0], self.args.geometry[1], self.args.geometry[2], self.args.geometry[3])
+            view.setGeometry(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1], self.args.geometry[2], self.args.geometry[3])
 
         sys.exit(self.app.exec_())
 
