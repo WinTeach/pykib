@@ -219,7 +219,6 @@ class RemotePykib():
                 logging.debug("      Tab found. Moving/Resizing")
                 self.args.setZoomFactor = zoomFactor * 100
                 self.pykibInstances[windowId][tabId].web.setZoomFactor(zoomFactor)
-                logging.error("  --------------------  ScreenOffset: " + str(self.args.screenOffsetLeft))
                 self.pykibInstances[windowId][tabId].setGeometry(geometry[0] + self.args.screenOffsetLeft, geometry[1], geometry[2], geometry[3])
                 self.pykibInstances[windowId][tabId].show()
                 #self.pykibInstances[windowId][tabId].activateWindow()
