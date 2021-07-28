@@ -108,7 +108,9 @@ class MainWindow(QWidget):
          request.accept()
 
     def enterEvent(self, event):
-        self.activateWindow()
+        #When working with a remote Daemon, the Browse need to get focussed on Enter
+        if(args.remoteBrowserDaemon):
+            self.activateWindow()
 
     def onFeaturePermissionRequested(self, url, feature):
         logging.info(
