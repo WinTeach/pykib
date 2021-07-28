@@ -101,9 +101,15 @@ class MainWindow(QWidget):
                 logging.info("leave Fullscreen")
                 self.fullScreenState = False
                 self.showNormal()
+                if (args.remoteBrowserDaemon):
+                    self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.X11BypassWindowManagerHint)
+                    self.show()
              else:
                  logging.info("set Fullscreen")
                  self.fullScreenState = True
+                 #Need to remove X11BypassWindowManagerHint because without showFullscreen not possible
+                 if (args.remoteBrowserDaemon):
+                    self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
                  self.showFullScreen()
          request.accept()
 
