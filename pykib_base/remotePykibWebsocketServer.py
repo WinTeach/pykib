@@ -33,6 +33,7 @@ class RemotePykibWebsocketServer(QtCore.QThread):
     closeInstance = pyqtSignal(int, int)
     activateInstance = pyqtSignal(int, int)
     moveInstance = pyqtSignal(int, int, list, float)
+    changeTabWindow = pyqtSignal(int, int, int)
 
     def __init__(self, config, sessionToken, port):
         super(RemotePykibWebsocketServer, self).__init__()
@@ -111,7 +112,6 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                         logging.info("    WindowID: " + str(data["windowId"]))
                         logging.info("------------------------------------------------------------")
                         self.closeInstance.emit(0, int(data["windowId"]))
-
                     elif(data['action'] == 'moveTab'):
                         logging.debug("Websocket:")
                         logging.debug("  Moving Tab:")
@@ -122,6 +122,15 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                             self.activateInstance.emit(0, int(data["windowId"]))
                         else:
                             self.moveInstance.emit(int(data["tabId"]), int(data["windowId"]), data['geometry'], float(data['zoomFactor']))
+                    elif(data['action'] == 'changeTabWindow'):
+                        logging.info("Websocket:")
+                        logging.info("  change Tab Window:")
+                        logging.info("    TabID: " + str(data["tabId"]))
+                        logging.info("    oldWindowId: " + str(data["oldWindowId"]))
+                        logging.info("    newWindowId: " + str(data['newWindowId']))
+                        logging.info("------------------------------------------------------------")
+                        self.changeTabWindow.emit(int(data["tabId"]), int(data["oldWindowId"]), int(data['newWindowId']))
+                        self.openSockets[websocket]["windowId"] = data['newWindowId']
                 else:
                     await websocket.send(json.dumps({"ErrorCode": 1}))
                     logging.warning("Websocket:")
@@ -132,6 +141,8 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                 self.closeInstance.emit(self.openSockets[websocket]["tabId"], self.openSockets[websocket]["windowId"])
                 logging.info("Websocket:")
                 logging.info("  Connection to Tab lost. Closing")
+                logging.info(self.openSockets[websocket]["tabId"])
+                logging.info(self.openSockets[websocket]["windowId"])
             except Exception as e2:
                 logging.warning(e2)
             if(e == websockets.exceptions.ConnectionClosedError):

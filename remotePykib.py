@@ -28,7 +28,6 @@ import pykib_base.arguments
 import pykib_base.mainWindow
 import pykib_base.remotePykibWebsocketServer
 
-from pprint import pprint
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction
 
@@ -43,7 +42,6 @@ class RemotePykib():
         self.pykibInstances = {}
 
         self.startRemotePykib()
-
 
     def startRemotePykib(self):
         logging.info("Pykib Remote Browser Daemon Mode")
@@ -100,6 +98,7 @@ class RemotePykib():
         websocketServer.closeInstance.connect(self.closeInstance)
         websocketServer.activateInstance.connect(self.activateInstance)
         websocketServer.moveInstance.connect(self.moveInstance)
+        websocketServer.changeTabWindow.connect(self.changeTabWindow)
         websocketServer.start()
 
         # Add the menu to the tray
@@ -226,3 +225,27 @@ class RemotePykib():
                 logging.debug("      Tab not found.")
         except Exception as e:
             logging.info("  Error, WindowID not found")
+
+    def changeTabWindow(self, tabId, oldWindowId, newWindowId):
+        logging.info("RemotePykib:")
+        logging.info("  Change Tab Window")
+        logging.info("    TabID: " + str(tabId))
+        logging.info("    oldWindowId: " + str(oldWindowId))
+        logging.info("    newWindowId: " + str(newWindowId))
+        try:
+            if(tabId in self.pykibInstances[oldWindowId]):
+                logging.debug("      Tab found. Move to new Window")
+                try:
+                    # Array for newWindowId found
+                    self.pykibInstances[newWindowId]
+                except:
+                    # No Array for newWindowId exist, creating one
+                    self.pykibInstances[newWindowId] = {}
+
+                #Move Tab from old to new Window Id
+                self.pykibInstances[newWindowId][tabId] = self.pykibInstances[oldWindowId][tabId]
+                del self.pykibInstances[oldWindowId][tabId]
+            else:
+                logging.info("      Tab not found.")
+        except Exception as e:
+            logging.info(e)

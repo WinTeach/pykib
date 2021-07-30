@@ -23,10 +23,10 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '2.0.4')
+__version_info__ = ('devel', '2.0.5')
 __version__ = '-'.join(__version_info__)
 
-__remote_daemon_protocol_version__ = '1.0.0.0'
+__remote_daemon_protocol_version__ = '1.0.0.2'
 
 def getArguments(dirname):
     parser = ArgumentParser(
