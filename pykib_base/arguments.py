@@ -23,10 +23,10 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '2.0.5')
+__version_info__ = ('devel', '2.0.6')
 __version__ = '-'.join(__version_info__)
 
-__remote_daemon_protocol_version__ = '1.0.0.2'
+__remote_daemon_protocol_version__ = '1.0.0.3'
 
 def getArguments(dirname):
     parser = ArgumentParser(
@@ -107,6 +107,7 @@ def getArguments(dirname):
                         help="with this option HTTPS Warninigs will be ignored")
     parser.add_argument("-m", "--maximized", dest="maximized", action='store_true',
                         help="Start browser in a maximized window")
+
     parser.add_argument("-v", "--version", action="version", version='%(prog)s {version}'.format(version=__version__))
     parser.add_argument("-rdpv", "--remoteDaemonProtocolVersion", action="version", version=__remote_daemon_protocol_version__)
 
@@ -124,6 +125,8 @@ def getArguments(dirname):
     parser.add_argument("-sa", "--showAddressBar", dest="showAddressBar", action='store_true',
                         help="Shows a Address Bar when set")
     parser.add_argument("-sn", "--showNavigationButtons", dest="showNavigationButtons", action='store_true', help="Shows Navigation Buttons when set")
+    parser.add_argument("-ecm", "--enableContextMenu", dest="enableContextMenu", action='store_true', help="Enables a minimal context Menu")
+
     parser.add_argument("-g", "--geometry", dest="geometry", default=[100, 100, 1024, 600], nargs="+", type=int,
                         help="Set window geomety #left# #top# #width# #height#, when using a multimonitor envireoment you can define the monitor for fullscreen or maximized mode with #left# #top#")
     parser.add_argument("-ng", "--normalizeGeometry", dest="normalizeGeometry", action='store_true',

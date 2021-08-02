@@ -69,7 +69,7 @@ def setupUi(form, args, dirname):
         form.memoryCapGridLayout.setContentsMargins(0, 5, 0, 0)
         form.memoryCapGridLayout.setObjectName("memoryCapGridLayout")
 
-    form.web = myQWebEngineView(args)
+    form.web = myQWebEngineView(args, dirname)
     form.web.setObjectName("view")
     
     form.page = myQWebEnginePage(args, dirname, form)    
@@ -240,6 +240,11 @@ def setupUi(form, args, dirname):
     form.closeSearchButton.clicked.connect(form.page.closeSearchBar)
 
     form.searchBarGridLayout.addWidget(form.closeSearchButton, 0, 4, 1, 1)
+
+    # ###########################################################
+    #Context Menu
+    if(not args.enableContextMenu):
+        form.web.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
 
     # ###########################################################
 
