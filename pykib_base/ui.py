@@ -69,14 +69,14 @@ def setupUi(form, args, dirname):
         form.memoryCapGridLayout.setContentsMargins(0, 5, 0, 0)
         form.memoryCapGridLayout.setObjectName("memoryCapGridLayout")
 
-    form.web = myQWebEngineView(args, dirname)
-    form.web.setObjectName("view")
-    
-    form.page = myQWebEnginePage(args, dirname, form)    
-    form.web.setPage(form.page)
-    
-    #Added progress Handling   
-    form.web.loadProgress.connect(form.loadingProgressChanged)
+    # form.web = myQWebEngineView(args, dirname)
+    # form.web.setObjectName("view")
+    #
+    # form.page = myQWebEnginePage(args, dirname, form)
+    # form.web.setPage(form.page)
+    #
+    # #Added progress Handling
+    # form.web.loadProgress.connect(form.loadingProgressChanged)
 
     form.pageGridLayout.addWidget(form.web, 2, 0, 1, 0)
 
@@ -207,8 +207,8 @@ def setupUi(form, args, dirname):
     form.searchText = QtWidgets.QLineEdit(form)
     form.searchText.setObjectName("lineEdit")
     form.searchText.setClearButtonEnabled(1)
-    form.searchText.textChanged.connect(form.page.searchOnPage)
-    form.searchText.returnPressed.connect(form.page.searchOnPage)
+    form.searchText.textChanged.connect(form.searchOnPage)
+    form.searchText.returnPressed.connect(form.searchOnPage)
     form.searchBarGridLayout.addWidget(form.searchText, 0, 0, 1, 1)
 
     # Add Search Direction Buttons
@@ -216,7 +216,7 @@ def setupUi(form, args, dirname):
     form.searchDown.setObjectName("searchDownButton")
     form.searchDown.setIcon(QIcon(os.path.join(dirname, 'icons/down.png')))
     form.searchDown.setIconSize(QSize(24, 24))
-    form.searchDown.clicked.connect(form.page.searchOnPage)
+    form.searchDown.clicked.connect(form.searchOnPage)
 
     form.searchBarGridLayout.addWidget(form.searchDown, 0, 2, 1, 1)
 
@@ -224,7 +224,7 @@ def setupUi(form, args, dirname):
     form.searchUp.setObjectName("searchUpButton")
     form.searchUp.setIcon(QIcon(os.path.join(dirname, 'icons/up.png')))
     form.searchUp.setIconSize(QSize(24, 24))
-    form.searchUp.clicked.connect(form.page.searchOnPage)
+    form.searchUp.clicked.connect(form.searchOnPage)
 
     form.searchBarGridLayout.addWidget(form.searchUp, 0, 1, 1, 1)
 
@@ -237,7 +237,7 @@ def setupUi(form, args, dirname):
     form.closeSearchButton.setObjectName("closeSearchButton")
     form.closeSearchButton.setIcon(QIcon(os.path.join(dirname, 'icons/close.png')))
     form.closeSearchButton.setIconSize(QSize(24, 24))
-    form.closeSearchButton.clicked.connect(form.page.closeSearchBar)
+    form.closeSearchButton.clicked.connect(form.closeSearchBar)
 
     form.searchBarGridLayout.addWidget(form.closeSearchButton, 0, 4, 1, 1)
 

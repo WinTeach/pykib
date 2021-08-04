@@ -291,22 +291,6 @@ class myQWebEnginePage(QWebEnginePage):
             pass
         self.form.progress.disabled = False
 
-    def openSearchBar(self):
-        self.form.searchBar.show()
-        self.form.searchText.setFocus()
-        self.form.searchText.setSelection(0, self.form.searchText.maxLength())
-
-
-    def closeSearchBar(self):
-        self.form.searchBar.hide()
-
-    def searchOnPage(self):
-        signalFrom = self.sender().objectName()
-        if(signalFrom == "searchUpButton"):
-            self.findText(self.form.searchText.text(), QWebEnginePage.FindBackward)
-        else:
-            self.findText(self.form.searchText.text())
-
     def pdfDownloadAction(self):
         # Remove Extension From URL
         try:

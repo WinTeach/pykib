@@ -115,13 +115,19 @@ class RemotePykib():
         except:
             self.pykibInstances[windowId] = {}
 
-        if(tabId in self.pykibInstances[windowId]):
+        if(tabId in self.pykibInstances[windowId] and self.pykibInstances[windowId][tabId].web):
             logging.info("  Tab found, set as CurrentView:"+str(tabId))
             logging.info("    TabID: " + str(tabId))
             logging.info("    WindowID: " + str(windowId))
+            print(self.pykibInstances[windowId][tabId])
             currentView = self.pykibInstances[windowId][tabId]
-            currentView.web.load(url)
-
+            try:
+                currentView.web.load(url)
+            except:
+                logging.info("    Tab should be availeable but is not. May be closed manually. creating new: " + str(tabId))
+                self.args.url = url
+                currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname)
+                self.pykibInstances[windowId][tabId] = currentView
         else:
             logging.info("  Tab not found, create new an set as CurrentView:" + str(tabId))
             logging.info("    TabID: " + str(tabId))

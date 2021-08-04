@@ -55,6 +55,7 @@ class Pykib():
         atexit.register(self.exitCleanup)
 
         self.app = QApplication(sys.argv)
+
         faulthandler.enable()
         self.startPykib()
 
@@ -162,6 +163,11 @@ class Pykib():
                             self.args.screenOffsetLeft = key.availableGeometry().left()
         except:
             self.args.screenOffsetLeft = 0
+
+        # ----------------------------------------------------------
+        # Define System application Name
+        # ----------------------------------------------------------
+        self.app.setApplicationName(self.args.systemApplicationName)
 
         # ----------------------------------------------------------
         # Switch between Remote Daemon an Default Pykib

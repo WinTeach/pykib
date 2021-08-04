@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '2.0.6')
+__version_info__ = ('devel', '2.0.7')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.0.0.3'
@@ -95,6 +95,8 @@ def getArguments(dirname):
     parser.add_argument("-t", "--title", dest="title", help="Defines the Window Title", default="pykib")
     parser.add_argument("-dt", "--dynamicTitle", dest="dynamicTitle", action='store_true',
                         help="When enabled the window title will display the current websites title")
+    parser.add_argument("-san", "--systemApplicationName", dest="systemApplicationName", default="Pykib - Python based Kiosk Browser",
+                        help="With this option the system application Name which will shown on pulse audio and some other apps can be overritten")
     parser.add_argument("-rt", "--removeTitleBar", dest="removeTitleBar", action='store_true',
                         help="Removes the window title bar")
     parser.add_argument("-f", "--fullscreen", dest="fullscreen", action='store_true',

@@ -21,19 +21,20 @@ import sys
 import os
 import subprocess
 import logging
-
-from PyQt5.QtWebEngineWidgets import QWebEnginePage
-
 import pykib_base.ui
 import pykib_base.arguments
 import pykib_base.mainWindow
 import platform
 
+from pykib_base.myQWebEngineView import myQWebEngineView
+from pykib_base.myQWebEnginePage import myQWebEnginePage
+from pykib_base.myQProgressBar import myQProgressBar
 from pykib_base.memoryCap import MemoryCap
 from pykib_base.memoryDebug import MemoryDebug
 from pykib_base.autoReload import AutoReload
 
 #
+from PyQt5.QtWebEngineWidgets import QWebEnginePage
 from PyQt5 import QtCore
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QKeyEvent
@@ -63,8 +64,21 @@ class MainWindow(QWidget):
         elif(args.alwaysOnTop):
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_DeleteOnClose)
+
+        #Create WebView and WebPage
+        self.web = myQWebEngineView(args, dirname)
+        self.web.setObjectName("view")
+
+        self.page = myQWebEnginePage(args, dirname, self)
+        self.web.setPage(self.page)
+
+        #Setup UI
         pykib_base.ui.setupUi(self, args, dirname)
-        self.web.load(args.url)
+
+        # Added progress Handling
+        self.web.loadProgress.connect(self.loadingProgressChanged)
+
+
         self.web.renderProcessTerminated.connect(self.viewTerminated)
         self.removeDownloadBarTimer = QTimer(self)
         self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
@@ -92,6 +106,9 @@ class MainWindow(QWidget):
             self.autoRefresher.daemon = True  # Daemonize thread
             self.autoRefresher.autoRefresh.connect(self.autoRefresh)
             self.autoRefresher.start()
+
+        #Start with url
+        self.web.load(args.url)
 
     def toggleFullscreen(self, request):
          logging.info("Fullscren Request received")
@@ -381,9 +398,9 @@ function mouseMove(e) {{
         if (keyEvent.key() == QtCore.Qt.Key_F4):
             logging.info("Alt +F4 is disabled")
         if (ctrl and keyEvent.key() == QtCore.Qt.Key_F):
-            self.page.openSearchBar()
+            self.openSearchBar()
         if (keyEvent.key() == QtCore.Qt.Key_Escape):
-            self.page.closeSearchBar()
+            self.closeSearchBar()
 
     def closeEvent(self, event):
         if (args.fullscreen):
@@ -397,3 +414,18 @@ function mouseMove(e) {{
 
     def adjustAdressbar(self):
         self.addressBar.setText(self.web.url().toString())
+
+    def openSearchBar(self):
+        self.searchBar.show()
+        self.searchText.setFocus()
+        self.searchText.setSelection(0, self.searchText.maxLength())
+
+    def closeSearchBar(self):
+        self.searchBar.hide()
+
+    def searchOnPage(self):
+        signalFrom = self.sender().objectName()
+        if(signalFrom == "searchUpButton"):
+            self.page.findText(self.searchText.text(), QWebEnginePage.FindBackward)
+        else:
+            self.page.findText(self.searchText.text())
