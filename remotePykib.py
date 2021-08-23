@@ -85,6 +85,7 @@ class RemotePykib():
         # Build Configuration Array fpr Plugin
         config = {
             "remotingList": self.args.remotingList.split(" "),
+            "allowUserBasedRemoting": self.args.allowUserBasedRemoting,
             "remoteBrowserMoveInterval": self.args.remoteBrowserMoveInterval,
             "remoteDaemonProtocolVersion": self.args.remoteDaemonProtocolVersion,
         }

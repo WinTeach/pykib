@@ -69,15 +69,6 @@ def setupUi(form, args, dirname):
         form.memoryCapGridLayout.setContentsMargins(0, 5, 0, 0)
         form.memoryCapGridLayout.setObjectName("memoryCapGridLayout")
 
-    # form.web = myQWebEngineView(args, dirname)
-    # form.web.setObjectName("view")
-    #
-    # form.page = myQWebEnginePage(args, dirname, form)
-    # form.web.setPage(form.page)
-    #
-    # #Added progress Handling
-    # form.web.loadProgress.connect(form.loadingProgressChanged)
-
     form.pageGridLayout.addWidget(form.web, 2, 0, 1, 0)
 
     navGridLayoutHorizontalPosition = 0

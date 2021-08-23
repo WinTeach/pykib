@@ -26,7 +26,7 @@ import sys
 __version_info__ = ('devel', '2.0.7')
 __version__ = '-'.join(__version_info__)
 
-__remote_daemon_protocol_version__ = '1.0.0.3'
+__remote_daemon_protocol_version__ = '1.0.0.4'
 
 def getArguments(dirname):
     parser = ArgumentParser(
@@ -133,7 +133,7 @@ def getArguments(dirname):
                         help="Set window geomety #left# #top# #width# #height#, when using a multimonitor envireoment you can define the monitor for fullscreen or maximized mode with #left# #top#")
     parser.add_argument("-ng", "--normalizeGeometry", dest="normalizeGeometry", action='store_true',
                         help="This Option makes the #left# geometry Parameter be calculated started from the primary screen (windows default behavior). "
-                             "Specially help full in multi monitor enviroments when using the remote damon funktion")
+                             "Specially help full in multi monitor enviroments when using the remote damon function")
 
     parser.add_argument("-a", "--enableAdminKey", dest="adminKey",
                         help="Enables the admin key SHIFT+STRG+ALT+A and defines a Application which will be started when pushed")
@@ -165,6 +165,8 @@ def getArguments(dirname):
                         help="Define Interval in ms in which movement requests are send when moving the remote browser window - Default 50ms")
     parser.add_argument("-rl", "--remotingList", dest="remotingList", nargs="+",
                         help="Defined a List of Urls which should be remoted - use * as wildcard")
+    parser.add_argument("-aubr", "--allowUserBasedRemoting", dest="allowUserBasedRemoting", action='store_true',
+                        help="When this option is set, the user on the remote side is allowed to define an own additional remoting list")
     parser.add_argument("-rbst", "--remoteBrowserSessionToken", dest="remoteBrowserSessionToken",
                         help="Only Request which includes the configured Token will be accepted. This Option will be overritten if 'useTemporarySessionToken' is set")
     parser.add_argument("-utst", "--useTemporarySessionToken", dest="useTemporarySessionToken", action='store_true',

@@ -356,7 +356,7 @@ class myQWebEnginePage(QWebEnginePage):
         return False
 
     def webAuthenticationRequired(self, uri: QUrl, cred: QAuthenticator):
-        print("Authentication Reqeust from " + uri.toString())
+        print("Authentication Request from " + uri.toString())
         if(args.enableAutoLogon):
             print("Using autologin credentials")
             cred.setUser(args.autoLogonUser)
