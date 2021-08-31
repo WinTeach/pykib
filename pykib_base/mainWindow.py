@@ -111,17 +111,22 @@ class MainWindow(QWidget):
         self.web.load(args.url)
 
     def toggleFullscreen(self, request):
-         logging.info("Fullscren Request received")
+         logging.info("Fullscreen Request received")
          logging.info(self.fullScreenState)
          if(not args.fullscreen):
              if (self.fullScreenState):
                 logging.info("leave Fullscreen")
                 self.fullScreenState = False
                 self.showNormal()
+                logging.info("Restore previous Windows Position")
+                self.setGeometry(self.oldgeometry)
                 if (args.remoteBrowserDaemon):
                     self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.X11BypassWindowManagerHint)
                     self.show()
              else:
+                 logging.info("Store Current Windows Position")
+                 self.oldgeometry = self.frameGeometry()
+
                  logging.info("set Fullscreen")
                  self.fullScreenState = True
                  #Need to remove X11BypassWindowManagerHint because without showFullscreen not possible
