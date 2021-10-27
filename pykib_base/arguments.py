@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '2.0.9')
+__version_info__ = ('devel', '2.0.11')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.0.0.4'
@@ -117,10 +117,12 @@ def getArguments(dirname):
 
     parser.add_argument("--no-sandbox", dest="no-sandbox", action='store_true',
                         help="Allows to run as root")
+    parser.add_argument("--disable-gpu", dest="disable-gpu", action='store_true',
+                        help="Disables QTs GPU Support")
     parser.add_argument("--js-flags", dest="js-flags", help="Allows setting js-flags")
     parser.add_argument("--single-process", dest="single-process", action='store_true', help="Allows to run the browser in one thread")
     parser.add_argument("--remote-debugging-port", dest="remote-debugging-port",
-                        help="Allows to run as root")
+                        help="Allows to debug with chromes webbrowser console")
     parser.add_argument("-md", "--memoryDebug", dest="memoryDebug", action='store_true',
                         help="Show informations about the browser current memory usage")
 

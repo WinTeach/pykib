@@ -120,9 +120,6 @@ class MainWindow(QWidget):
                 self.showNormal()
                 logging.info("Restore previous Windows Position")
                 self.setGeometry(self.oldgeometry)
-                if (args.remoteBrowserDaemon):
-                    self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.X11BypassWindowManagerHint)
-                    self.show()
              else:
                  logging.info("Store Current Windows Position")
                  self.oldgeometry = self.frameGeometry()
@@ -133,6 +130,11 @@ class MainWindow(QWidget):
                  if (args.remoteBrowserDaemon):
                     self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
                  self.showFullScreen()
+                 # Need set X11BypassWindowManagerHint again after going to Fullscreen
+                 if (args.remoteBrowserDaemon):
+                     self.setWindowFlags(
+                         Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.X11BypassWindowManagerHint)
+                     self.show()
          request.accept()
 
     def enterEvent(self, event):
@@ -237,6 +239,7 @@ class MainWindow(QWidget):
 
     def loadingProgressChanged(self, percent):
         # Setting Zoomfactor
+        logging.debug("Progress Changed" + str(percent))
         self.web.setZoomFactor(args.setZoomFactor / 100)
         global firstrun
 

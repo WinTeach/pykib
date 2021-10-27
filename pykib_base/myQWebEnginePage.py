@@ -44,25 +44,29 @@ class myQWebEnginePage(QWebEnginePage):
         global dirname
         dirname = currentdir
         self.form = form
-        QtWebEngineWidgets.QWebEnginePage.__init__(self)
 
-        self.profile().downloadRequested.connect(self.on_downloadRequested)
+        #Create Empty profile
+        profile = QtWebEngineWidgets.QWebEngineProfile(self.form .web)
+        QtWebEngineWidgets.QWebEnginePage.__init__(self, profile, self.form.web)
 
-        #Allow Fullscreen
-        self.settings().setAttribute(QWebEngineSettings.FullScreenSupportEnabled, True)
+        self.authenticationRequired.connect(self.webAuthenticationRequired)
+
+        #Modify Profile
+        #*********************************************************************
+
+        # Do not persist Cookies - Should be Default
+        profile.setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
+
+        #Connect to Download Handler
+        profile.downloadRequested.connect(self.on_downloadRequested)
+
+        # Enable Spell Checking
+        if (args.enableSpellcheck):
+            self.profile().setSpellCheckEnabled(True)
+            self.profile().setSpellCheckLanguages({args.spellCheckingLanguage})
 
         if (args.setBrowserLanguage):
             self.profile().setHttpAcceptLanguage(args.setBrowserLanguage)
-
-        if (args.allowDesktopSharing):
-            self.settings().setAttribute(QWebEngineSettings.ScreenCaptureEnabled, True)
-
-        # Do not persist Cookies
-        self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
-
-        if (args.enablepdfsupport):
-            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
-            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, 1)
 
         # When Autologin is enabled, se Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces which will otherwise show the Client detection which fails.
         if (args.enableAutoLogon or args.setCitrixUserAgent):
@@ -73,23 +77,27 @@ class myQWebEnginePage(QWebEnginePage):
                 self.profile().setHttpUserAgent(
                     "Mozilla/5.0 (Windows; U; Windows NT 6.1; " + args.setBrowserLanguage + ") AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
 
-        # Clears the Cache on Load
-        self.profile().clearHttpCache();
+        # Modify Settings
+        # *********************************************************************
 
-        self.authenticationRequired.connect(self.webAuthenticationRequired)
+        #Allow Fullscreen
+        self.settings().setAttribute(QWebEngineSettings.FullScreenSupportEnabled, True)
 
-        if (args.enableSpellcheck):
-            self.profile().setSpellCheckEnabled(True)
-            self.profile().setSpellCheckLanguages({args.spellCheckingLanguage})
+        if (args.allowDesktopSharing):
+            self.settings().setAttribute(QWebEngineSettings.ScreenCaptureEnabled, True)
 
-
-    def createWindow(self, _type):
-        page = QWebEnginePage(self)
         if (args.enablepdfsupport):
             self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
+            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, 1)
 
-        page.urlChanged.connect(self.openInSameWindow)
-        return page;
+
+    # def createWindow(self, _type):
+    #     page = QWebEnginePage(self)
+    #     if (args.enablepdfsupport):
+    #         self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
+    #
+    #     page.urlChanged.connect(self.openInSameWindow)
+    #     return page;
 
     @QtCore.pyqtSlot(QtCore.QUrl)
     def openInSameWindow(self, url):
