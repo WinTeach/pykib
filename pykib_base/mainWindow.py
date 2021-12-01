@@ -141,6 +141,14 @@ class MainWindow(QWidget):
         #When working with a remote Daemon, the Browse need to get focussed on Enter
         if(args.remoteBrowserDaemon):
             self.activateWindow()
+            logging.debug("Enter window")
+
+    def leaveEvent(self, event):
+        if(args.remoteBrowserDaemon):
+            # Workaround for Applications which don't grab the focus when click on them (like VMWare View)
+            if (platform.system().lower() == "linux"):
+                os.system("activeWindow=$(xdotool getactivewindow) && xdotool windowfocus $activeWindow")
+            logging.debug("Leave window")
 
     def onFeaturePermissionRequested(self, url, feature):
         logging.info(
