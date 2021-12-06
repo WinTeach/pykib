@@ -92,10 +92,10 @@ def getArguments(dirname):
     parser.add_argument("-scua", "--setCitrixUserAgent", dest="setCitrixUserAgent", action='store_true',
                         help="Overrides the default UserAgent for skipping citrix receivers client detection")
 
-    parser.add_argument("-t", "--title", dest="title", help="Defines the Window Title", default="pykib")
+    parser.add_argument("-t", "--title", dest="title", help="Defines the Window Title", default="Pykib - Python based Kiosk Browser")
     parser.add_argument("-dt", "--dynamicTitle", dest="dynamicTitle", action='store_true',
                         help="When enabled the window title will display the current websites title")
-    parser.add_argument("-san", "--systemApplicationName", dest="systemApplicationName", default="Pykib - Python based Kiosk Browser",
+    parser.add_argument("-san", "--systemApplicationName", dest="systemApplicationName", default="Pykib",
                         help="With this option the system application Name which will shown on pulse audio and some other apps can be overritten")
     parser.add_argument("-rt", "--removeTitleBar", dest="removeTitleBar", action='store_true',
                         help="Removes the window title bar")
@@ -117,6 +117,7 @@ def getArguments(dirname):
 
     parser.add_argument("--no-sandbox", dest="no-sandbox", action='store_true',
                         help="Allows to run as root")
+    parser.add_argument("--name", dest="name", help="Used to set the WM_CLASS", default="Pykib")
     parser.add_argument("--disable-gpu", dest="disable-gpu", action='store_true',
                         help="Disables QTs GPU Support")
     parser.add_argument("--js-flags", dest="js-flags", help="Allows setting js-flags")
