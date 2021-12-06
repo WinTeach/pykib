@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '2.0.12')
+__version_info__ = ('devel', '2.0.13')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.0.0.4'
