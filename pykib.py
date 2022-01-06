@@ -56,7 +56,7 @@ class Pykib():
 
         self.app = QApplication(sys.argv)
 
-        faulthandler.enable()
+        #faulthandler.enable()
         self.startPykib()
 
     def startPykib(self):

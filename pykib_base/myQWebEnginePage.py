@@ -91,13 +91,13 @@ class myQWebEnginePage(QWebEnginePage):
             self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, 1)
 
 
-    # def createWindow(self, _type):
-    #     page = QWebEnginePage(self)
-    #     if (args.enablepdfsupport):
-    #         self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
-    #
-    #     page.urlChanged.connect(self.openInSameWindow)
-    #     return page;
+    def createWindow(self, _type):
+        page = QWebEnginePage(self)
+        if (args.enablepdfsupport):
+            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
+
+        page.urlChanged.connect(self.openInSameWindow)
+        return page;
 
     @QtCore.pyqtSlot(QtCore.QUrl)
     def openInSameWindow(self, url):
