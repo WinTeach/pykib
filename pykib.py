@@ -142,6 +142,16 @@ class Pykib():
                 print("The folder for downloadPath (" + self.args.downloadPath + ") does not exists or is unreachable")
                 sys.exit()
 
+        # Parse Download Handle
+        if (self.args.downloadHandle):
+            tempDownloadHandle = []
+            for x in self.args.downloadHandle:
+                handle = x.split("|")
+                if(len(handle) != 0):
+                    tempDownloadHandle.append(handle)
+            self.args.downloadHandle = tempDownloadHandle
+
+
         # Check if a configred temporarySessionTokenPath Location exists
         if (self.args.temporarySessionTokenPath):
             if (os.path.isdir(self.args.temporarySessionTokenPath) != True):

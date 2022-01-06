@@ -205,13 +205,11 @@ class myQWebEnginePage(QWebEnginePage):
             # If Download Handle is hit
         if (args.downloadHandle):
             print("Download Handle Hit " + os.path.basename(old_path))
-            for x in args.downloadHandle:
-                handle = x.split("|")
+            for handle in args.downloadHandle:
                 if (suffix == handle[0]):
                     downloadHandleHit = True
                     if os.name == 'nt':
-                        print(handle[1])
-                        filepath = handle[2] + "\\tmp." + suffix
+                        filepath = os.path.expandvars(handle[2]) + "\\tmp." + suffix
                     else:
                         filepath = handle[2] + "/tmp." + suffix
                     download.setPath(filepath)
