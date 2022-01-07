@@ -131,7 +131,7 @@ def getArguments(dirname):
                         help="Shows a Address Bar when set")
     parser.add_argument("-sn", "--showNavigationButtons", dest="showNavigationButtons", action='store_true', help="Shows Navigation Buttons when set")
     parser.add_argument("-slpb", "--showLoadingProgressBar", dest="showLoadingProgressBar", action='store_true',
-                        help="Shows a Progress Bar on site loading. Default: True", default=True)
+                        help="Shows a Progress Bar on site loading.")
     parser.add_argument("-ecm", "--enableContextMenu", dest="enableContextMenu", action='store_true', help="Enables a minimal context Menu")
 
     parser.add_argument("-g", "--geometry", dest="geometry", default=[100, 100, 1024, 600], nargs="+", type=int,
