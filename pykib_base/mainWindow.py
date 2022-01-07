@@ -78,7 +78,6 @@ class MainWindow(QWidget):
         # Added progress Handling
         self.web.loadProgress.connect(self.loadingProgressChanged)
 
-
         self.web.renderProcessTerminated.connect(self.viewTerminated)
         self.removeDownloadBarTimer = QTimer(self)
         self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
@@ -251,7 +250,9 @@ class MainWindow(QWidget):
         self.web.setZoomFactor(args.setZoomFactor / 100)
         global firstrun
 
-        if (not self.progress.disabled):
+        if (not args.showLoadingProgressBar):
+            self.progress.hide()
+        elif (not self.progress.disabled):
             self.progress.show()
             self.progress.setValue(percent)
             self.progress.changeStyle("loading")
