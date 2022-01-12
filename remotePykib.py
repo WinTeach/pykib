@@ -224,13 +224,19 @@ class RemotePykib():
             if(tabId in self.pykibInstances[windowId]):
                 logging.debug("      Tab found. Moving/Resizing")
                 self.args.setZoomFactor = zoomFactor * 100
-                self.pykibInstances[windowId][tabId].web.setZoomFactor(zoomFactor)
-                self.pykibInstances[windowId][tabId].setGeometry(geometry[0] + self.args.screenOffsetLeft, geometry[1], geometry[2], geometry[3])
+                #self.pykibInstances[windowId][tabId].web.setZoomFactor(zoomFactor)
+                logging.debug("      1")
+                logging.debug(geometry)
+                logging.debug(self.args.screenOffsetLeft)
+                self.pykibInstances[windowId][tabId].setGeometry(int(geometry[0] + self.args.screenOffsetLeft), int(geometry[1]), int(geometry[2]), int(geometry[3]))
+                logging.debug("      2")
                 self.pykibInstances[windowId][tabId].show()
+                logging.debug("      3")
                 #self.pykibInstances[windowId][tabId].activateWindow()
             else:
                 logging.debug("      Tab not found.")
         except Exception as e:
+            logging.info(e)
             logging.info("  Error, WindowID not found")
 
     def changeTabWindow(self, tabId, oldWindowId, newWindowId):
