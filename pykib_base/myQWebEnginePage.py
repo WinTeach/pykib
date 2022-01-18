@@ -38,16 +38,24 @@ class myQWebEnginePage(QWebEnginePage):
 
     # downloadProgressChange = pyqtSignal(QWidget)
 
-    def __init__(self, argsparsed, currentdir, form):
+    def __init__(self, argsparsed, currentdir, form, createPrivateProfile = True):
         global args
         args = argsparsed
         global dirname
         dirname = currentdir
         self.form = form
 
-        #Create Empty profile
-        profile = QtWebEngineWidgets.QWebEngineProfile(self.form .web)
-        QtWebEngineWidgets.QWebEnginePage.__init__(self, profile, self.form.web)
+        #Create Empty (private) profile
+        if (createPrivateProfile):
+            logging.info("Create new private Profile")
+            profile = QtWebEngineWidgets.QWebEngineProfile(self.form.web)
+            QtWebEngineWidgets.QWebEnginePage.__init__(self, profile, self.form.web)
+            logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
+        else:
+            logging.info("Create no new Profile")
+            QtWebEngineWidgets.QWebEnginePage.__init__(self)
+            profile = self.profile()
+            logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
 
         self.authenticationRequired.connect(self.webAuthenticationRequired)
 
@@ -275,7 +283,13 @@ class myQWebEnginePage(QWebEnginePage):
 
     def loadPDFPage(self, pdfjsurl):
         global dirname
-        self.form.pdfpage = myQWebEnginePage(args, dirname, self.form)
+        #Creates a new myQWebEnginePage
+        #if args.singleProcess ist set, the old "profile" will be reused and no additional private profil will be created
+        # --single-process supports only one active profile on linux
+        if(args.singleProcess):
+            self.form.pdfpage = myQWebEnginePage(args, dirname, self.form, False)
+        else:
+            self.form.pdfpage = myQWebEnginePage(args, dirname, self.form, True)
 
         self.form.web.setPage(self.form.pdfpage)
         self.form.web.load(pdfjsurl)

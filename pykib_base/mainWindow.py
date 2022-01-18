@@ -69,7 +69,7 @@ class MainWindow(QWidget):
         self.web = myQWebEngineView(args, dirname)
         self.web.setObjectName("view")
 
-        self.page = myQWebEnginePage(args, dirname, self)
+        self.page = myQWebEnginePage(args, dirname, self, True)
         self.web.setPage(self.page)
 
         #Setup UI
