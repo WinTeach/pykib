@@ -1,3 +1,6 @@
-pyqtwebengine
+PyQt6
+PyQt6-Qt
+PyQt6-WebEngine
+PyQt6-Sip
 websockets
 psutil

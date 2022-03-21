@@ -1,3 +1,8 @@
+Python Based Kiosk Browser
+Python3 and packages from requirements.txt are neccessary to run this browser.
+
+Output from -h (--help):
+------------------------------------------------------------------------------
 usage: pykib [-h] [-c CONFIGFILE] [-u URL] [-p PROXY] [-ppo PROXYPORT]
              [-pu PROXYUSERNAME] [-pp PROXYPASSWORD] [-amc ADDMEMORYCAP] [-d]
              [-dh DOWNLOADHANDLE [DOWNLOADHANDLE ...]] [-dp DOWNLOADPATH]
@@ -5,19 +10,26 @@ usage: pykib [-h] [-c CONFIGFILE] [-u URL] [-p PROXY] [-ppo PROXYPORT]
              [-ald AUTOLOGONDOMAIN] [-aluid AUTOLOGONUSERID]
              [-alpid AUTOLOGONPASSWORDID] [-aldid AUTOLOGONDOMAINID] [-es]
              [-sl SPELLCHECKINGLANGUAGE] [-eps] [-prm]
-             [-sbl SETBROWSERLANGUAGE] [-scua] [-t TITLE] [-dt] [-rt] [-f]
-             [-ic] [-m] [-v] [-szf SETZOOMFACTOR] [--no-sandbox]
-             [--js-flags JS-FLAGS] [--single-process]
+             [-sbl SETBROWSERLANGUAGE] [-scua] [-t TITLE] [-dt]
+             [-san SYSTEMAPPLICATIONNAME] [-rt] [-f] [-aot] [-rwc] [-ic] [-m]
+             [-v] [-rdpv] [-isds] [-szf SETZOOMFACTOR] [--no-sandbox]
+             [--name NAME] [--disable-gpu] [--js-flags JS-FLAGS]
+             [--single-process]
              [--remote-debugging-port REMOTE-DEBUGGING-PORT] [-md] [-sa] [-sn]
-             [-g GEOMETRY [GEOMETRY ...]] [-a ADMINKEY]
-             [-wl WHITELIST [WHITELIST ...]] [-art AUTORELOADTIMER] [-ama]
-             [-awa] [-emd]
+             [-slpb] [-ecm] [-g GEOMETRY [GEOMETRY ...]] [-ng] [-a ADMINKEY]
+             [-wl WHITELIST [WHITELIST ...]] [-ll LOGLEVEL]
+             [-art AUTORELOADTIMER] [-ama] [-awa] [-ads] [-emd] [-sp]
+             [-spp STOREPIDPATH] [-rbd] [-rbp REMOTEBROWSERPORT]
+             [-rbmi REMOTEBROWSERMOVEINTERVAL]
+             [-rl REMOTINGLIST [REMOTINGLIST ...]] [-aubr]
+             [-rbst REMOTEBROWSERSESSIONTOKEN] [-utst]
+             [-tstp TEMPORARYSESSIONTOKENPATH]
              [URL]
 
 positional arguments:
   URL                   alternative to -u, --url
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -c CONFIGFILE, --configFile CONFIGFILE
                         Use this as configuration file - configured setting
@@ -73,7 +85,7 @@ optional arguments:
                         Enables spellchecking when set
   -sl SPELLCHECKINGLANGUAGE, --spellcheckinglanguage SPELLCHECKINGLANGUAGE
                         Defines the language for the spellcheck dictionary.
-                        Default de_DE
+                        Default en_US
   -eps, --enablepdfsupport
                         Enables the Option of viewing PDFs in the
                         BrowserWindow
@@ -91,38 +103,68 @@ optional arguments:
                         Defines the Window Title
   -dt, --dynamicTitle   When enabled the window title will display the current
                         websites title
+  -san SYSTEMAPPLICATIONNAME, --systemApplicationName SYSTEMAPPLICATIONNAME
+                        With this option the system application Name which
+                        will shown on pulse audio and some other apps can be
+                        overritten
   -rt, --removeTitleBar
                         Removes the window title bar
   -f, --fullscreen      Start browser in fullscreen mode
+  -aot, --alwaysOnTop   Makes the Browser Windows to Stay always on top of all
+                        other Windows
+  -rwc, --removeWindowControls
+                        This Option will remove the top Window Frame (with the
+                        Buttons Minimize/Maximize/Close)
   -ic, --ignoreCertificates
                         with this option HTTPS Warninigs will be ignored
   -m, --maximized       Start browser in a maximized window
   -v, --version         show program's version number and exit
+  -rdpv, --remoteDaemonProtocolVersion
+                        show program's version number and exit
+  -isds, --ignoreSystemDpiSettings
+                        When set, the Browser won't try to use the systems DPI
+                        Settings
   -szf SETZOOMFACTOR, --setZoomFactor SETZOOMFACTOR
                         Set Zoom Factor for Webpages in percent. Allowed
-                        Values between 25 and 500
+                        Values between 25 and 500. Allowed only in combination
+                        with ignoreSystemDpiSettings
   --no-sandbox          Allows to run as root
+  --name NAME           Used to set the WM_CLASS
+  --disable-gpu         Disables QTs GPU Support
   --js-flags JS-FLAGS   Allows setting js-flags
   --single-process      Allows to run the browser in one thread
   --remote-debugging-port REMOTE-DEBUGGING-PORT
-                        Allows to run as root
+                        Allows to debug with chromes webbrowser console
   -md, --memoryDebug    Show informations about the browser current memory
                         usage
   -sa, --showAddressBar
                         Shows a Address Bar when set
   -sn, --showNavigationButtons
                         Shows Navigation Buttons when set
+  -slpb, --showLoadingProgressBar
+                        Shows a Progress Bar on site loading.
+  -ecm, --enableContextMenu
+                        Enables a minimal context Menu
   -g GEOMETRY [GEOMETRY ...], --geometry GEOMETRY [GEOMETRY ...]
                         Set window geomety #left# #top# #width# #height#, when
                         using a multimonitor envireoment you can define the
                         monitor for fullscreen or maximized mode with #left#
                         #top#
+  -ng, --normalizeGeometry
+                        This Option makes the #left# geometry Parameter be
+                        calculated started from the primary screen (windows
+                        default behavior). Specially help full in multi
+                        monitor enviroments when using the remote damon
+                        function
   -a ADMINKEY, --enableAdminKey ADMINKEY
                         Enables the admin key SHIFT+STRG+ALT+A and defines a
                         Application which will be started when pushed
   -wl WHITELIST [WHITELIST ...], --whiteList WHITELIST [WHITELIST ...]
                         Enables the white List function. Only Urls which start
                         with elemtens from this list could be opend
+  -ll LOGLEVEL, --logLevel LOGLEVEL
+                        Setting the Level of Loggin. Allowed Values are ERROR,
+                        INFO, WARNING and DEBUG, Default is ERROR
   -art AUTORELOADTIMER, --autoReloadTimer AUTORELOADTIMER
                         Here you can configure a Timeout (in seconds) after
                         which the actives site gets reloaded
@@ -130,9 +172,46 @@ optional arguments:
                         Allows all Websites to use your Microfon
   -awa, --allowWebcamAccess
                         Allows all Websites to use your Webcam
+  -ads, --allowDesktopSharing
+                        Allows all Websites to share your screen and local
+                        computers audio
   -emd, --enableMouseDrag
                         Enable Single Click (Touch) website movement (js
                         injection)
+  -sp, --storePid       With this Option each start of the Rangee Browser the
+                        current Process ID will be written to the file
+                        .pykibLatestProcId in the users tmp path
+  -spp STOREPIDPATH, --storePidPath STOREPIDPATH
+                        Path where the temporary current process id should be
+                        stored on the system. Only works in combination with
+                        --storePid
+  -rbd, --remoteBrowserDaemon
+                        start a remote browser daemon
+  -rbp REMOTEBROWSERPORT, --remoteBrowserPort REMOTEBROWSERPORT
+                        Define the Port on which the remoteBrowserDaemon waits
+                        for incoming websocket connections
+  -rbmi REMOTEBROWSERMOVEINTERVAL, --remoteBrowserMoveInterval REMOTEBROWSERMOVEINTERVAL
+                        Define Interval in ms in which movement requests are
+                        send when moving the remote browser window - Default
+                        50ms
+  -rl REMOTINGLIST [REMOTINGLIST ...], --remotingList REMOTINGLIST [REMOTINGLIST ...]
+                        Defined a List of Urls which should be remoted - use *
+                        as wildcard
+  -aubr, --allowUserBasedRemoting
+                        When this option is set, the user on the remote side
+                        is allowed to define an own additional remoting list
+  -rbst REMOTEBROWSERSESSIONTOKEN, --remoteBrowserSessionToken REMOTEBROWSERSESSIONTOKEN
+                        Only Request which includes the configured Token will
+                        be accepted. This Option will be overritten if
+                        'useTemporarySessionToken' is set
+  -utst, --useTemporarySessionToken
+                        With this Option each start of the daemon a temporary
+                        session Token will be created
+  -tstp TEMPORARYSESSIONTOKENPATH, --temporarySessionTokenPath TEMPORARYSESSIONTOKENPATH
+                        Path where the temporary session token should be
+                        stored on the system. If not set the file
+                        .pykibTemporarySessionToken will be stored in the
+                        users tmp path
 
 example Usage:
         Save all .rdp files to /tmp/tmp.rdp and execute the script"/home/xfreerdp.sh /tmp/tmp.rdp", after that the file will be deleted:
