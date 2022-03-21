@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
 # Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
@@ -34,36 +34,35 @@ from pykib_base.memoryDebug import MemoryDebug
 from pykib_base.autoReload import AutoReload
 
 #
-from PyQt5.QtWebEngineWidgets import QWebEnginePage
-from PyQt5 import QtCore
-from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QKeyEvent
+from PyQt6.QtWebEngineCore import QWebEnginePage
+from PyQt6 import QtCore
+from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtGui import QKeyEvent, QGuiApplication
 
-from PyQt5.QtWidgets import QWidget
+from PyQt6.QtWidgets import QWidget
 
 class MainWindow(QWidget):
     fullScreenState = False
+    firstrun = True
 
     def __init__(self, transferargs, dirname, parent=None):
         print("running in: " + dirname)
         global args
         args = transferargs
-        global firstrun
-        firstrun = True
 
         if(args.remoteBrowserDaemon):
-            super(MainWindow, self).__init__(parent,Qt.Tool)
+            super(MainWindow, self).__init__(parent,Qt.WindowType.Tool)
         else:
             super(MainWindow, self).__init__(parent)
 
         if (args.alwaysOnTop and args.removeWindowControls or args.remoteBrowserDaemon):
-            self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.X11BypassWindowManagerHint)
+            self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
 
         elif(args.removeWindowControls):
-            self.setWindowFlags(Qt.FramelessWindowHint)
+            self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         elif(args.alwaysOnTop):
-            self.setWindowFlags(Qt.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WA_DeleteOnClose)
+            self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+        #self.setAttribute(Qt.WA_DeleteOnClose)
 
         #Create WebView and WebPage
         self.web = myQWebEngineView(args, dirname)
@@ -127,12 +126,12 @@ class MainWindow(QWidget):
                  self.fullScreenState = True
                  #Need to remove X11BypassWindowManagerHint because without showFullscreen not possible
                  if (args.remoteBrowserDaemon):
-                    self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
+                    self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint)
                  self.showFullScreen()
                  # Need set X11BypassWindowManagerHint again after going to Fullscreen
                  if (args.remoteBrowserDaemon):
                      self.setWindowFlags(
-                         Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.X11BypassWindowManagerHint)
+                         Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
                      self.show()
          request.accept()
 
@@ -150,24 +149,30 @@ class MainWindow(QWidget):
             logging.debug("Leave window")
 
     def onFeaturePermissionRequested(self, url, feature):
-        logging.info(
-            "Permission" + str(feature) + " requestet and...")
-        if (args.allowMicAccess and feature == QWebEnginePage.MediaAudioCapture):
-            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
-            return True
-        if (args.allowWebcamAccess and feature == QWebEnginePage.MediaVideoCapture):
-            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
-            return True
-        if (args.allowMicAccess and args.allowWebcamAccess and feature == QWebEnginePage.MediaAudioVideoCapture):
-            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
-            return True
-        if (args.allowDesktopSharing and (feature == QWebEnginePage.DesktopVideoCapture or feature == QWebEnginePage.DesktopAudioVideoCapture)):
-            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
-            return True
-
-        self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionDeniedByUser)
-        logging.info(
-            "denied")
+        print('hui');
+        #self.page.setFeaturePermission(QWebEnginePage.Feature.MediaAudioVideoCapture)
+        self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+        return True
+        # if (args.allowMicAccess and feature == QWebEnginePage.MediaAudioCapture):
+        #     self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
+        #     logging.info("Permission" + str(feature) + " granted")
+        #     return True
+        # if (args.allowWebcamAccess and feature == QWebEnginePage.MediaVideoCapture):
+        #     self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
+        #     logging.info("Permission" + str(feature) + " granted")
+        #     return True
+        # if (args.allowMicAccess and args.allowWebcamAccess and feature == QWebEnginePage.MediaAudioVideoCapture):
+        #     logging.info("Permission" + str(feature) + " granted")
+        #     self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
+        #     return True
+        # if (args.allowDesktopSharing and (feature == QWebEnginePage.DesktopVideoCapture or feature == QWebEnginePage.DesktopAudioVideoCapture)):
+        #     logging.info("Permission" + str(feature) + " granted")
+        #     self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
+        #     return True
+        #
+        # self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionDeniedByUser)
+        # logging.info(
+        #     "denied")
         return False
 
     # Handling crash of wegengineproc
@@ -248,7 +253,10 @@ class MainWindow(QWidget):
         # Setting Zoomfactor
         logging.debug("Progress Changed" + str(percent))
         self.web.setZoomFactor(args.setZoomFactor / 100)
-        global firstrun
+
+        #First Run ist set to false when a Website first time reachs 100% load state
+        if (percent == 100):
+            self.firstrun = False
 
         if (not args.showLoadingProgressBar):
             self.progress.hide()
@@ -260,8 +268,8 @@ class MainWindow(QWidget):
             if (percent == 100):
                 self.progress.hide()
 
-        if (args.enableAutoLogon and firstrun == True):
-            firstrun = False
+        if (args.enableAutoLogon and self.firstrun == True):
+            logging.info("Perform AutoLogin")
             # if(len(autologin) >= 2):
             username = args.autoLogonUser.replace("\\", "\\\\")
             password = args.autoLogonPassword.replace("\\", "\\\\")
@@ -306,11 +314,11 @@ class MainWindow(QWidget):
                                 }}
 
                                 //Wait until usernameID and PasswordID is loaded
-                                while(!document.getElementById(usernameID) && !document.getElementById(passwordID)) {{
-                                  await new Promise(r => setTimeout(r, 50));
+                                while(!document.getElementById(usernameID) && !document.getElementById(passwordID)) {{                                  
+                                  await new Promise(r => setTimeout(r, 50));                                                                  
                                 }}
-
-                                if('{domain}' != 'False' && domainID == 'False'){{ 
+                            
+                                if('{domain}' != 'False' && domainID == 'False'){{                                 
                                     document.getElementById(usernameID).value='{domain}\\{username}';
                                     document.getElementById(passwordID).value='{password}';
                                 }}else if('{domain}' != 'False' && domainID != 'False'){{                                
@@ -399,24 +407,26 @@ function mouseMove(e) {{
         # catch defined Shortcuts
 
     def keyPressEvent(self, event):
-        keyEvent = QKeyEvent(event)
-        shift = event.modifiers() & QtCore.Qt.ShiftModifier
-        ctrl = event.modifiers() & QtCore.Qt.ControlModifier
-        alt = event.modifiers() & QtCore.Qt.AltModifier
-        if (shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key_B):
+        keyEvent = event
+
+        shift = event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier
+        ctrl = event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier
+        alt = event.modifiers() & QtCore.Qt.KeyboardModifier.AltModifier
+
+        if (shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_B):
             logging.info("leave by shortcut")
             os._exit(0)
-        if ((keyEvent.key() == QtCore.Qt.Key_F5) or (ctrl and keyEvent.key() == QtCore.Qt.Key_R)):
+        if ((keyEvent.key() == QtCore.Qt.Key.Key_F5) or (ctrl and keyEvent.key() == QtCore.Qt.Key.Key_R)):
             self.web.reload()
             logging.info("Refresh")
-        if (args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key_A):
+        if (args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_A):
             logging.info("Hit admin key")
             subprocess.Popen([args.adminKey])
-        if (keyEvent.key() == QtCore.Qt.Key_F4):
+        if (keyEvent.key() == QtCore.Qt.Key.Key_F4 and alt):
             logging.info("Alt +F4 is disabled")
-        if (ctrl and keyEvent.key() == QtCore.Qt.Key_F):
+        if (ctrl and keyEvent.key() == QtCore.Qt.Key.Key_F):
             self.openSearchBar()
-        if (keyEvent.key() == QtCore.Qt.Key_Escape):
+        if (keyEvent.key() == QtCore.Qt.Key.Key_Escape):
             self.closeSearchBar()
 
     def closeEvent(self, event):

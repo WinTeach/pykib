@@ -28,8 +28,8 @@ import pykib_base.arguments
 import pykib_base.mainWindow
 import pykib_base.remotePykibWebsocketServer
 
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction
+from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 
 
 #Workaround for Problem with relative File Paths
@@ -105,7 +105,7 @@ class RemotePykib():
         # Add the menu to the tray
         tray.setContextMenu(menu)
 
-        sys.exit(self.app.exec_())
+        sys.exit(self.app.exec())
 
     def configureInstance(self, tabId, windowId, url):
         logging.info("RemotePykib:")
@@ -223,7 +223,8 @@ class RemotePykib():
         try:
             if(tabId in self.pykibInstances[windowId]):
                 logging.debug("      Tab found. Moving/Resizing")
-                self.args.setZoomFactor = zoomFactor * 100
+                if(self.args.ignoreSystemDpiSettings == True):
+                    self.args.setZoomFactor = zoomFactor * 100
                 #self.pykibInstances[windowId][tabId].web.setZoomFactor(zoomFactor)
                 logging.debug("      1")
                 logging.debug(geometry)

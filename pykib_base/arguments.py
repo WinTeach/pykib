@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
 # Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '2.0.17')
+__version_info__ = ('devel', '3.0.0')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.0.0.4'
@@ -80,8 +80,8 @@ def getArguments(dirname):
 
     parser.add_argument("-es", "--enablespellcheck", dest="enableSpellcheck", action='store_true',
                         help="Enables spellchecking when set")
-    parser.add_argument("-sl", "--spellcheckinglanguage", dest="spellCheckingLanguage", default="de_DE",
-                        help="Defines the language for the spellcheck dictionary. Default de_DE")
+    parser.add_argument("-sl", "--spellcheckinglanguage", dest="spellCheckingLanguage", default="en_US",
+                        help="Defines the language for the spellcheck dictionary. Default en_US")
     parser.add_argument("-eps", "--enablepdfsupport", dest="enablepdfsupport", action='store_true',
                         help="Enables the Option of viewing PDFs in the BrowserWindow")
     parser.add_argument("-prm", "--pdfreadermode", dest="pdfreadermode", action='store_true',
@@ -113,7 +113,8 @@ def getArguments(dirname):
     parser.add_argument("-v", "--version", action="version", version='%(prog)s {version}'.format(version=__version__))
     parser.add_argument("-rdpv", "--remoteDaemonProtocolVersion", action="version", version=__remote_daemon_protocol_version__)
 
-    parser.add_argument("-szf", "--setZoomFactor", dest="setZoomFactor", help="Set Zoom Factor for Webpages in percent. Allowed Values between 25 and 500", default=100, type=int)
+    parser.add_argument("-isds", "--ignoreSystemDpiSettings", dest="ignoreSystemDpiSettings", action='store_true', help="When set, the Browser won't try to use the systems DPI Settings")
+    parser.add_argument("-szf", "--setZoomFactor", dest="setZoomFactor", help="Set Zoom Factor for Webpages in percent. Allowed Values between 25 and 500. Allowed only in combination with ignoreSystemDpiSettings", default=100, type=int)
 
     parser.add_argument("--no-sandbox", dest="no-sandbox", action='store_true',
                         help="Allows to run as root")

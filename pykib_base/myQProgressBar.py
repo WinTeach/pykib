@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
 # Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtWidgets import QProgressBar
+from PyQt6.QtWidgets import QProgressBar
 
 LOADING = """
 QProgressBar{

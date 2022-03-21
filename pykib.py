@@ -25,6 +25,8 @@ import tempfile
 import atexit
 import pprint
 
+
+
 import pykib_base.ui
 import pykib_base.arguments
 import pykib_base.mainWindow
@@ -34,9 +36,10 @@ import faulthandler
 from remotePykib import RemotePykib
 
 #
-from PyQt5 import QtNetwork
-from PyQt5.Qt import PYQT_VERSION_STR
-from PyQt5.QtWidgets import QApplication
+from PyQt6 import QtNetwork
+from PyQt6.QtCore import PYQT_VERSION_STR, Qt
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QGuiApplication
 
 
 class Pykib():
@@ -56,7 +59,7 @@ class Pykib():
 
         self.app = QApplication(sys.argv)
 
-        #faulthandler.enable()
+        faulthandler.enable()
         self.startPykib()
 
     def startPykib(self):
@@ -111,7 +114,7 @@ class Pykib():
         # Set Proxy
         if (self.args.proxy):
             proxy = QtNetwork.QNetworkProxy()
-            proxy.setType(QtNetwork.QNetworkProxy.HttpProxy)
+            proxy.setType(QtNetwork.QNetworkProxy.ProxyType.HttpProxy)
             proxy.setHostName(self.args.proxy)
             proxy.setPort(self.args.proxyPort)
             if (self.args.proxyUsername and self.args.proxyPassword):
@@ -158,9 +161,14 @@ class Pykib():
                 print("The folder for storing the temporary Session Token (" + self.args.temporarySessionTokenPath + ") does not exists or is unreachable")
                 sys.exit()
 
-        # Check if a set Zoom Factor is inside the allowed area
-        if (self.args.setZoomFactor < 25 or self.args.setZoomFactor > 500):
-            print("The Zoom factor must be a value between 25 and 500")
+        # Ignoring Systems DPI Setting, allways ignored in remoteBrowserDaemon Mode
+        if(self.args.ignoreSystemDpiSettings):
+            QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.Round)
+            if (self.args.setZoomFactor < 25 or self.args.setZoomFactor > 500):
+                print("The Zoom factor must be a value between 25 and 500")
+                sys.exit()
+        elif(self.args.setZoomFactor != 100):
+            print("A Zoom factor can only be defined when --ignoreSystemDpiSettings is set ")
             sys.exit()
 
         # Calculate Screen Offset when normalizeGeometry is set
@@ -219,50 +227,53 @@ class Pykib():
             view.show()
             view.setGeometry(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1], self.args.geometry[2], self.args.geometry[3])
 
-        sys.exit(self.app.exec_())
+        sys.exit(self.app.exec())
 
     def exitCleanup(self):
-        logging.info("Closing Pykib, doing cleanup:")
+        try:
+            logging.info("Closing Pykib, doing cleanup:")
 
-        #Delete Session Token File if set
-        if (self.args.useTemporarySessionToken):
-            logging.info("  Cleanup session token file")
-            token_path = tempfile.gettempdir()
-            if (self.args.temporarySessionTokenPath):
-                token_path = self.args.temporarySessionTokenPath
-            token_path = token_path.replace("\\", "/") + "/.pykibTemporarySessionToken"
+            #Delete Session Token File if set
+            if (self.args.useTemporarySessionToken):
+                logging.info("  Cleanup session token file")
+                token_path = tempfile.gettempdir()
+                if (self.args.temporarySessionTokenPath):
+                    token_path = self.args.temporarySessionTokenPath
+                token_path = token_path.replace("\\", "/") + "/.pykibTemporarySessionToken"
 
-            try:
-                stored_token = open(token_path, "r").read()
-                if(stored_token == self.args.remoteBrowserSessionToken):
+                try:
+                    stored_token = open(token_path, "r").read()
+                    if(stored_token == self.args.remoteBrowserSessionToken):
 
-                    logging.info("  Removing token file at "+token_path)
-                    os.remove(token_path)
-                else:
-                    logging.info("  Session token in file "+token_path+" is not the same like the current used - doing nothing")
-            except Exception as e:
-                logging.info("No Stored Session Token found at "+token_path)
-                logging.warning(e)
+                        logging.info("  Removing token file at "+token_path)
+                        os.remove(token_path)
+                    else:
+                        logging.info("  Session token in file "+token_path+" is not the same like the current used - doing nothing")
+                except Exception as e:
+                    logging.info("No Stored Session Token found at "+token_path)
+                    logging.warning(e)
 
-        if (self.args.storePid):
-            logging.info("  Cleanup process id file")
-            pid_path = tempfile.gettempdir()
-            if (self.args.storePidPath):
-                pid_path = self.args.storePidPath
-            pid_path = pid_path.replace("\\", "/") + "/.pykibLatestProcId"
+            if (self.args.storePid):
+                logging.info("  Cleanup process id file")
+                pid_path = tempfile.gettempdir()
+                if (self.args.storePidPath):
+                    pid_path = self.args.storePidPath
+                pid_path = pid_path.replace("\\", "/") + "/.pykibLatestProcId"
 
-            try:
-                stored_pid = open(pid_path, "r").read()
-                if(stored_pid == str(os.getpid())):
-                    logging.info("  Removing pocess id file at "+pid_path)
-                    os.remove(pid_path)
-                else:
-                    logging.info("  Stored pid id in file "+pid_path+" is not the same like the current process id")
-            except Exception as e:
-                logging.info("No process id file found at "+pid_path)
-                logging.warning(e)
+                try:
+                    stored_pid = open(pid_path, "r").read()
+                    if(stored_pid == str(os.getpid())):
+                        logging.info("  Removing pocess id file at "+pid_path)
+                        os.remove(pid_path)
+                    else:
+                        logging.info("  Stored pid id in file "+pid_path+" is not the same like the current process id")
+                except Exception as e:
+                    logging.info("No process id file found at "+pid_path)
+                    logging.warning(e)
 
-        logging.info("Cleanup ended... goodbye")
+            logging.info("Cleanup ended... goodbye")
+        except:
+            logging.info("Nothing to do... goodbye")
 
 
 

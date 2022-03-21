@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
 # Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
@@ -19,8 +19,8 @@
 
 import time
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSignal
+from PyQt6 import QtCore
+from PyQt6.QtCore import pyqtSignal
 
 class AutoReload(QtCore.QThread):
     autoRefresh = pyqtSignal()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
 # Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
@@ -25,12 +25,12 @@ import logging
 
 from functools import partial
 
-from PyQt5.QtNetwork import QAuthenticator
-from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
-from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtCore import QSize, QUrl, Qt
+from PyQt6.QtNetwork import QAuthenticator
+from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
+from PyQt6 import QtCore, QtWebEngineWidgets, QtWidgets, QtWebEngineCore
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QFileDialog
+from PyQt6.QtCore import QSize, QUrl, Qt
 
 class myQWebEnginePage(QWebEnginePage):
     args = 0
@@ -44,34 +44,37 @@ class myQWebEnginePage(QWebEnginePage):
         global dirname
         dirname = currentdir
         self.form = form
-
         #Create Empty (private) profile
         if (createPrivateProfile):
             logging.info("Create new private Profile")
-            profile = QtWebEngineWidgets.QWebEngineProfile(self.form.web)
-            QtWebEngineWidgets.QWebEnginePage.__init__(self, profile, self.form.web)
+            profile = QtWebEngineCore.QWebEngineProfile(self.form.web)
+            QtWebEngineCore.QWebEnginePage.__init__(self, profile, self.form.web)
             logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
         else:
             logging.info("Create no new Profile")
-            QtWebEngineWidgets.QWebEnginePage.__init__(self)
+            QtWebEngineCore.QWebEnginePage.__init__(self)
             profile = self.profile()
             logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
 
         self.authenticationRequired.connect(self.webAuthenticationRequired)
 
+        self.newWindowRequested.connect(self.openInSameWindow)
+        self.certificateError.connect(self.validateCertificateError)
+
         #Modify Profile
         #*********************************************************************
 
         # Do not persist Cookies - Should be Default
-        profile.setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
+        self.profile().setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.NoPersistentCookies)
 
         #Connect to Download Handler
-        profile.downloadRequested.connect(self.on_downloadRequested)
+        self.profile().downloadRequested.connect(self.on_downloadRequested)
 
         # Enable Spell Checking
         if (args.enableSpellcheck):
+            #Seems not to work with current Version - Further investigation neccessary
+            logging.info("Enable spell checking language: " + args.spellCheckingLanguage)
             self.profile().setSpellCheckEnabled(True)
-            self.profile().setSpellCheckLanguages({args.spellCheckingLanguage})
 
         if (args.setBrowserLanguage):
             self.profile().setHttpAcceptLanguage(args.setBrowserLanguage)
@@ -89,32 +92,17 @@ class myQWebEnginePage(QWebEnginePage):
         # *********************************************************************
 
         #Allow Fullscreen
-        self.settings().setAttribute(QWebEngineSettings.FullScreenSupportEnabled, True)
+        self.settings().setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True)
 
         if (args.allowDesktopSharing):
-            self.settings().setAttribute(QWebEngineSettings.ScreenCaptureEnabled, True)
+            self.settings().setAttribute(QWebEngineSettings.WebAttribute.ScreenCaptureEnabled, True)
 
         if (args.enablepdfsupport):
-            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
-            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, 1)
+            self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, 1)
+            self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessFileUrls, 1)
 
-
-    def createWindow(self, _type):
-        page = QWebEnginePage(self)
-        if (args.enablepdfsupport):
-            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
-
-        page.urlChanged.connect(self.openInSameWindow)
-        return page;
-
-    @QtCore.pyqtSlot(QtCore.QUrl)
-    def openInSameWindow(self, url):
-        page = self.sender()
-        self.form.web.load(url.toString())
-
-        page.deleteLater()
-
-        # Overrite the default Upload Dialog with a smaller, more limited one
+    def openInSameWindow(self, newWindowsRequest):
+        self.form.web.load(newWindowsRequest.requestedUrl().toString())
 
     def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):
         # Format acceptedMimeTypes
@@ -164,18 +152,19 @@ class myQWebEnginePage(QWebEnginePage):
         pass
 
     # Certificate Error handling
-    def certificateError(self, error):
+    def validateCertificateError(self, error):
         if (args.ignoreCertificates):
             print("Certificate Error")
+            error.acceptCertificate()
             return True
         else:
             return False
 
     # Download Handle
-    @QtCore.pyqtSlot(QtWebEngineWidgets.QWebEngineDownloadItem)
+    @QtCore.pyqtSlot(QtWebEngineCore.QWebEngineDownloadRequest)
     def on_downloadRequested(self, download):
         downloadHandleHit = False
-        old_path = download.path()
+        old_path = download.url().path()
         suffix = QtCore.QFileInfo(old_path).suffix()
         # If PDF Support is enabled
         if (args.enablepdfsupport and suffix == 'pdf' and not download.url().toString().startswith(
@@ -220,11 +209,11 @@ class myQWebEnginePage(QWebEnginePage):
                         filepath = os.path.expandvars(handle[2]) + "\\tmp." + suffix
                     else:
                         filepath = handle[2] + "/tmp." + suffix
-                    download.setPath(filepath)
+                    download.setDownloadFileName(filepath)
                     download.accept()
-                    download.finished.connect(partial(self.runProcess, handle, filepath, download))
+                    download.isFinishedChanged.connect(partial(self.runProcess, handle, filepath, download))
 
-        if (args.download and not downloadHandleHit and download.state() == 0):
+        if (args.download and not downloadHandleHit and download.state() == QtWebEngineCore.QWebEngineDownloadRequest.DownloadState.DownloadRequested):
             print("File Download Request " + os.path.basename(old_path))
             # path, _ = QtWidgets.QFileDialog.getSaveFileName(self.view(), "Save File", old_path, "*."+suffix)
             path = ""
@@ -232,38 +221,36 @@ class myQWebEnginePage(QWebEnginePage):
             downloadDialog = QFileDialog()
 
             if (args.alwaysOnTop or args.remoteBrowserDaemon):
-                downloadDialog.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.X11BypassWindowManagerHint)
+                downloadDialog.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.X11BypassWindowManagerHint)
 
             if (args.downloadPath):
                 downloadDialog.setDirectory(args.downloadPath)
                 downloadDialog.selectFile(os.path.basename(old_path))
             else:
-                downloadDialog.selectFile(old_path)
+                downloadDialog.selectFile(os.path.basename(old_path))
 
-            downloadDialog.setFileMode(QFileDialog.AnyFile)
-            downloadDialog.setAcceptMode(QFileDialog.AcceptSave)
+            downloadDialog.setFileMode(QFileDialog.FileMode.AnyFile)
+            downloadDialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
             downloadDialog.setNameFilters(["*." + suffix])
 
-            options = QFileDialog.Options()
-            options |= QFileDialog.DontUseNativeDialog
-            downloadDialog.setOptions(options)
-
-            if downloadDialog.exec_():
+            downloadDialog.setOption(QFileDialog.Option.DontUseNativeDialog)
+            if downloadDialog.exec():
                 path = downloadDialog.selectedFiles()[0]
 
             if path:
-                download.setPath(path)
+
+                download.setDownloadFileName(path)
                 download.accept()
-                download.downloadProgress.connect(self.onDownloadProgressChange)
-                download.finished.connect(self.onDownloadFinished)
+                download.receivedBytesChanged.connect(partial(self.onDownloadReceivedBytesChanged, download))
+                download.isFinishedChanged.connect(self.onDownloadIsFinished)
             else:
                 download.cancel()
             return True
 
-    def onDownloadProgressChange(self, bytesReceived, bytesTotal):
-        self.form.downloadProgressChanged(bytesReceived, bytesTotal)
+    def onDownloadReceivedBytesChanged(self, downloadRequest):
+        self.form.downloadProgressChanged(downloadRequest.receivedBytes(), downloadRequest.totalBytes())
 
-    def onDownloadFinished(self):
+    def onDownloadIsFinished(self):
         self.form.downloadFinished()
         print("Download finished")
 
@@ -347,7 +334,7 @@ class myQWebEnginePage(QWebEnginePage):
             return False;
 
         msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Warning)
+        msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
         msg.setText("Site " + currentUrl + " is not white-listed")
         msg.setWindowTitle("Whitelist Error")
 
@@ -356,22 +343,22 @@ class myQWebEnginePage(QWebEnginePage):
         backButton.setIconSize(QSize(24, 24));
         backButton.setObjectName("backButton")
 
-        msg.addButton(backButton, QtWidgets.QMessageBox.NoRole)
+        msg.addButton(backButton, QtWidgets.QMessageBox.ButtonRole.NoRole)
 
         homeButton = QtWidgets.QPushButton("Go Home")
         homeButton.setIcon(QIcon(os.path.join(dirname, 'icons/home.png')));
         homeButton.setIconSize(QSize(24, 24));
         homeButton.setObjectName("homeButton")
 
-        msg.addButton(homeButton, QtWidgets.QMessageBox.NoRole)
+        msg.addButton(homeButton, QtWidgets.QMessageBox.ButtonRole.NoRole)
 
         msg.show()
-        retval = msg.exec_()
+        retval = msg.exec()
 
         if (retval == 0):
-            self.view().stop()
+            self.form.web.stop()
         else:
-            self.view().load(args.url)
+            self.form.web.load(args.url)
 
         return False
 

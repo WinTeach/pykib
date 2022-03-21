@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
 # Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
@@ -19,9 +19,9 @@
 
 import os
 
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtGui import QIcon, QFont
-from PyQt5.QtCore import QSize
+from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtGui import QIcon, QFont
+from PyQt6.QtCore import QSize, Qt
 
 
 from pykib_base.myQWebEngineView import myQWebEngineView
@@ -111,7 +111,7 @@ def setupUi(form, args, dirname):
         form.pageGridLayout.addWidget(form.navbar, 0, 0, 1, 0)
     
     if(args.removeTitleBar):
-            form.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+            form.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
     elif(args.dynamicTitle):
         form.web.titleChanged.connect(form.adjustTitle)
         form.web.iconUrlChanged.connect(form.adjustTitleIcon)
@@ -123,7 +123,8 @@ def setupUi(form, args, dirname):
         form.memoryCapCloseBar.setTextVisible(True)
         form.memoryCapCloseBar.setFixedHeight(40)
 
-        form.memoryCapCloseBar.setLayoutDirection(1)
+
+        form.memoryCapCloseBar.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         alertFont = QFont("arial", 16)
         form.memoryCapCloseBar.setFont(alertFont)
         form.memoryCapCloseBar.changeStyle("memorycap")
@@ -220,7 +221,7 @@ def setupUi(form, args, dirname):
     form.searchBarGridLayout.addWidget(form.searchUp, 0, 1, 1, 1)
 
     #Add Spacer Item
-    spacerItem = QtWidgets.QSpacerItem(24, 24, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+    spacerItem = QtWidgets.QSpacerItem(24, 24, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
     form.searchBarGridLayout.addItem(spacerItem, 0, 3, 1, 1)
 
     #Add Close Button
@@ -235,7 +236,7 @@ def setupUi(form, args, dirname):
     # ###########################################################
     #Context Menu
     if(not args.enableContextMenu):
-        form.web.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
+        form.web.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
 
     # ###########################################################
 

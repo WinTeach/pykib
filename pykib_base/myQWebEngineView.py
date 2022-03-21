@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
 # Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
@@ -17,12 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtCore import QUrl
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtCore import QUrl
+from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QAction
 
 import os
+import logging
 
 class myQWebEngineView(QWebEngineView):
     
@@ -40,11 +41,10 @@ class myQWebEngineView(QWebEngineView):
             url = args.url
         if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file://')):
             url = 'http://' + url
-        
         self.setUrl(QUrl(url))
 
     def contextMenuEvent(self, event):
-        self.menu = self.page().createStandardContextMenu()
+        self.menu = self.createStandardContextMenu()
 
         #Remove Menu Entryies by Id:
         #11 -> Paste and match Style
