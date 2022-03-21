@@ -1,0 +1,3 @@
+pyqtwebengine
+websockets
+psutil

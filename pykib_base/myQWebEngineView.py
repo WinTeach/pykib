@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 # pykib - A PyQt5 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2018 Tobias Wintrich
+# Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -17,20 +18,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5 import QtCore
 from PyQt5.QtCore import QUrl
-from PyQt5.QtWidgets import QTextEdit
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction
 
+import os
 
 class myQWebEngineView(QWebEngineView):
     
 
-    def __init__(self, argsparsed):
+    def __init__(self, argsparsed, dirnameparsed):
         global args
         args = argsparsed
-        self.browser = QWebEngineView.__init__(self)        
-        self.setContextMenuPolicy( QtCore.Qt.NoContextMenu )
-        
+
+        global dirname
+        dirname = dirnameparsed
+        self.browser = QWebEngineView.__init__(self)
+
     def load(self,url):
         if not url:
             url = args.url
@@ -38,3 +42,35 @@ class myQWebEngineView(QWebEngineView):
             url = 'http://' + url
         
         self.setUrl(QUrl(url))
+
+    def contextMenuEvent(self, event):
+        self.menu = self.page().createStandardContextMenu()
+
+        #Remove Menu Entryies by Id:
+        #11 -> Paste and match Style
+        #13 -> Open in New Tab
+        #14 -> Open in New Window
+        #16 -> Save Link
+        #30 -> View Source
+        #32 -> Save Page
+        unwantedMenuEntries = {11, 16, 13, 14, 32, 30}
+
+        for menuAction in self.menu.actions():
+            #Remove Item From Default Menu
+            #View Source
+            if(menuAction.data() in unwantedMenuEntries):
+                self.menu.removeAction(menuAction)
+
+        # Adding Close Button (for remoteDameonMode)
+        if(args.remoteBrowserDaemon):
+            closeButton = QAction(QIcon(os.path.join(dirname, 'icons/close.png')), 'Close Remote Tab', self)
+            closeButton.setStatusTip('Close Remote Browser Tab')
+            closeButton.triggered.connect(self.closeByMenu)
+            self.menu.addSeparator()
+            self.menu.addAction(closeButton)
+
+        self.menu.popup(event.globalPos())
+
+    def closeByMenu(self):
+        self.close()
+        self.parent().close()

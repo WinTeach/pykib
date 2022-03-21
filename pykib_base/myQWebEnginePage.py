@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 # pykib - A PyQt5 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2018 Tobias Wintrich
+# Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -14,12 +15,13 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import subprocess
 import os
 import urllib.parse
 import tempfile
+import logging
 
 from functools import partial
 
@@ -27,12 +29,8 @@ from PyQt5.QtNetwork import QAuthenticator
 from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
-from PyQt5.QtCore import QSize, QUrl, QFile, QMimeType, pyqtSignal
-from pykib_base.myQWebEngineView import myQWebEngineView
-
-from pprint import pprint
-
+from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtCore import QSize, QUrl, Qt
 
 class myQWebEnginePage(QWebEnginePage):
     args = 0
@@ -40,24 +38,43 @@ class myQWebEnginePage(QWebEnginePage):
 
     # downloadProgressChange = pyqtSignal(QWidget)
 
-    def __init__(self, argsparsed, currentdir, form):
+    def __init__(self, argsparsed, currentdir, form, createPrivateProfile = True):
         global args
         args = argsparsed
         global dirname
         dirname = currentdir
         self.form = form
-        QtWebEngineWidgets.QWebEnginePage.__init__(self)
 
-        self.profile().downloadRequested.connect(self.on_downloadRequested)
+        #Create Empty (private) profile
+        if (createPrivateProfile):
+            logging.info("Create new private Profile")
+            profile = QtWebEngineWidgets.QWebEngineProfile(self.form.web)
+            QtWebEngineWidgets.QWebEnginePage.__init__(self, profile, self.form.web)
+            logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
+        else:
+            logging.info("Create no new Profile")
+            QtWebEngineWidgets.QWebEnginePage.__init__(self)
+            profile = self.profile()
+            logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
+
+        self.authenticationRequired.connect(self.webAuthenticationRequired)
+
+        #Modify Profile
+        #*********************************************************************
+
+        # Do not persist Cookies - Should be Default
+        profile.setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
+
+        #Connect to Download Handler
+        profile.downloadRequested.connect(self.on_downloadRequested)
+
+        # Enable Spell Checking
+        if (args.enableSpellcheck):
+            self.profile().setSpellCheckEnabled(True)
+            self.profile().setSpellCheckLanguages({args.spellCheckingLanguage})
+
         if (args.setBrowserLanguage):
             self.profile().setHttpAcceptLanguage(args.setBrowserLanguage)
-
-        # Do not persist Cookies
-        self.profile().setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
-
-        if (args.enablepdfsupport):
-            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
-            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, 1)
 
         # When Autologin is enabled, se Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces which will otherwise show the Client detection which fails.
         if (args.enableAutoLogon or args.setCitrixUserAgent):
@@ -68,14 +85,19 @@ class myQWebEnginePage(QWebEnginePage):
                 self.profile().setHttpUserAgent(
                     "Mozilla/5.0 (Windows; U; Windows NT 6.1; " + args.setBrowserLanguage + ") AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
 
-        # Clears the Cache on Load
-        self.profile().clearHttpCache();
+        # Modify Settings
+        # *********************************************************************
 
-        self.authenticationRequired.connect(self.webAuthenticationRequired)
+        #Allow Fullscreen
+        self.settings().setAttribute(QWebEngineSettings.FullScreenSupportEnabled, True)
 
-        if (args.enableSpellcheck):
-            self.profile().setSpellCheckEnabled(True)
-            self.profile().setSpellCheckLanguages({args.spellCheckingLanguage})
+        if (args.allowDesktopSharing):
+            self.settings().setAttribute(QWebEngineSettings.ScreenCaptureEnabled, True)
+
+        if (args.enablepdfsupport):
+            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, 1)
+            self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, 1)
+
 
     def createWindow(self, _type):
         page = QWebEnginePage(self)
@@ -191,13 +213,11 @@ class myQWebEnginePage(QWebEnginePage):
             # If Download Handle is hit
         if (args.downloadHandle):
             print("Download Handle Hit " + os.path.basename(old_path))
-            for x in args.downloadHandle:
-                handle = x.split("|")
+            for handle in args.downloadHandle:
                 if (suffix == handle[0]):
                     downloadHandleHit = True
                     if os.name == 'nt':
-                        print(handle[1])
-                        filepath = handle[2] + "\\tmp." + suffix
+                        filepath = os.path.expandvars(handle[2]) + "\\tmp." + suffix
                     else:
                         filepath = handle[2] + "/tmp." + suffix
                     download.setPath(filepath)
@@ -210,6 +230,9 @@ class myQWebEnginePage(QWebEnginePage):
             path = ""
             suffix = QtCore.QFileInfo(old_path).suffix()
             downloadDialog = QFileDialog()
+
+            if (args.alwaysOnTop or args.remoteBrowserDaemon):
+                downloadDialog.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.X11BypassWindowManagerHint)
 
             if (args.downloadPath):
                 downloadDialog.setDirectory(args.downloadPath)
@@ -260,7 +283,13 @@ class myQWebEnginePage(QWebEnginePage):
 
     def loadPDFPage(self, pdfjsurl):
         global dirname
-        self.form.pdfpage = myQWebEnginePage(args, dirname, self.form)
+        #Creates a new myQWebEnginePage
+        #if args.singleProcess ist set, the old "profile" will be reused and no additional private profil will be created
+        # --single-process supports only one active profile on linux
+        if(args.singleProcess):
+            self.form.pdfpage = myQWebEnginePage(args, dirname, self.form, False)
+        else:
+            self.form.pdfpage = myQWebEnginePage(args, dirname, self.form, True)
 
         self.form.web.setPage(self.form.pdfpage)
         self.form.web.load(pdfjsurl)
@@ -281,22 +310,6 @@ class myQWebEnginePage(QWebEnginePage):
         except:
             pass
         self.form.progress.disabled = False
-
-    def openSearchBar(self):
-        self.form.searchBar.show()
-        self.form.searchText.setFocus()
-        self.form.searchText.setSelection(0, self.form.searchText.maxLength())
-
-
-    def closeSearchBar(self):
-        self.form.searchBar.hide()
-
-    def searchOnPage(self):
-        signalFrom = self.sender().objectName()
-        if(signalFrom == "searchUpButton"):
-            self.findText(self.form.searchText.text(), QWebEnginePage.FindBackward)
-        else:
-            self.findText(self.form.searchText.text())
 
     def pdfDownloadAction(self):
         # Remove Extension From URL
@@ -327,7 +340,11 @@ class myQWebEnginePage(QWebEnginePage):
                 else:
                     self.closePDFPage()
 
-        print("Site " + currentUrl + " is not whitelisted")
+        logging.info("Site " + currentUrl + " is not whitelisted")
+
+        #If Remote Browser is used we will show no warning an won't open the page
+        if (args.remoteBrowserDaemon):
+            return False;
 
         msg = QtWidgets.QMessageBox()
         msg.setIcon(QtWidgets.QMessageBox.Warning)
@@ -359,7 +376,7 @@ class myQWebEnginePage(QWebEnginePage):
         return False
 
     def webAuthenticationRequired(self, uri: QUrl, cred: QAuthenticator):
-        print("Authentication Reqeust from " + uri.toString())
+        print("Authentication Request from " + uri.toString())
         if(args.enableAutoLogon):
             print("Using autologin credentials")
             cred.setUser(args.autoLogonUser)
