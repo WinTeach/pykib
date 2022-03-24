@@ -225,11 +225,14 @@ class RemotePykib():
                 logging.debug("      Tab found. Moving/Resizing")
                 if(self.args.ignoreSystemDpiSettings == True):
                     self.args.setZoomFactor = zoomFactor * 100
+                    dpi = 1
+                else:
+                    dpi = self.pykibInstances[windowId][tabId].devicePixelRatio()
                 #self.pykibInstances[windowId][tabId].web.setZoomFactor(zoomFactor)
                 logging.debug("      1")
                 logging.debug(geometry)
                 logging.debug(self.args.screenOffsetLeft)
-                self.pykibInstances[windowId][tabId].setGeometry(int(geometry[0] + self.args.screenOffsetLeft), int(geometry[1]), int(geometry[2]), int(geometry[3]))
+                self.pykibInstances[windowId][tabId].setGeometry(int(geometry[0] / dpi + self.args.screenOffsetLeft), int(geometry[1] / dpi), int(geometry[2] / dpi), int(geometry[3] / dpi))
                 logging.debug("      2")
                 self.pykibInstances[windowId][tabId].show()
                 logging.debug("      3")

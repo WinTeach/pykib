@@ -59,13 +59,12 @@ class Pykib():
 
         self.app = QApplication(sys.argv)
 
-        faulthandler.enable()
+        #faulthandler.enable()
         self.startPykib()
 
     def startPykib(self):
         # Register Sigterm command
         signal.signal(signal.SIGINT, sigint_handler)
-
 
         # ----------------------------------------------------------
         # Eval for all relevant Arguments
@@ -163,7 +162,7 @@ class Pykib():
 
         # Ignoring Systems DPI Setting, allways ignored in remoteBrowserDaemon Mode
         if(self.args.ignoreSystemDpiSettings):
-            QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.Round)
+            QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.Floor)
             if (self.args.setZoomFactor < 25 or self.args.setZoomFactor > 500):
                 print("The Zoom factor must be a value between 25 and 500")
                 sys.exit()
