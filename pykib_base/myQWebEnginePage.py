@@ -48,18 +48,17 @@ class myQWebEnginePage(QWebEnginePage):
 
         # Profile Handling
         if (args.persistentProfilePath):
-            logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
-
             profile = QWebEngineProfile('/', self.form.web)
-            profile.setPersistentStoragePath(args.persistentProfilePath)
-
-            # Set Cache to Memory
-            profile.setHttpCacheType(QWebEngineProfile.HttpCacheType.MemoryHttpCache)
-            # Do persist Cookies
-            profile.setPersistentCookiesPolicy(QWebEngineProfile.AllowPersistentCookies)
-
             QWebEnginePage.__init__(self, profile)
-            logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
+
+            logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
+            self.profile().setPersistentStoragePath(args.persistentProfilePath)
+            # Set Cache to Memory
+            self.profile().setHttpCacheType(QWebEngineProfile.HttpCacheType.MemoryHttpCache)
+            # Do persist Cookies
+            self.profile().setPersistentCookiesPolicy(QWebEngineProfile.AllowPersistentCookies)
+
+            logging.info("Is profile in private mode:" + str(self.profile().isOffTheRecord()))
 
         elif(createPrivateProfile):
             # Create Empty (private) profile
@@ -79,7 +78,7 @@ class myQWebEnginePage(QWebEnginePage):
         #*********************************************************************
 
         #Connect to Download Handler
-        profile.downloadRequested.connect(self.on_downloadRequested)
+        self.profile().downloadRequested.connect(self.on_downloadRequested)
 
         # Enable Spell Checking
         if (args.enableSpellcheck):
