@@ -45,8 +45,23 @@ class myQWebEnginePage(QWebEnginePage):
         dirname = currentdir
         self.form = form
 
-        #Create Empty (private) profile
-        if (createPrivateProfile):
+
+        # Profile Hanlding
+        if (args.persistentProfilePath):
+            logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
+
+            profile = QWebEngineProfile('/', self.form.web)
+            profile.setPersistentStoragePath(args.persistentProfilePath + '/Cache')
+
+            # Set Cache to Memory
+            profile.setHttpCacheType(QWebEngineProfile.HttpCacheType.MemoryHttpCache)
+            # Do persist Cookies
+            profile.setPersistentCookiesPolicy(QWebEngineProfile.AllowPersistentCookies)
+
+            QWebEnginePage.__init__(self, profile, self.form.web)
+            logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
+        elif (createPrivateProfile):
+            # Create Empty (private) profile
             logging.info("Create new private Profile")
             profile = QtWebEngineWidgets.QWebEngineProfile(self.form.web)
             QtWebEngineWidgets.QWebEnginePage.__init__(self, profile, self.form.web)
@@ -61,9 +76,6 @@ class myQWebEnginePage(QWebEnginePage):
 
         #Modify Profile
         #*********************************************************************
-
-        # Do not persist Cookies - Should be Default
-        profile.setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
 
         #Connect to Download Handler
         profile.downloadRequested.connect(self.on_downloadRequested)

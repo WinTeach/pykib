@@ -150,18 +150,21 @@ class MainWindow(QWidget):
             logging.debug("Leave window")
 
     def onFeaturePermissionRequested(self, url, feature):
-        logging.info(
-            "Permission" + str(feature) + " requestet and...")
+
         if (args.allowMicAccess and feature == QWebEnginePage.MediaAudioCapture):
             self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
+            logging.info("Permission" + str(feature) + " granted")
             return True
         if (args.allowWebcamAccess and feature == QWebEnginePage.MediaVideoCapture):
             self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
+            logging.info("Permission" + str(feature) + " granted")
             return True
         if (args.allowMicAccess and args.allowWebcamAccess and feature == QWebEnginePage.MediaAudioVideoCapture):
+            logging.info("Permission" + str(feature) + " granted")
             self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
             return True
         if (args.allowDesktopSharing and (feature == QWebEnginePage.DesktopVideoCapture or feature == QWebEnginePage.DesktopAudioVideoCapture)):
+            logging.info("Permission" + str(feature) + " granted")
             self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
             return True
 
