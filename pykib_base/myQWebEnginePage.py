@@ -51,7 +51,7 @@ class myQWebEnginePage(QWebEnginePage):
             logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
 
             profile = QWebEngineProfile('/', self.form.web)
-            profile.setPersistentStoragePath(args.persistentProfilePath + '/Cache')
+            profile.setPersistentStoragePath(args.persistentProfilePath)
 
             # Set Cache to Memory
             profile.setHttpCacheType(QWebEngineProfile.HttpCacheType.MemoryHttpCache)
