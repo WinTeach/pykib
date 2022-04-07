@@ -55,13 +55,7 @@ class MainWindow(QWidget):
         else:
             super(MainWindow, self).__init__(parent)
 
-        if (args.alwaysOnTop and args.removeWindowControls or args.remoteBrowserDaemon):
-            self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
-
-        elif(args.removeWindowControls):
-            self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        elif(args.alwaysOnTop):
-            self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+        self.applyWindowHints()
         #self.setAttribute(Qt.WA_DeleteOnClose)
 
         #Create WebView and WebPage
@@ -108,6 +102,14 @@ class MainWindow(QWidget):
         #Start with url
         self.web.load(args.url)
 
+    def applyWindowHints(self):
+        if (args.alwaysOnTop and args.removeWindowControls or args.remoteBrowserDaemon):
+            self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
+        elif(args.removeWindowControls):
+            self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        elif(args.alwaysOnTop):
+            self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+
     def toggleFullscreen(self, request):
          logging.info("Fullscreen Request received")
          logging.info(self.fullScreenState)
@@ -116,11 +118,18 @@ class MainWindow(QWidget):
                 logging.info("leave Fullscreen")
                 self.fullScreenState = False
                 self.showNormal()
+                self.applyWindowHints()
                 logging.info("Restore previous Windows Position")
-                self.setGeometry(self.oldgeometry)
+                if(self.oldgeometry == 'maximized'):
+                    self.showMaximized()
+                else:
+                    self.setGeometry(self.oldgeometry)
              else:
                  logging.info("Store Current Windows Position")
-                 self.oldgeometry = self.frameGeometry()
+                 if(self.isMaximized()):
+                     self.oldgeometry = 'maximized'
+                 else:
+                     self.oldgeometry = self.frameGeometry()
 
                  logging.info("set Fullscreen")
                  self.fullScreenState = True

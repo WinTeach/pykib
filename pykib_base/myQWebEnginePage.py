@@ -45,7 +45,20 @@ class myQWebEnginePage(QWebEnginePage):
         dirname = currentdir
         self.form = form
         #Create Empty (private) profile
-        if (createPrivateProfile):
+        if(args.persistentProfilePath):
+            profile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
+            QtWebEngineCore.QWebEnginePage.__init__(self, profile)
+
+            logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
+            self.profile().setPersistentStoragePath(args.persistentProfilePath)
+            # Set Cache to Memory
+            self.profile().setHttpCacheType(QWebEngineProfile.HttpCacheType.MemoryHttpCache)
+            # Do persist Cookies
+            self.profile().setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.AllowPersistentCookies)
+
+            logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
+
+        elif (createPrivateProfile):
             logging.info("Create new private Profile")
             profile = QtWebEngineCore.QWebEngineProfile(self.form.web)
             QtWebEngineCore.QWebEnginePage.__init__(self, profile, self.form.web)
@@ -53,8 +66,7 @@ class myQWebEnginePage(QWebEnginePage):
         else:
             logging.info("Create no new Profile")
             QtWebEngineCore.QWebEnginePage.__init__(self)
-            profile = self.profile()
-            logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
+            logging.info("Is profile in private mode:" + str(self.profile().isOffTheRecord()))
 
         self.authenticationRequired.connect(self.webAuthenticationRequired)
 
@@ -63,9 +75,6 @@ class myQWebEnginePage(QWebEnginePage):
 
         #Modify Profile
         #*********************************************************************
-
-        # Do not persist Cookies - Should be Default
-        self.profile().setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.NoPersistentCookies)
 
         #Connect to Download Handler
         self.profile().downloadRequested.connect(self.on_downloadRequested)
