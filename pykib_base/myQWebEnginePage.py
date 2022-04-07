@@ -46,7 +46,7 @@ class myQWebEnginePage(QWebEnginePage):
         self.form = form
 
 
-        # Profile Hanlding
+        # Profile Handling
         if (args.persistentProfilePath):
             logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
 
@@ -58,9 +58,10 @@ class myQWebEnginePage(QWebEnginePage):
             # Do persist Cookies
             profile.setPersistentCookiesPolicy(QWebEngineProfile.AllowPersistentCookies)
 
-            QWebEnginePage.__init__(self, profile, self.form.web)
+            QWebEnginePage.__init__(self, profile)
             logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
-        elif (createPrivateProfile):
+
+        elif(createPrivateProfile):
             # Create Empty (private) profile
             logging.info("Create new private Profile")
             profile = QtWebEngineWidgets.QWebEngineProfile(self.form.web)
