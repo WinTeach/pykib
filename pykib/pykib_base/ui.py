@@ -24,9 +24,9 @@ from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import QSize
 
 
-from pykib_base.myQWebEngineView import myQWebEngineView
-from pykib_base.myQWebEnginePage import myQWebEnginePage
-from pykib_base.myQProgressBar import myQProgressBar
+from pykib.pykib_base.myQWebEngineView import myQWebEngineView
+from pykib.pykib_base.myQWebEnginePage import myQWebEnginePage
+from pykib.pykib_base.myQProgressBar import myQProgressBar
 
 def setupUi(form, args, dirname):        
     form.setWindowTitle(args.title)        

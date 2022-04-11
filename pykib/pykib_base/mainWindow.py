@@ -21,17 +21,17 @@ import sys
 import os
 import subprocess
 import logging
-import pykib_base.ui
-import pykib_base.arguments
-import pykib_base.mainWindow
+import pykib.pykib_base.ui
+import pykib.pykib_base.arguments
+import pykib.pykib_base.mainWindow
 import platform
 
-from pykib_base.myQWebEngineView import myQWebEngineView
-from pykib_base.myQWebEnginePage import myQWebEnginePage
-from pykib_base.myQProgressBar import myQProgressBar
-from pykib_base.memoryCap import MemoryCap
-from pykib_base.memoryDebug import MemoryDebug
-from pykib_base.autoReload import AutoReload
+from pykib.pykib_base.myQWebEngineView import myQWebEngineView
+from pykib.pykib_base.myQWebEnginePage import myQWebEnginePage
+from pykib.pykib_base.myQProgressBar import myQProgressBar
+from pykib.pykib_base.memoryCap import MemoryCap
+from pykib.pykib_base.memoryDebug import MemoryDebug
+from pykib.pykib_base.autoReload import AutoReload
 
 #
 from PyQt5.QtWebEngineWidgets import QWebEnginePage
@@ -73,7 +73,7 @@ class MainWindow(QWidget):
         self.web.setPage(self.page)
 
         #Setup UI
-        pykib_base.ui.setupUi(self, args, dirname)
+        pykib.pykib_base.ui.setupUi(self, args, dirname)
 
         # Added progress Handling
         self.web.loadProgress.connect(self.loadingProgressChanged)
