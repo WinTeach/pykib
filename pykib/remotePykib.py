@@ -23,10 +23,10 @@ import logging
 import random
 import string
 import tempfile
-import pykib_base.ui
-import pykib_base.arguments
-import pykib_base.mainWindow
-import pykib_base.remotePykibWebsocketServer
+import pykib.pykib_base.ui
+import pykib.pykib_base.arguments
+import pykib.pykib_base.mainWindow
+import pykib.pykib_base.remotePykibWebsocketServer
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction
