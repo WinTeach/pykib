@@ -286,7 +286,15 @@ class myQWebEnginePage(QWebEnginePage):
 
     def acceptNavigationRequest(self, url: QUrl, typ: QWebEnginePage.NavigationType, is_main_frame: bool):
         if (args.whiteList):
-            if (self.checkWhitelist(url)):
+            logging.info("Whitlist Check in Main Frame: " + str(is_main_frame))
+            if(args.whiteListMainFrameOnly):
+                if(is_main_frame and self.checkWhitelist(url)):
+                    return True
+                elif(not is_main_frame):
+                    return True
+                else:
+                    return False
+            elif (self.checkWhitelist(url)):
                 return True
             else:
                 return False

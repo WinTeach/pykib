@@ -147,6 +147,8 @@ def getArguments(dirname):
                         help="Enables the admin key SHIFT+STRG+ALT+A and defines a Application which will be started when pushed")
     parser.add_argument("-wl", "--whiteList", dest="whiteList", nargs="+",
                         help="Enables the white List function. Only Urls which start with elemtens from this list could be opend")
+    parser.add_argument("-wlmfo", "--whiteListMainFrameOnly", dest="whiteListMainFrameOnly", action='store_true',
+                        help="When set, whitelist will only be checked in mainframe navigation requests")
     parser.add_argument("-ll", "--logLevel", dest="logLevel", default="ERROR",
                         help="Setting the Level of Loggin. Allowed Values are ERROR, INFO, WARNING and DEBUG, Default is ERROR")
 
