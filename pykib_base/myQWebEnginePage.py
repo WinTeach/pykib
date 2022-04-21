@@ -288,13 +288,13 @@ class myQWebEnginePage(QWebEnginePage):
         if (args.whiteList):
             logging.info("Whitlist Check in Main Frame: " + str(is_main_frame))
             if(args.whiteListMainFrameOnly):
-                if(is_main_frame and self.checkWhitelist(url)):
+                if(is_main_frame and self.checkWhitelist(url, is_main_frame)):
                     return True
                 elif(not is_main_frame):
                     return True
                 else:
                     return False
-            elif (self.checkWhitelist(url)):
+            elif (self.checkWhitelist(url, is_main_frame)):
                 return True
             else:
                 return False
@@ -340,7 +340,7 @@ class myQWebEnginePage(QWebEnginePage):
             # self.form.web.load(self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib")
             print("An exception while downloading a pdf occurred")
 
-    def checkWhitelist(self, url: QUrl):
+    def checkWhitelist(self, url: QUrl, is_main_frame: bool):
         global dirname
         currentUrl = url.toString()
 
@@ -363,7 +363,7 @@ class myQWebEnginePage(QWebEnginePage):
         logging.info("Site " + currentUrl + " is not whitelisted")
 
         #If Remote Browser is used we will show no warning an won't open the page
-        if (args.remoteBrowserDaemon):
+        if (args.remoteBrowserDaemon or not is_main_frame):
             return False;
 
         msg = QtWidgets.QMessageBox()
