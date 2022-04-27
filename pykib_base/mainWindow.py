@@ -158,7 +158,6 @@ class MainWindow(QWidget):
             logging.debug("Leave window")
 
     def onFeaturePermissionRequested(self, url, feature):
-        print('hui');
         #self.page.setFeaturePermission(QWebEnginePage.Feature.MediaAudioVideoCapture)
         self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
         return True
