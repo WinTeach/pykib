@@ -47,7 +47,7 @@ class myQWebEnginePage(QWebEnginePage):
         #Create Empty (private) profile
         if(args.persistentProfilePath):
             profile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
-            QtWebEngineCore.QWebEnginePage.__init__(self, profile)
+            QtWebEngineCore.QWebEnginePage.__init__(self, profile, self.form.web)
 
             logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
             self.profile().setPersistentStoragePath(args.persistentProfilePath)
