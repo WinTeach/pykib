@@ -75,6 +75,7 @@ class MainWindow(QWidget):
         self.removeDownloadBarTimer = QTimer(self)
         self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
 
+
         #Definde Action when Fullscreen ist choosen
         self.page.fullScreenRequested.connect(self.toggleFullscreen)
 
@@ -158,29 +159,26 @@ class MainWindow(QWidget):
             logging.debug("Leave window")
 
     def onFeaturePermissionRequested(self, url, feature):
-        #self.page.setFeaturePermission(QWebEnginePage.Feature.MediaAudioVideoCapture)
-        self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
-        return True
-        # if (args.allowMicAccess and feature == QWebEnginePage.MediaAudioCapture):
-        #     self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
-        #     logging.info("Permission" + str(feature) + " granted")
-        #     return True
-        # if (args.allowWebcamAccess and feature == QWebEnginePage.MediaVideoCapture):
-        #     self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
-        #     logging.info("Permission" + str(feature) + " granted")
-        #     return True
-        # if (args.allowMicAccess and args.allowWebcamAccess and feature == QWebEnginePage.MediaAudioVideoCapture):
-        #     logging.info("Permission" + str(feature) + " granted")
-        #     self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
-        #     return True
-        # if (args.allowDesktopSharing and (feature == QWebEnginePage.DesktopVideoCapture or feature == QWebEnginePage.DesktopAudioVideoCapture)):
-        #     logging.info("Permission" + str(feature) + " granted")
-        #     self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionGrantedByUser)
-        #     return True
-        #
-        # self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionDeniedByUser)
-        # logging.info(
-        #     "denied")
+        if (args.allowMicAccess and feature == QWebEnginePage.Feature.MediaAudioCapture):
+            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+            logging.info("Permission" + str(feature) + " granted")
+            return True
+        if (args.allowWebcamAccess and feature == QWebEnginePage.Feature.MediaVideoCapture):
+            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+            logging.info("Permission" + str(feature) + " granted")
+            return True
+        if (args.allowMicAccess and args.allowWebcamAccess and feature == QWebEnginePage.Feature.MediaAudioVideoCapture):
+            logging.info("Permission" + str(feature) + " granted")
+            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+            return True
+        if (args.allowDesktopSharing and (feature == QWebEnginePage.Feature.DesktopVideoCapture or feature == QWebEnginePage.Feature.DesktopAudioVideoCapture)):
+            logging.info("Permission" + str(feature) + " granted")
+            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+            return True
+
+        self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionDeniedByUser)
+        logging.info(
+            "denied")
         return False
 
     # Handling crash of wegengineproc
