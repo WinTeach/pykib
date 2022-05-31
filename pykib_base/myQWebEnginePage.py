@@ -33,11 +33,11 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QFileDialog
 from PyQt6.QtCore import QSize, QUrl, Qt
 
+from pykib_base.myUrlSchemeHandler import myUrlSchemeHandler
+
 class myQWebEnginePage(QWebEnginePage):
     args = 0
     dirname = 0
-
-    # downloadProgressChange = pyqtSignal(QWidget)
 
     def __init__(self, argsparsed, currentdir, form, createPrivateProfile = True):
         global args
@@ -79,6 +79,9 @@ class myQWebEnginePage(QWebEnginePage):
 
         #Connect to Download Handler
         self.profile().downloadRequested.connect(self.on_downloadRequested)
+
+        #Register Teams URL Handler
+        self.profile().installUrlSchemeHandler(b'msteams', myUrlSchemeHandler(self))
 
         # Enable Spell Checking
         if (args.enableSpellcheck):

@@ -36,11 +36,12 @@ class myQWebEngineView(QWebEngineView):
         dirname = dirnameparsed
         self.browser = QWebEngineView.__init__(self)
 
-    def load(self,url):
+    def load(self, url):
+        logging.debug("Load URL:" + url)
         if not url:
-            url = args.url
+             url = args.url
         if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file://')):
-            url = 'http://' + url
+             url = 'http://' + url
         self.setUrl(QUrl(url))
 
     def contextMenuEvent(self, event):
