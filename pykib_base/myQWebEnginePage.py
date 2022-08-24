@@ -183,7 +183,7 @@ class myQWebEnginePage(QWebEnginePage):
         suffix = QtCore.QFileInfo(download.suggestedFileName()).suffix()
         logging.info(suffix)
         # If PDF Support is enabled
-        if (args.enablepdfsupport and suffix == 'pdf' and not download.url().toString().startswith(
+        if (args.enablepdfsupport and suffix.lower() == 'pdf' and not download.url().toString().startswith(
                 "blob:file://") and not download.url().toString().endswith("?downloadPdfFromPykib")):
             print("Loading PDF: " + os.path.basename(download.suggestedFileName()))
             global dirname
@@ -199,21 +199,12 @@ class myQWebEnginePage(QWebEnginePage):
             else:
                 os.makedirs(tempfolder)
 
-            self.pdfFile = download.url().toString()
+            self.pdfFile = tempfolder + "/" + os.path.basename(download.suggestedFileName()).replace("////", "///")
 
-            if (download.url().toString().startswith("blob:")):
-                download.setPath(tempfolder + "/" + os.path.basename(download.suggestedFileName()).replace("////", "///"))
-                download.accept()
-                self.pdfFile = "file:///" + download.path()
-
-            f = {'file': self.pdfFile}
-            pdfjsargs = urllib.parse.urlencode(f)
-
-            pdfjsurl = "file:///" + dirname.replace("\\", "/") + "/plugins/pdf.js/web/viewer.html?" + pdfjsargs.replace(
-                "+", " ")
-
-            time.sleep(1)
-            self.loadPDFPage(pdfjsurl)
+            #if (download.url().toString().startswith("blob:")):
+            download.setDownloadFileName(self.pdfFile)
+            download.accept()
+            download.isFinishedChanged.connect(partial(self.openPdf, download.url().toString()))
             return True
 
             # If Download Handle is hit
@@ -255,7 +246,6 @@ class myQWebEnginePage(QWebEnginePage):
                 path = downloadDialog.selectedFiles()[0]
 
             if path:
-
                 download.setDownloadFileName(path)
                 download.accept()
                 download.receivedBytesChanged.connect(partial(self.onDownloadReceivedBytesChanged, download))
@@ -276,6 +266,17 @@ class myQWebEnginePage(QWebEnginePage):
         print("Executing:" + "\"" + handle[1] + "\" " + filepath);
         subprocess.Popen("\"" + handle[1] + "\" " + filepath, shell=True)
 
+    def openPdf(self, origUrl):
+        self.pdfFile = "file:///" + self.pdfFile
+        f = {'file': self.pdfFile}
+        pdfjsargs = urllib.parse.urlencode(f)
+
+        pdfjsurl = "file:///" + dirname.replace("\\", "/") + "/plugins/pdf.js/web/viewer.html?" + pdfjsargs.replace(
+            "+", " ")
+
+        self.loadPDFPage(pdfjsurl, origUrl)
+
+
     def acceptNavigationRequest(self, url: QUrl, typ: QWebEnginePage.NavigationType, is_main_frame: bool):
         if (args.whiteList):
             logging.info("Whitlist Check in Main Frame: " + str(is_main_frame))
@@ -293,7 +294,7 @@ class myQWebEnginePage(QWebEnginePage):
         else:
             return True
 
-    def loadPDFPage(self, pdfjsurl):
+    def loadPDFPage(self, pdfjsurl, origUrl):
         global dirname
         #Creates a new myQWebEnginePage
         #if args.singleProcess ist set, the old "profile" will be reused and no additional private profil will be created
@@ -308,6 +309,7 @@ class myQWebEnginePage(QWebEnginePage):
         self.form.PDFnavbar.show()
         # self.form.navbar.hide()
         self.form.progress.disabled = True
+        self.form.addressBar.setText(origUrl)
 
     def closePDFPage(self):
         if(args.pdfreadermode):
@@ -323,6 +325,14 @@ class myQWebEnginePage(QWebEnginePage):
             pass
         self.form.progress.disabled = False
 
+        #CleanUp Tempoary PDFs
+        try:
+            tempfolder = os.listdir(tempfile.gettempdir() + "/pykib/")
+            for item in tempfolder:
+                if item.lower().endswith(".pdf"):
+                    os.remove(os.path.join(tempfile.gettempdir() + "/pykib/", item))
+        except:
+            logging.info("An exception while cleanup PDF TMP Folder")
     def pdfDownloadAction(self):
         # Remove Extension From URL
         try:

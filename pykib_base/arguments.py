@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.6')
+__version_info__ = ('devel', '3.0.7')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.0.0.4'
@@ -171,6 +171,8 @@ def getArguments(dirname):
     # Settings for Running in Remote Browser Daemon
     parser.add_argument("-rbd", "--remoteBrowserDaemon", dest="remoteBrowserDaemon", action='store_true',
                         help="start a remote browser daemon")
+    parser.add_argument("-rbsp", "--remoteBrowserSocketPath", dest="remoteBrowserSocketPath", help="When this option is set, the remote browser Deamon will only listen "
+                                                                                                   "to commands send to this socket. Any other communication options will be disabled")
     parser.add_argument("-rbp", "--remoteBrowserPort", dest="remoteBrowserPort", type=int, default=8765,
                         help="Define the Port on which the remoteBrowserDaemon waits for incoming websocket connections")
     parser.add_argument("-rbmi", "--remoteBrowserMoveInterval", dest="remoteBrowserMoveInterval", type=int, default=50,

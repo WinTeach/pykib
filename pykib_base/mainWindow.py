@@ -446,7 +446,8 @@ function mouseMove(e) {{
         self.setWindowIcon(self.web.icon())
 
     def adjustAdressbar(self):
-        self.addressBar.setText(self.web.url().toString())
+        if(not self.web.url().toString().lower().endswith('.pdf')):
+            self.addressBar.setText(self.web.url().toString())
 
     def openSearchBar(self):
         self.searchBar.show()

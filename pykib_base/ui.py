@@ -22,7 +22,7 @@ import os
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtCore import QSize, Qt
-
+from functools import partial
 
 from pykib_base.myQWebEngineView import myQWebEngineView
 from pykib_base.myQWebEnginePage import myQWebEnginePage
@@ -95,7 +95,7 @@ def setupUi(form, args, dirname):
         form.homeButton.setIcon(QIcon(os.path.join(dirname, 'icons/home.png')));
         form.homeButton.setIconSize(QSize(24, 24));
         form.homeButton.setObjectName("homeButton")
-        form.homeButton.clicked.connect(form.web.load)
+        form.homeButton.clicked.connect(partial(form.web.load, ""))
         
         form.navGridLayout.addWidget(form.homeButton, 0, navGridLayoutHorizontalPosition, 1, 1)
         navGridLayoutHorizontalPosition += 1
