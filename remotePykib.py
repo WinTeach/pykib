@@ -23,10 +23,13 @@ import logging
 import random
 import string
 import tempfile
+import time
+
 import pykib_base.ui
 import pykib_base.arguments
 import pykib_base.mainWindow
 import pykib_base.remotePykibWebsocketServer
+import pykib_base.remotePykibUnixSocketServer
 
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
@@ -46,26 +49,15 @@ class RemotePykib():
     def startRemotePykib(self):
         logging.info("Pykib Remote Browser Daemon Mode")
 
-        #Create Temp Session Token if Option is set
-        if(self.args.useTemporarySessionToken):
-            logging.info("Temporary Session Token is used:")
-            characters = string.ascii_letters + string.digits
-            self.args.remoteBrowserSessionToken = ''.join(random.choice(characters) for i in range(128))
-            logging.info("  Token: " + self.args.remoteBrowserSessionToken)
-
-            token_path = tempfile.gettempdir()
-            if (self.args.temporarySessionTokenPath):
-                token_path = self.args.temporarySessionTokenPath
-
-            token_path = token_path.replace("\\", "/")+"/.pykibTemporarySessionToken"
-
-            with open(token_path, "w") as text_file:
-                text_file.write(self.args.remoteBrowserSessionToken)
-
-            logging.info("  Storing Token under: " + token_path)
-
-
         self.app.setQuitOnLastWindowClosed(False)
+
+        # Build Configuration Array for Plugin
+        config = {
+            "remotingList": self.args.remotingList.split(" "),
+            "allowUserBasedRemoting": self.args.allowUserBasedRemoting,
+            "remoteBrowserMoveInterval": self.args.remoteBrowserMoveInterval,
+            "remoteDaemonProtocolVersion": self.args.remoteDaemonProtocolVersion,
+        }
 
         # Creating a Tray App
         icon = QIcon(os.path.join(self.dirname, 'icons/pykib.png'))
@@ -82,28 +74,43 @@ class RemotePykib():
         quit.triggered.connect(sys.exit)
         menu.addAction(quit)
 
-        # Build Configuration Array fpr Plugin
-        config = {
-            "remotingList": self.args.remotingList.split(" "),
-            "allowUserBasedRemoting": self.args.allowUserBasedRemoting,
-            "remoteBrowserMoveInterval": self.args.remoteBrowserMoveInterval,
-            "remoteDaemonProtocolVersion": self.args.remoteDaemonProtocolVersion,
-        }
-
-        # Create an Start the Websocket Server Thread
-        websocketServer = pykib_base.remotePykibWebsocketServer.RemotePykibWebsocketServer(config,
-                                                                                           self.args.remoteBrowserSessionToken,
-                                                                                           self.args.remoteBrowserPort)
-        websocketServer.daemon = True  # Daemonize thread
-        websocketServer.configureInstance.connect(self.configureInstance)
-        websocketServer.closeInstance.connect(self.closeInstance)
-        websocketServer.activateInstance.connect(self.activateInstance)
-        websocketServer.moveInstance.connect(self.moveInstance)
-        websocketServer.changeTabWindow.connect(self.changeTabWindow)
-        websocketServer.start()
-
         # Add the menu to the tray
         tray.setContextMenu(menu)
+
+        if(self.args.remoteBrowserSocketPath):
+            # Create and Start the UnixSocket Server Thread
+            socketServer = pykib_base.remotePykibUnixSocketServer.RemotePykibUnixSocketServer(config,
+                                                                                               self.args)
+        else:
+            #Create Temp Session Token if Option is set
+            if(self.args.useTemporarySessionToken):
+                logging.info("Temporary Session Token is used:")
+                characters = string.ascii_letters + string.digits
+                self.args.remoteBrowserSessionToken = ''.join(random.choice(characters) for i in range(128))
+                logging.info("  Token: " + self.args.remoteBrowserSessionToken)
+
+                token_path = tempfile.gettempdir()
+                if (self.args.temporarySessionTokenPath):
+                    token_path = self.args.temporarySessionTokenPath
+
+                token_path = token_path.replace("\\", "/")+"/.pykibTemporarySessionToken"
+
+                with open(token_path, "w") as text_file:
+                    text_file.write(self.args.remoteBrowserSessionToken)
+
+                logging.info("  Storing Token under: " + token_path)
+
+            # Create and Start the Websocket Server Thread
+            socketServer = pykib_base.remotePykibWebsocketServer.RemotePykibWebsocketServer(config, self.args.remoteBrowserSessionToken,
+                                                                           self.args.remoteBrowserPort)
+
+        socketServer.daemon = True  # Daemonize thread
+        socketServer.configureInstance.connect(self.configureInstance)
+        socketServer.closeInstance.connect(self.closeInstance)
+        socketServer.activateInstance.connect(self.activateInstance)
+        socketServer.moveInstance.connect(self.moveInstance)
+        socketServer.changeTabWindow.connect(self.changeTabWindow)
+        socketServer.start()
 
         sys.exit(self.app.exec())
 

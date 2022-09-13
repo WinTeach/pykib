@@ -32,6 +32,7 @@ from pykib_base.myQProgressBar import myQProgressBar
 from pykib_base.memoryCap import MemoryCap
 from pykib_base.memoryDebug import MemoryDebug
 from pykib_base.autoReload import AutoReload
+from pykib_base.resetTimeout import ResetTimeout
 
 #
 from PyQt6.QtWebEngineCore import QWebEnginePage
@@ -49,6 +50,7 @@ class MainWindow(QWidget):
         print("running in: " + dirname)
         global args
         args = transferargs
+        self.dirname = dirname
 
         if(args.remoteBrowserDaemon):
             super(MainWindow, self).__init__(parent,Qt.WindowType.Tool)
@@ -99,8 +101,31 @@ class MainWindow(QWidget):
             self.autoRefresher.daemon = True  # Daemonize thread
             self.autoRefresher.autoRefresh.connect(self.autoRefresh)
             self.autoRefresher.start()
+        if (args.browserResetTimeout):
+            logging.info(
+                "BrowserResetTimeout is set. Going to reset the webpage after " + str(args.browserResetTimeout) + "seconds of inactivity")
+
+            self.resetTimeout = ResetTimeout(int(args.browserResetTimeout))
+            self.resetTimeout.daemon = True  # Daemonize thread
+            self.resetTimeout.resetTimeoutExeeded.connect(self.resetTimeoutExeeded)
+            self.resetTimeout.start()
+            self.web.loadProgress.connect(self.resetTimerReset)
 
         #Start with url
+        self.web.load(args.url)
+
+    def resetTimerReset(self):
+        logging.info(
+            "BrowserResetTimeout is set.")
+        self.resetTimeout.resetTimer()
+
+    def resetTimeoutExeeded(self):
+        #Reset Page if resetTimeoutExeeded
+        self.page.deleteLater()
+        self.page = myQWebEnginePage(args, self.dirname, self, True)
+        self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
+        self.page.fullScreenRequested.connect(self.toggleFullscreen)
+        self.web.setPage(self.page)
         self.web.load(args.url)
 
     def applyWindowHints(self):

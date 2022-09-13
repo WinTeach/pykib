@@ -190,6 +190,9 @@ class Pykib():
         # Switch between Remote Daemon an Default Pykib
         # ----------------------------------------------------------
         if (self.args.remoteBrowserDaemon):
+            if (self.args.remoteBrowserKeepAliveInterval != 0 and self.args.remoteBrowserKeepAliveInterval < 200):
+                print("The remote browser keep alive interval hast to 0 or  be greater than 200ms")
+                sys.exit()
             RemotePykib(self.args, self.dirname)
 
         # ----------------------------------------------------------

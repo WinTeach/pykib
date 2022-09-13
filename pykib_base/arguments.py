@@ -23,10 +23,10 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.7')
+__version_info__ = ('devel', '3.0.8')
 __version__ = '-'.join(__version_info__)
 
-__remote_daemon_protocol_version__ = '1.0.0.4'
+__remote_daemon_protocol_version__ = '1.0.0.5'
 
 def getArguments(dirname):
     parser = ArgumentParser(
@@ -156,6 +156,8 @@ def getArguments(dirname):
 
     parser.add_argument("-art", "--autoReloadTimer", dest="autoReloadTimer", help="Here you can configure a Timeout (in seconds) after which the actives site gets reloaded", default=0, type=int)
 
+    parser.add_argument("-brt", "--browserResetTimeout", dest="browserResetTimeout", help="Here you can configure a Timeout of inactivity (in seconds) after which the browser will be resettet", default=0, type=int)
+
     parser.add_argument("-ama", "--allowMicAccess", dest="allowMicAccess", action='store_true', help="Allows all Websites to use your Microfon")
 
     parser.add_argument("-awa", "--allowWebcamAccess", dest="allowWebcamAccess", action='store_true', help="Allows all Websites to use your Webcam")
@@ -171,23 +173,30 @@ def getArguments(dirname):
     # Settings for Running in Remote Browser Daemon
     parser.add_argument("-rbd", "--remoteBrowserDaemon", dest="remoteBrowserDaemon", action='store_true',
                         help="start a remote browser daemon")
-    parser.add_argument("-rbsp", "--remoteBrowserSocketPath", dest="remoteBrowserSocketPath", help="When this option is set, the remote browser Deamon will only listen "
-                                                                                                   "to commands send to this socket. Any other communication options will be disabled")
-    parser.add_argument("-rbp", "--remoteBrowserPort", dest="remoteBrowserPort", type=int, default=8765,
-                        help="Define the Port on which the remoteBrowserDaemon waits for incoming websocket connections")
     parser.add_argument("-rbmi", "--remoteBrowserMoveInterval", dest="remoteBrowserMoveInterval", type=int, default=50,
                         help="Define Interval in ms in which movement requests are send when moving the remote browser window - Default 50ms")
     parser.add_argument("-rl", "--remotingList", dest="remotingList", nargs="+", default='',
                         help="Defined a List of Urls which should be remoted - use * as wildcard")
     parser.add_argument("-aubr", "--allowUserBasedRemoting", dest="allowUserBasedRemoting", action='store_true',
                         help="When this option is set, the user on the remote side is allowed to define an own additional remoting list")
+
+    # Settings only for Running Remote Browser Daemon in Socket Mode
+    parser.add_argument("-rbsp", "--remoteBrowserSocketPath", dest="remoteBrowserSocketPath", help="When this option is set, the remote browser Deamon will only listen "
+                                                                                                   "to commands send to this socket. Any other communication options will be disabled")
+    parser.add_argument("-rbkai", "--remoteBrowserKeepAliveInterval", dest="remoteBrowserKeepAliveInterval", type=int, default=1000,
+                        help="Define interval in ms in which keep alive aignals should be send. At least 200, 0 will disable keep alive function - Default 1000ms")
+    parser.add_argument("-rbkael", "--remoteBrowserKeepAliveErrorLimit", dest="remoteBrowserKeepAliveErrorLimit", type=int, default=5,
+                        help="Define interval how many keepAlive Signal losts in a row will be tolerated. Default 5")
+
+    # Settings only for Running Remote Browser Daemon in Channel Mode
+    parser.add_argument("-rbp", "--remoteBrowserPort", dest="remoteBrowserPort", type=int, default=8765,
+                        help="Define the Port on which the remoteBrowserDaemon waits for incoming websocket connections")
     parser.add_argument("-rbst", "--remoteBrowserSessionToken", dest="remoteBrowserSessionToken",
                         help="Only Request which includes the configured Token will be accepted. This Option will be overritten if 'useTemporarySessionToken' is set")
     parser.add_argument("-utst", "--useTemporarySessionToken", dest="useTemporarySessionToken", action='store_true',
                         help="With this Option each start of the daemon a temporary session Token will be created")
     parser.add_argument("-tstp", "--temporarySessionTokenPath", dest="temporarySessionTokenPath",
                         help="Path where the temporary session token should be stored on the system. If not set the file .pykibTemporarySessionToken will be stored in the users tmp path")
-
 
 
     args = parser.parse_args();
