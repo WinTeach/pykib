@@ -438,7 +438,7 @@ class MainWindow(QWidget):
                 self.progress.hide()
 
     # catch defined Shortcuts
-  
+
     def keyPressEvent(self, event):
 
         if (args.browserResetTimeout):
