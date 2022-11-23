@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2021 Tobias Wintrich
+# Copyright (C) 2022 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.9')
+__version_info__ = ('devel', '3.0.10')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.0.0.5'
@@ -63,9 +63,16 @@ def getArguments(dirname):
     parser.add_argument("-d", "--download", dest="download", action='store_true',
                         help="Enables download function")
     parser.add_argument("-dh", "--downloadHandle", dest="downloadHandle", nargs='+',
-                        help="With this option, default behaviour for special file extensions can be defined, this will also work when -d is not defined. Format: #extension#|#app_to_start#|#tmpdownloadpath#")
+                        help="With this option, default behaviour for special file extensions can be defined, this will also work when -d is not defined. "
+                             "Format: #extension#|#app_to_start#|#tmpdownloadpath#")
     parser.add_argument("-dp", "--downloadPath", dest="downloadPath",
                         help="Defines the start path for any download and upload dialog")
+
+    # parser.add_argument("-ejs", "--executeJavascript", dest="executeJavascript",nargs='+',
+    #                     help="With this option, a js script file can be defined which should be injected on every page."
+    #                          "Format: #pathToScript#|#once#"
+    #                          "#pathToScript# = path to Script. Full path or relative to folder 'scripts' from installation dir"
+    #                          "#once# = 0 or 1. If 1 it will be injected only when the first site load completes. With 0 it will be injected each time a site is loaded.")
 
     parser.add_argument("-eal", "--enableAutoLogon", dest="enableAutoLogon", action='store_true',
                         help="Enables the autologon functionality, this function requires at least autoLogonUser and autoLogonPassword to be set. The Browser is preconfigured to work with Citrix Webinterface, Citrix Storefront and RDWeb Servers")
@@ -80,6 +87,7 @@ def getArguments(dirname):
                         help="Defines the ID of the HTML Element in which the password should be put in")
     parser.add_argument("-aldid", "--autoLogonDomainID", dest="autoLogonDomainID", default=False,
                         help="Defines the ID of the HTML Element in which the domain should be put in")
+    #parser.add_argument("-cwaa", "--citrixWebAutostartApp", dest="citrixWebAutostartApp", help="Defines an Application name which will be clicked automatically if found after login on a Citrix site")
 
     parser.add_argument("-es", "--enablespellcheck", dest="enableSpellcheck", action='store_true',
                         help="Enables spellchecking when set")
@@ -146,6 +154,8 @@ def getArguments(dirname):
 
     parser.add_argument("-a", "--enableAdminKey", dest="adminKey",
                         help="Enables the admin key SHIFT+STRG+ALT+A and defines a Application which will be started when pushed")
+    parser.add_argument("-epkh", "--enablePrintKeyHandle", dest="enablePrintKeyHandle", action='store_true',
+                        help="When enabled, a press on the 'Print'-Button will insert a Image of the current page to the clipboard")
     parser.add_argument("-wl", "--whiteList", dest="whiteList", nargs="+",
                         help="Enables the white List function. Only Urls which start with elemtens from this list could be opend")
     parser.add_argument("-wlmfo", "--whiteListMainFrameOnly", dest="whiteListMainFrameOnly", action='store_true',

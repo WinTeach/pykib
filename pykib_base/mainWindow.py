@@ -422,6 +422,26 @@ class MainWindow(QWidget):
                 self.page.runJavaScript(script)
             self.firstRun = False
 
+        #Very Special Solution for opening an Citrix Virtual App and Desktop App right after Login.
+        #The combination of Autologin + Download Handle + This one, can maker your citrix Session start in  < 1 Second.
+        #Using selfservice or storebrowse script will need much more time
+        # if (args.citrixWebAutostartApp):
+        #     logging.info("Perform AutoStart App Script")
+        #     script = r"""
+        #                    var autostart = setInterval(autostart, 100);
+        #                    function autostart(){{
+        #                         var collection = document.getElementsByClassName("storeapp-icon");
+        #                         for (let i = 0; i < collection.length; i++) {{
+        #                           if(collection[i].alt == '{citrixWebAutostartApp}'){{
+        #                             collection[i].click();
+        #                             clearInterval(autostart);
+        #                           }}
+        #                         }}
+        #                    }}
+        #     """.format(citrixWebAutostartApp=args.citrixWebAutostartApp)
+        #
+        #     self.page.runJavaScript(script)
+
     def loadingProgressChanged(self, percent):
         # Setting Zoomfactor
         logging.debug("Progress Changed" + str(percent))
@@ -459,6 +479,11 @@ class MainWindow(QWidget):
         if (args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_A):
             logging.info("Hit admin key")
             subprocess.Popen([args.adminKey])
+        if (args.enablePrintKeyHandle and keyEvent.key() == QtCore.Qt.Key.Key_Print):
+            logging.info("Saving image to clipboard")
+            clipboard = QGuiApplication.clipboard()
+            clipboard.setPixmap(self.grab())
+            # self.grab().save("d:\\test.png", b'PNG')
         if (keyEvent.key() == QtCore.Qt.Key.Key_F4 and alt):
             logging.info("Alt +F4 is disabled")
         if (ctrl and keyEvent.key() == QtCore.Qt.Key.Key_F):
