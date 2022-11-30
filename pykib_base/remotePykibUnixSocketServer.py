@@ -86,9 +86,15 @@ class RemotePykibUnixSocketServer(QtCore.QThread):
                 while keepOpen:
                     logging.info("Wait for Message")
                     try:
+                        connection.settimeout(5)
                         message = connection.recv(1024)
                     except Exception as e:
                         logging.debug(e)
+                        keepOpen = False
+                        connection.sendall(json.dumps([{
+                            "Timed Out": 5}
+                        ]).encode() + b'\n')
+                        connection.close()
                         continue
 
                     logging.info("Message Received")
