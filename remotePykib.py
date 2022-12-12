@@ -37,11 +37,11 @@ from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 
 #Workaround for Problem with relative File Paths
 class RemotePykib():
-    def __init__(self, args, dirname):
+    def __init__(self, args, dirname, tray):
         self.args = args
         self.dirname = dirname
         self.app = QApplication(sys.argv)
-
+        self.tray = tray
         self.pykibInstances = {}
 
         self.startRemotePykib()
@@ -59,23 +59,20 @@ class RemotePykib():
             "remoteDaemonProtocolVersion": self.args.remoteDaemonProtocolVersion,
         }
 
-        # Creating a Tray App
-        icon = QIcon(os.path.join(self.dirname, 'icons/pykib.png'))
-        tray = QSystemTrayIcon()
-        tray.setIcon(icon)
-        tray.setVisible(True)
-        tray.setToolTip("Rangee Remote Browser Daemon")
+        # Configure a Remote Pykib Tray App
+        self.tray.setVisible(True)
+        self.tray.setToolTip("Remote Browser Daemon")
 
         # Create the menu
         menu = QMenu()
 
         # Add a Quit option to the menu.
-        quit = QAction("Close Rangee Remote Browser Daemon")
+        quit = QAction("Close Remote Browser Daemon")
         quit.triggered.connect(sys.exit)
         menu.addAction(quit)
 
         # Add the menu to the tray
-        tray.setContextMenu(menu)
+        self.tray.setContextMenu(menu)
 
         if(self.args.remoteBrowserSocketPath):
             # Create and Start the UnixSocket Server Thread
@@ -134,14 +131,14 @@ class RemotePykib():
             except:
                 logging.info("    Tab should be availeable but is not. May be closed manually. creating new: " + str(tabId))
                 self.args.url = url
-                currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname)
+                currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray)
                 self.pykibInstances[windowId][tabId] = currentView
         else:
             logging.info("  Tab not found, create new an set as CurrentView:" + str(tabId))
             logging.info("    TabID: " + str(tabId))
             logging.info("    WindowID: " + str(windowId))
             self.args.url = url
-            currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname)
+            currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray)
             self.pykibInstances[windowId][tabId] = currentView
 
         for key in self.pykibInstances[windowId]:

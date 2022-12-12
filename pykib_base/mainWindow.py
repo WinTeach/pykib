@@ -37,84 +37,95 @@ from pykib_base.resetTimeout import ResetTimeout
 #
 from PyQt6.QtWebEngineCore import QWebEnginePage
 from PyQt6 import QtCore
-from PyQt6.QtCore import QTimer, Qt
-from PyQt6.QtGui import QKeyEvent, QGuiApplication
+from PyQt6.QtCore import QTimer, Qt, QEvent
+from PyQt6.QtGui import QGuiApplication
 
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QWidget, QSystemTrayIcon
+
 
 class MainWindow(QWidget):
     fullScreenState = False
     firstRun = True
 
-    def __init__(self, transferargs, dirname, parent=None):
+    def __init__(self, transferargs, dirname, parent=None, tray: QSystemTrayIcon = None):
         print("running in: " + dirname)
-        global args
-        args = transferargs
+        self.args = transferargs
         self.dirname = dirname
+        self.tray = tray
 
-        if(args.remoteBrowserDaemon):
-            super(MainWindow, self).__init__(parent,Qt.WindowType.Tool)
+        if (self.args.remoteBrowserDaemon):
+            super(MainWindow, self).__init__(parent, Qt.WindowType.Tool)
         else:
             super(MainWindow, self).__init__(parent)
 
         self.applyWindowHints()
-        #self.setAttribute(Qt.WA_DeleteOnClose)
+        # self.setAttribute(Qt.WA_DeleteOnClose)
 
-        #Create WebView and WebPage
-        self.web = myQWebEngineView(args, dirname)
+        # Create WebView and WebPage
+        self.web = myQWebEngineView(self.args, dirname)
         self.web.setObjectName("view")
 
-        self.page = myQWebEnginePage(args, dirname, self, True)
+        self.page = myQWebEnginePage(self.args, dirname, self, True)
         self.web.setPage(self.page)
 
-        #Setup UI
-        pykib_base.ui.setupUi(self, args, dirname)
+        # Setup UI
+        pykib_base.ui.setupUi(self, self.args, dirname)
 
         # Added progress Handling
         self.web.loadProgress.connect(self.loadingProgressChanged)
-        self.web.loadFinished.connect(self.jsInsertion)
+        self.web.loadFinished.connect(self.jsInjection)
 
         self.web.renderProcessTerminated.connect(self.viewTerminated)
         self.removeDownloadBarTimer = QTimer(self)
         self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
 
-
-        #Definde Action when Fullscreen ist choosen
+        # Definde Action when Fullscreen ist choosen
         self.page.fullScreenRequested.connect(self.toggleFullscreen)
 
-        if (args.addMemoryCap):
+        if (self.args.addMemoryCap):
             logging.info("Starting memory monitoring. Going to close browser when memory usage is over " + str(
-                args.addMemoryCap) + "MB")
-            self.memoryCapThread = MemoryCap(int(args.addMemoryCap))
+                self.args.addMemoryCap) + "MB")
+            self.memoryCapThread = MemoryCap(int(self.args.addMemoryCap))
             self.memoryCapThread.daemon = True  # Daemonize thread
             self.memoryCapThread.memoryCapExceeded.connect(self.closeBecauseMemoryCap)
             self.memoryCapThread.start()
-        if (args.memoryDebug):
+        if (self.args.memoryDebug):
             logging.info("Starting memory monitoring")
             self.memoryDebugThread = MemoryDebug()
             self.memoryDebugThread.daemon = True  # Daemonize thread
             self.memoryDebugThread.memoryDebugTick.connect(self.memoryDebugUpdate)
             self.memoryDebugThread.start()
-        if (args.autoReloadTimer):
+        if (self.args.autoReloadTimer):
             logging.info(
-                "AutoRefreshTimer is set. Going to reload the webpage each" + str(args.autoReloadTimer) + "seconds")
-            self.autoRefresher = AutoReload(int(args.autoReloadTimer))
+                "AutoRefreshTimer is set. Going to reload the webpage each" + str(
+                    self.args.autoReloadTimer) + "seconds")
+            self.autoRefresher = AutoReload(int(self.args.autoReloadTimer))
             self.autoRefresher.daemon = True  # Daemonize thread
             self.autoRefresher.autoRefresh.connect(self.autoRefresh)
             self.autoRefresher.start()
-        if (args.browserResetTimeout):
+        if (self.args.browserResetTimeout):
             logging.info(
-                "BrowserResetTimeout is set. Going to reset the webpage after " + str(args.browserResetTimeout) + "seconds of inactivity")
+                "BrowserResetTimeout is set. Going to reset the webpage after " + str(
+                    self.args.browserResetTimeout) + "seconds of inactivity")
 
-            self.resetTimeout = ResetTimeout(int(args.browserResetTimeout))
+            self.resetTimeout = ResetTimeout(int(self.args.browserResetTimeout))
             self.resetTimeout.daemon = True  # Daemonize thread
             self.resetTimeout.resetTimeoutExeeded.connect(self.resetTimeoutExeeded)
             self.resetTimeout.start()
             self.web.loadProgress.connect(self.resetTimerReset)
             self.web.urlChanged.connect(self.resetTimerReset)
 
-        #Start with url
-        self.web.load(args.url)
+        # Store initial Restore State
+        self.restoreState = self.windowState()
+
+        # Start with url
+        self.web.load(self.args.url)
+
+    def changeEvent(self, event: QEvent):
+        if (event.type() == QEvent.Type.WindowStateChange):
+            if not self.windowState().__contains__(Qt.WindowState.WindowMinimized):
+                self.restoreState = self.windowState()
+                logging.debug("Set RestoreState = " + str(self.restoreState))
 
     def resetTimerReset(self):
         logging.info(
@@ -122,90 +133,96 @@ class MainWindow(QWidget):
         self.resetTimeout.resetTimer()
 
     def resetTimeoutExeeded(self):
-        #Reset Page if resetTimeoutExeeded
+        # Reset Page if resetTimeoutExeeded
         self.page.deleteLater()
-        self.page = myQWebEnginePage(args, self.dirname, self, True)
+        self.page = myQWebEnginePage(self.args, self.dirname, self, True)
         self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
         self.page.fullScreenRequested.connect(self.toggleFullscreen)
         self.web.setPage(self.page)
-        self.web.load(args.url)
+        self.web.load(self.args.url)
 
     def applyWindowHints(self):
-        if (args.alwaysOnTop and args.removeWindowControls or args.remoteBrowserDaemon):
-            self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
-        elif(args.removeWindowControls):
+        if (self.args.alwaysOnTop and self.args.removeWindowControls or self.args.remoteBrowserDaemon):
+            self.setWindowFlags(
+                Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
+        elif (self.args.removeWindowControls):
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        elif(args.alwaysOnTop):
+        elif (self.args.alwaysOnTop):
             self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
 
     def toggleFullscreen(self, request):
-         logging.info("Fullscreen Request received")
-         logging.info(self.fullScreenState)
-         if(not args.fullscreen):
-             if (self.fullScreenState):
+        logging.info("Fullscreen Request received")
+        logging.info(self.fullScreenState)
+        if (not self.args.fullscreen):
+            if (self.fullScreenState):
                 logging.info("leave Fullscreen")
                 self.fullScreenState = False
                 self.showNormal()
                 self.applyWindowHints()
                 logging.info("Restore previous Windows Position")
-                if(self.oldgeometry == 'maximized'):
+                if (self.oldgeometry == 'maximized'):
                     self.showMaximized()
                 else:
                     self.setGeometry(self.oldgeometry)
-             else:
-                 logging.info("Store Current Windows Position")
-                 if(self.isMaximized()):
-                     self.oldgeometry = 'maximized'
-                 else:
-                     self.oldgeometry = self.frameGeometry()
+            else:
+                logging.info("Store Current Windows Position")
+                if (self.isMaximized()):
+                    self.oldgeometry = 'maximized'
+                else:
+                    self.oldgeometry = self.frameGeometry()
 
-                 logging.info("set Fullscreen")
-                 self.fullScreenState = True
-                 #Need to remove X11BypassWindowManagerHint because without showFullscreen not possible
-                 if (args.remoteBrowserDaemon):
+                logging.info("set Fullscreen")
+                self.fullScreenState = True
+                # Need to remove X11BypassWindowManagerHint because without showFullscreen not possible
+                if (self.args.remoteBrowserDaemon):
                     self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint)
-                 self.showFullScreen()
-                 # Need set X11BypassWindowManagerHint again after going to Fullscreen
-                 if (args.remoteBrowserDaemon):
-                     self.setWindowFlags(
-                         Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
-                     self.show()
-         request.accept()
+                self.showFullScreen()
+                # Need set X11BypassWindowManagerHint again after going to Fullscreen
+                if (self.args.remoteBrowserDaemon):
+                    self.setWindowFlags(
+                        Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
+                    self.show()
+        request.accept()
 
     def enterEvent(self, event):
-        #When working with a remote Daemon, the Browse need to get focussed on Enter
-        if(args.remoteBrowserDaemon):
+        # When working with a remote Daemon, the Browse need to get focussed on Enter
+        if (self.args.remoteBrowserDaemon):
             self.activateWindow()
             logging.debug("Enter window")
 
     def leaveEvent(self, event):
-        if(args.remoteBrowserDaemon):
+        if (self.args.remoteBrowserDaemon):
             # Workaround for Applications which don't grab the focus when click on them (like VMWare View)
             if (platform.system().lower() == "linux"):
                 os.system("activeWindow=$(xdotool getactivewindow) && xdotool windowfocus $activeWindow")
             logging.debug("Leave window")
 
     def onFeaturePermissionRequested(self, url, feature):
-        if (args.allowMicAccess and feature == QWebEnginePage.Feature.MediaAudioCapture):
+        if (self.args.allowMicAccess and feature == QWebEnginePage.Feature.MediaAudioCapture):
             self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
-            logging.info("Permission" + str(feature) + " granted")
+            logging.info("Permission" + str(feature) + " | granted")
             return True
-        if (args.allowWebcamAccess and feature == QWebEnginePage.Feature.MediaVideoCapture):
+        if (self.args.allowWebcamAccess and feature == QWebEnginePage.Feature.MediaVideoCapture):
             self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
-            logging.info("Permission" + str(feature) + " granted")
+            logging.info("Permission" + str(feature) + " | granted")
             return True
-        if (args.allowMicAccess and args.allowWebcamAccess and feature == QWebEnginePage.Feature.MediaAudioVideoCapture):
-            logging.info("Permission" + str(feature) + " granted")
+        if (
+                self.args.allowMicAccess and self.args.allowWebcamAccess and feature == QWebEnginePage.Feature.MediaAudioVideoCapture):
+            logging.info("Permission" + str(feature) + " | granted")
             self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
             return True
-        if (args.allowDesktopSharing and (feature == QWebEnginePage.Feature.DesktopVideoCapture or feature == QWebEnginePage.Feature.DesktopAudioVideoCapture)):
-            logging.info("Permission" + str(feature) + " granted")
+        if (self.args.allowDesktopSharing and (
+                feature == QWebEnginePage.Feature.DesktopVideoCapture or feature == QWebEnginePage.Feature.DesktopAudioVideoCapture)):
+            logging.info("Permission" + str(feature) + " | granted")
+            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+            return True
+        if (self.args.allowBrowserNotifications and feature == QWebEnginePage.Feature.Notifications):
+            logging.info("Permission" + str(feature) + " | granted")
             self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
             return True
 
         self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionDeniedByUser)
-        logging.info(
-            "denied")
+        logging.info("Permission " + str(feature) + " | denied")
         return False
 
     # Handling crash of wegengineproc
@@ -236,12 +253,12 @@ class MainWindow(QWidget):
 
         informationstring += "| Total: " + str(currentSwapUse + currentMemUse) + " MB "
 
-        if (args.addMemoryCap):
-            if ((currentSwapUse + currentMemUse) > int(args.addMemoryCap)):
+        if (self.args.addMemoryCap):
+            if ((currentSwapUse + currentMemUse) > int(self.args.addMemoryCap)):
                 self.memoryDebug.changeStyle('memorycap')
             else:
                 self.memoryDebug.changeStyle('loading')
-            informationstring += "| MemoryCap: " + str(args.addMemoryCap) + " MB"
+            informationstring += "| MemoryCap: " + str(self.args.addMemoryCap) + " MB"
 
         self.memoryDebug.setFormat(informationstring)
 
@@ -282,17 +299,31 @@ class MainWindow(QWidget):
             self.removeDownloadBarTimer.stop()
             self.downloadProgress.hide()
 
-    def jsInsertion(self, loadFinished):
-        if(loadFinished):
-            if (args.enableAutoLogon and self.firstRun == True):
+    def jsInjection(self, loadFinished):
+        if (self.args.injectJavascript):
+            logging.debug("JS Files injection")
+            if (loadFinished):
+                for injection in self.args.injectJavascript:
+                    logging.debug("Inject Javascript")
+                    logging.debug(injection)
+                    script = ''
+                    if (bool(injection[1]) and self.firstRun) or bool(injection[1]):
+                        script = open(injection[0], "r").read()
+                        for parameter in injection[2::]:
+                            script = script.replace('{'+parameter[0]+'}', parameter[1])
+                        self.page.runJavaScript(script)
+                        logging.debug(script)
+
+        if (loadFinished):
+            if (self.args.enableAutoLogon and self.firstRun == True):
                 logging.info("Perform AutoLogin")
                 # if(len(autologin) >= 2):
-                username = args.autoLogonUser.replace("\\", "\\\\")
-                password = args.autoLogonPassword.replace("\\", "\\\\")
-                domain = args.autoLogonDomain
-                usernameID = args.autoLogonUserID
-                passwordID = args.autoLogonPasswordID
-                domainID = args.autoLogonDomainID
+                username = self.args.autoLogonUser.replace("\\", "\\\\")
+                password = self.args.autoLogonPassword.replace("\\", "\\\\")
+                domain = self.args.autoLogonDomain
+                usernameID = self.args.autoLogonUserID
+                passwordID = self.args.autoLogonPasswordID
+                domainID = self.args.autoLogonDomainID
                 # if(len(autologin) >= 3):
                 # if(autologin[2]):
                 # domain = autologin[2].replace("\\","\\\\")
@@ -357,7 +388,7 @@ class MainWindow(QWidget):
                                                    passwordID=passwordID, domainID=domainID)
                 self.page.runJavaScript(script)
 
-            if (args.enableMouseDrag):
+            if (self.args.enableMouseDrag):
                 logging.info("Perform Mouse Drag Mode Scripts")
                 script = r"""
 
@@ -422,32 +453,13 @@ class MainWindow(QWidget):
                 self.page.runJavaScript(script)
             self.firstRun = False
 
-        #Very Special Solution for opening an Citrix Virtual App and Desktop App right after Login.
-        #The combination of Autologin + Download Handle + This one, can maker your citrix Session start in  < 1 Second.
-        #Using selfservice or storebrowse script will need much more time
-        # if (args.citrixWebAutostartApp):
-        #     logging.info("Perform AutoStart App Script")
-        #     script = r"""
-        #                    var autostart = setInterval(autostart, 100);
-        #                    function autostart(){{
-        #                         var collection = document.getElementsByClassName("storeapp-icon");
-        #                         for (let i = 0; i < collection.length; i++) {{
-        #                           if(collection[i].alt == '{citrixWebAutostartApp}'){{
-        #                             collection[i].click();
-        #                             clearInterval(autostart);
-        #                           }}
-        #                         }}
-        #                    }}
-        #     """.format(citrixWebAutostartApp=args.citrixWebAutostartApp)
-        #
-        #     self.page.runJavaScript(script)
 
     def loadingProgressChanged(self, percent):
         # Setting Zoomfactor
         logging.debug("Progress Changed" + str(percent))
-        self.web.setZoomFactor(args.setZoomFactor / 100)
+        self.web.setZoomFactor(self.args.setZoomFactor / 100)
 
-        if (not args.showLoadingProgressBar):
+        if (not self.args.showLoadingProgressBar):
             self.progress.hide()
         elif (not self.progress.disabled):
             self.progress.show()
@@ -460,9 +472,8 @@ class MainWindow(QWidget):
     # catch defined Shortcuts
 
     def keyPressEvent(self, event):
-
-        if (args.browserResetTimeout):
-            self.mouseReleaseEvent()
+        if (self.args.browserResetTimeout):
+            self.resetTimerReset()
 
         keyEvent = event
 
@@ -476,10 +487,10 @@ class MainWindow(QWidget):
         if ((keyEvent.key() == QtCore.Qt.Key.Key_F5) or (ctrl and keyEvent.key() == QtCore.Qt.Key.Key_R)):
             self.web.reload()
             logging.info("Refresh")
-        if (args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_A):
+        if (self.args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_A):
             logging.info("Hit admin key")
-            subprocess.Popen([args.adminKey])
-        if (args.enablePrintKeyHandle and keyEvent.key() == QtCore.Qt.Key.Key_Print):
+            subprocess.Popen([self.args.adminKey])
+        if (self.args.enablePrintKeyHandle and keyEvent.key() == QtCore.Qt.Key.Key_Print):
             logging.info("Saving image to clipboard")
             clipboard = QGuiApplication.clipboard()
             clipboard.setPixmap(self.grab())
@@ -492,7 +503,12 @@ class MainWindow(QWidget):
             self.closeSearchBar()
 
     def closeEvent(self, event):
-        if (args.fullscreen):
+        if self.args.fullscreen:
+            logging.debug("Ignore event Close because fullscreen is set")
+            event.ignore()
+        if self.args.enableTrayMode:
+            logging.debug("Ignore event close and hide window because enableTrayMode is set")
+            self.hide()
             event.ignore()
 
     def adjustTitle(self):
@@ -500,9 +516,11 @@ class MainWindow(QWidget):
 
     def adjustTitleIcon(self):
         self.setWindowIcon(self.web.icon())
+        if self.args.enableTrayMode:
+            self.tray.setIcon(self.web.icon())
 
     def adjustAdressbar(self):
-        if(not self.web.url().toString().lower().endswith('.pdf')):
+        if (not self.web.url().toString().lower().endswith('.pdf')):
             self.addressBar.setText(self.web.url().toString())
 
     def openSearchBar(self):
@@ -515,7 +533,7 @@ class MainWindow(QWidget):
 
     def searchOnPage(self):
         signalFrom = self.sender().objectName()
-        if(signalFrom == "searchUpButton"):
+        if (signalFrom == "searchUpButton"):
             self.page.findText(self.searchText.text(), QWebEnginePage.FindBackward)
         else:
             self.page.findText(self.searchText.text())

@@ -23,10 +23,10 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.11')
+__version_info__ = ('devel', '3.0.12')
 __version__ = '-'.join(__version_info__)
 
-__remote_daemon_protocol_version__ = '1.0.0.5'
+__remote_daemon_protocol_version__ = '1.0.0.6'
 
 def getArguments(dirname):
     parser = ArgumentParser(
@@ -68,11 +68,12 @@ def getArguments(dirname):
     parser.add_argument("-dp", "--downloadPath", dest="downloadPath",
                         help="Defines the start path for any download and upload dialog")
 
-    # parser.add_argument("-ejs", "--executeJavascript", dest="executeJavascript",nargs='+',
-    #                     help="With this option, a js script file can be defined which should be injected on every page."
-    #                          "Format: #pathToScript#|#once#"
-    #                          "#pathToScript# = path to Script. Full path or relative to folder 'scripts' from installation dir"
-    #                          "#once# = 0 or 1. If 1 it will be injected only when the first site load completes. With 0 it will be injected each time a site is loaded.")
+    parser.add_argument("-ijs", "--injectJavascript", dest="injectJavascript",nargs='+',
+                        help="With this option, a js script file can be defined which should be injected on every page when loadFinished is triggered."
+                             "Format: #pathToScript#|#once#|#argX#=argXvalue....."
+                             "#pathToScript# = path to Script. Full path or relative to folder 'scripts' from installation dir"
+                             "#once# = 0 or 1. If 1 it will be injected only when the first site load completes. With 0 or default it will be injected each time a site is loaded."
+                             "#argX#::#value# = define Arguments which should be replaced in Script File at Runtime. in Script use {argX} in script file")
 
     parser.add_argument("-eal", "--enableAutoLogon", dest="enableAutoLogon", action='store_true',
                         help="Enables the autologon functionality, this function requires at least autoLogonUser and autoLogonPassword to be set. The Browser is preconfigured to work with Citrix Webinterface, Citrix Storefront and RDWeb Servers")
@@ -87,7 +88,6 @@ def getArguments(dirname):
                         help="Defines the ID of the HTML Element in which the password should be put in")
     parser.add_argument("-aldid", "--autoLogonDomainID", dest="autoLogonDomainID", default=False,
                         help="Defines the ID of the HTML Element in which the domain should be put in")
-    #parser.add_argument("-cwaa", "--citrixWebAutostartApp", dest="citrixWebAutostartApp", help="Defines an Application name which will be clicked automatically if found after login on a Citrix site")
 
     parser.add_argument("-es", "--enablespellcheck", dest="enableSpellcheck", action='store_true',
                         help="Enables spellchecking when set")
@@ -117,7 +117,7 @@ def getArguments(dirname):
     parser.add_argument("-rwc", "--removeWindowControls", dest="removeWindowControls", action='store_true',
                         help="This Option will remove the top Window Frame (with the Buttons Minimize/Maximize/Close)")
     parser.add_argument("-ic", "--ignoreCertificates", dest="ignoreCertificates", action='store_true',
-                        help="with this option HTTPS Warninigs will be ignored")
+                        help="with this option HTTPS Warnings will be ignored")
     parser.add_argument("-m", "--maximized", dest="maximized", action='store_true',
                         help="Start browser in a maximized window")
 
@@ -145,6 +145,8 @@ def getArguments(dirname):
     parser.add_argument("-slpb", "--showLoadingProgressBar", dest="showLoadingProgressBar", action='store_true',
                         help="Shows a Progress Bar on site loading.")
     parser.add_argument("-ecm", "--enableContextMenu", dest="enableContextMenu", action='store_true', help="Enables a minimal context Menu")
+    parser.add_argument("-etm", "--enableTrayMode", dest="enableTrayMode", action='store_true',
+                        help="when this option is set the browser will be minimized to tray instead of closed")
 
     parser.add_argument("-g", "--geometry", dest="geometry", default=[100, 100, 1024, 600], nargs="+", type=int,
                         help="Set window geomety #left# #top# #width# #height#, when using a multimonitor envireoment you can define the monitor for fullscreen or maximized mode with #left# #top#")
@@ -173,6 +175,7 @@ def getArguments(dirname):
     parser.add_argument("-awa", "--allowWebcamAccess", dest="allowWebcamAccess", action='store_true', help="Allows all Websites to use your Webcam")
 
     parser.add_argument("-ads", "--allowDesktopSharing", dest="allowDesktopSharing", action='store_true', help="Allows all Websites to share your screen and local computers audio")
+    parser.add_argument("-abn", "--allowBrowserNotifications", dest="allowBrowserNotifications", action='store_true', help="Allows all Websites to send Push Notifications")
 
     parser.add_argument("-emd", "--enableMouseDrag", dest="enableMouseDrag", action='store_true', help="Enable Single Click (Touch) website movement (js injection)")
     parser.add_argument("-sp", "--storePid", dest="storePid", action='store_true',
@@ -247,7 +250,7 @@ def parseConfigFile(args, parser):
             config_arguments[key] = list(map(int, val.split()))
         elif(key == 'whiteList'):
             config_arguments[key] = val.split(" ")
-        elif(key == 'downloadHandle'):
+        elif(key == 'downloadHandle' or key == 'injectJavascript'):
             config_arguments[key] = val.split("\"")
             config_arguments[key] = filter(None, config_arguments[key])
             config_arguments[key] = filter(bool, config_arguments[key])

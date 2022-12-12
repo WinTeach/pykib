@@ -24,8 +24,7 @@ import logging
 import tempfile
 import atexit
 import pprint
-
-
+from os.path import exists
 
 import pykib_base.ui
 import pykib_base.arguments
@@ -38,8 +37,8 @@ from remotePykib import RemotePykib
 #
 from PyQt6 import QtNetwork
 from PyQt6.QtCore import PYQT_VERSION_STR, Qt
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
+from PyQt6.QtGui import QGuiApplication, QIcon, QAction
 
 
 class Pykib():
@@ -153,6 +152,25 @@ class Pykib():
                     tempDownloadHandle.append(handle)
             self.args.downloadHandle = tempDownloadHandle
 
+        # Parse injectJavascript
+        if (self.args.injectJavascript):
+            tempInjectJavascript = []
+            for x in self.args.injectJavascript:
+                handle = x.split("|")
+                if (len(handle) != 0):
+                    if not (exists(handle[0]) or exists(self.dirname + "\\" + handle[0])):
+                        logging.error(handle[0] + "not found")
+                        sys.exit()
+                    if exists(self.dirname + "\\" + handle[0]):
+                        handle[0] = self.dirname + "\\" + handle[0]
+                    for index, parameters in enumerate(handle[2::]):
+                        paramterPair = parameters.split("::")
+                        if (len(paramterPair) != 2):
+                            logging.error("Error Splitting Parameters for js injection "+ parameters)
+                            sys.exit()
+                        handle[index + 2] = paramterPair
+                    tempInjectJavascript.append(handle)
+            self.args.injectJavascript = tempInjectJavascript
 
         # Check if a configred temporarySessionTokenPath Location exists
         if (self.args.temporarySessionTokenPath):
@@ -187,16 +205,23 @@ class Pykib():
         self.app.setApplicationName(self.args.systemApplicationName)
 
         # ----------------------------------------------------------
+        # Create Tray Icon
+        # ----------------------------------------------------------
+        icon = QIcon(os.path.join(self.dirname, 'icons/pykib.png'))
+        tray = QSystemTrayIcon()
+        tray.setIcon(icon)
+
+        # ----------------------------------------------------------
         # Switch between Remote Daemon an Default Pykib
         # ----------------------------------------------------------
         if (self.args.remoteBrowserDaemon):
             if (self.args.remoteBrowserKeepAliveInterval != 0 and self.args.remoteBrowserKeepAliveInterval < 200):
                 print("The remote browser keep alive interval hast to 0 or  be greater than 200ms")
                 sys.exit()
-            RemotePykib(self.args, self.dirname)
+            RemotePykib(self.args, self.dirname, tray)
 
         # ----------------------------------------------------------
-        # Eval Arguments for da Default Pykib Start
+        # Eval Arguments for Default Pykib Start
         # ----------------------------------------------------------
 
         # Check autologin Data
@@ -204,7 +229,24 @@ class Pykib():
             print("When Autologin is enabled at least autoLogonUser and autoLogonPassword has to be set also")
             sys.exit()
 
-        view = pykib_base.mainWindow.MainWindow(self.args, self.dirname)
+        # ----------------------------------------------------------
+        # Show Tray If configured and Add Menu
+        # ----------------------------------------------------------
+        tray.activated.connect(self.bringToFront)
+        if self.args.enableTrayMode:
+            tray.setVisible(True)
+            # Create the menu
+            menu = QMenu()
+
+            # Add a Quit option to the menu.
+            quit = QAction("Close Browser")
+            quit.triggered.connect(sys.exit)
+            menu.addAction(quit)
+
+            # Add the menu to the tray
+            tray.setContextMenu(menu)
+
+        self.view = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, tray)
 
         # Set Dimensions
         if (self.args.fullscreen):
@@ -212,24 +254,29 @@ class Pykib():
                 print(
                     "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
                 sys.exit()
-            view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
-            view.showFullScreen()
+            self.view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
+            self.view.showFullScreen()
         elif (self.args.maximized):
             if (len(self.args.geometry) != 2 and len(self.args.geometry) != 4):
                 print(
                     "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
                 sys.exit()
-            view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
-            view.showMaximized()
+            self.view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
+            self.view.showMaximized()
         else:
             if (len(self.args.geometry) != 4):
                 print(
                     "When geometry without maximized or fullsreen is set, you have to define the whole position an screen #left# #top# #width# #height#")
                 sys.exit()
-            view.show()
-            view.setGeometry(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1], self.args.geometry[2], self.args.geometry[3])
+            self.view.show()
+            self.view.setGeometry(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1], self.args.geometry[2], self.args.geometry[3])
 
         sys.exit(self.app.exec())
+    def bringToFront(self, reason):
+        if not reason == QSystemTrayIcon.ActivationReason.Context:
+            self.view.setWindowState(self.view.restoreState)
+            self.view.activateWindow()
+            self.view.show()
 
     def exitCleanup(self):
         try:

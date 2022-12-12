@@ -34,6 +34,7 @@ from PyQt6.QtWidgets import QFileDialog
 from PyQt6.QtCore import QSize, QUrl, Qt
 
 from pykib_base.myUrlSchemeHandler import myUrlSchemeHandler
+from pykib_base.notificationPopup import NotificationPopup
 
 class myQWebEnginePage(QWebEnginePage):
     args = 0
@@ -83,6 +84,14 @@ class myQWebEnginePage(QWebEnginePage):
         #Register Teams URL Handler
         self.profile().installUrlSchemeHandler(b'msteams', myUrlSchemeHandler(self))
 
+        # Browser Notification Popup Handler
+        if args.allowBrowserNotifications:
+            popup = NotificationPopup(self.form)
+            def presentNotification(notification):
+                popup.present(notification)
+
+            self.profile().setNotificationPresenter(presentNotification)
+
         # Enable Spell Checking
         if (args.enableSpellcheck):
             #Seems not to work with current Version - Further investigation neccessary
@@ -113,6 +122,7 @@ class myQWebEnginePage(QWebEnginePage):
         if (args.enablepdfsupport):
             self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, 1)
             self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessFileUrls, 1)
+
 
     def openInSameWindow(self, newWindowsRequest):
         self.form.web.load(newWindowsRequest.requestedUrl().toString())
