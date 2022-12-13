@@ -167,10 +167,10 @@ class myQWebEnginePage(QWebEnginePage):
         return [""]
 
     def javaScriptConsoleMessage(self, msg, lineNumber, sourceID, category):
-        #print(msg);
-        #print(category);
-        #print(lineNumber);
-        #print(sourceID);
+        logging.debug(msg)
+        logging.debug(category)
+        logging.debug(lineNumber)
+        logging.debug(sourceID)
         # # #Ignore JS Failures
         pass
 

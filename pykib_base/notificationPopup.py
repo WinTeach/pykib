@@ -95,6 +95,8 @@ class NotificationPopup(QWidget):
         self.notificationTitle.setText(self.notification.title())
         self.notificationMessage.setText(self.notification.message())
         self.notificationSender.setText(self.notification.origin().toString())
+        #One time seems to be not enough
+        self.adjustSize()
         self.adjustSize()
 
         iconHeigth = self.notificationIcon.height()

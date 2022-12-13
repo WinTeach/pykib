@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.12')
+__version_info__ = ('devel', '3.0.13')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.0.0.6'
@@ -68,7 +68,7 @@ def getArguments(dirname):
     parser.add_argument("-dp", "--downloadPath", dest="downloadPath",
                         help="Defines the start path for any download and upload dialog")
 
-    parser.add_argument("-ijs", "--injectJavascript", dest="injectJavascript",nargs='+',
+    parser.add_argument("-ijs", "--injectJavascript", dest="injectJavascript", nargs='+',
                         help="With this option, a js script file can be defined which should be injected on every page when loadFinished is triggered."
                              "Format: #pathToScript#|#once#|#argX#=argXvalue....."
                              "#pathToScript# = path to Script. Full path or relative to folder 'scripts' from installation dir"

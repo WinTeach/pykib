@@ -304,16 +304,14 @@ class MainWindow(QWidget):
             logging.debug("JS Files injection")
             if (loadFinished):
                 for injection in self.args.injectJavascript:
-                    logging.debug("Inject Javascript")
-                    logging.debug(injection)
                     script = ''
-                    if (bool(injection[1]) and self.firstRun) or bool(injection[1]):
+                    if (injection[1] == '1' and self.firstRun) or injection[1] == '0':
+                        logging.debug("Inject Javascript")
+                        logging.debug(injection)
                         script = open(injection[0], "r").read()
                         for parameter in injection[2::]:
                             script = script.replace('{'+parameter[0]+'}', parameter[1])
                         self.page.runJavaScript(script)
-                        logging.debug(script)
-
         if (loadFinished):
             if (self.args.enableAutoLogon and self.firstRun == True):
                 logging.info("Perform AutoLogin")
