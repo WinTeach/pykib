@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.13')
+__version_info__ = ('devel', '3.0.14')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.0.0.6'
@@ -176,6 +176,8 @@ def getArguments(dirname):
 
     parser.add_argument("-ads", "--allowDesktopSharing", dest="allowDesktopSharing", action='store_true', help="Allows all Websites to share your screen and local computers audio")
     parser.add_argument("-abn", "--allowBrowserNotifications", dest="allowBrowserNotifications", action='store_true', help="Allows all Websites to send Push Notifications")
+    parser.add_argument("-pns", "--playNotificationSound", dest="allowBrowserNotificationsplayNotificationSound", action='store_true',
+                        help="if set a sound jingle is played when a notification is received")
 
     parser.add_argument("-emd", "--enableMouseDrag", dest="enableMouseDrag", action='store_true', help="Enable Single Click (Touch) website movement (js injection)")
     parser.add_argument("-sp", "--storePid", dest="storePid", action='store_true',

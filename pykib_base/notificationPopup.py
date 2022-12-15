@@ -123,7 +123,8 @@ class NotificationPopup(QWidget):
 
         self.move(notificationPositionX, notificationPositionY)
 
-        self.soundEffect.play()
+        if self.parent.args.playNotificationSound:
+            self.soundEffect.play()
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         if not self.parent.args.remoteBrowserDaemon:
