@@ -319,7 +319,9 @@ class myQWebEnginePage(QWebEnginePage):
         self.form.PDFnavbar.show()
         # self.form.navbar.hide()
         self.form.progress.disabled = True
-        self.form.addressBar.setText(origUrl)
+
+        if args.showAddressBar:
+            self.form.addressBar.setText(origUrl)
 
     def closePDFPage(self):
         if(args.pdfreadermode):
