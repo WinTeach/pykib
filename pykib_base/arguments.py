@@ -176,7 +176,7 @@ def getArguments(dirname):
 
     parser.add_argument("-ads", "--allowDesktopSharing", dest="allowDesktopSharing", action='store_true', help="Allows all Websites to share your screen and local computers audio")
     parser.add_argument("-abn", "--allowBrowserNotifications", dest="allowBrowserNotifications", action='store_true', help="Allows all Websites to send Push Notifications")
-    parser.add_argument("-pns", "--playNotificationSound", dest="allowBrowserNotificationsplayNotificationSound", action='store_true',
+    parser.add_argument("-pns", "--playNotificationSound", dest="playNotificationSound", action='store_true',
                         help="if set a sound jingle is played when a notification is received")
 
     parser.add_argument("-emd", "--enableMouseDrag", dest="enableMouseDrag", action='store_true', help="Enable Single Click (Touch) website movement (js injection)")
