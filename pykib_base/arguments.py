@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.15')
+__version_info__ = ('devel', '3.0.16')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.0.0.6'
@@ -165,6 +165,8 @@ def getArguments(dirname):
 
     parser.add_argument("-ll", "--logLevel", dest="logLevel", default="ERROR",
                         help="Setting the Level of Loggin. Allowed Values are ERROR, INFO, WARNING and DEBUG, Default is ERROR")
+    parser.add_argument("-sjsc", "--showJsConsole", dest="showJsConsole", action='store_true',
+                        help="Showing all js console entry on in DEBUG log")
 
     parser.add_argument("-art", "--autoReloadTimer", dest="autoReloadTimer", help="Here you can configure a Timeout (in seconds) after which the actives site gets reloaded", default=0, type=int)
 
