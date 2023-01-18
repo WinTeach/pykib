@@ -16,14 +16,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import logging
 import textwrap
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.18')
+__version_info__ = ('devel', '3.0.19')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.0.0.6'
@@ -216,7 +216,11 @@ def getArguments(dirname):
                         help="Path where the temporary session token should be stored on the system. If not set the file .pykibTemporarySessionToken will be stored in the users tmp path")
 
 
-    args = parser.parse_args();
+    args, unknown = parser.parse_known_args()
+    if unknown:
+        logging.warning("ignoring undefined arguments:")
+        logging.warning(unknown)
+
     if (args.configFile):
         if (os.path.isfile(dirname + "/" + args.configFile)):
             args.configFile = dirname + "/" + args.configFile
