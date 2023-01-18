@@ -273,8 +273,8 @@ class myQWebEnginePage(QWebEnginePage):
 
     def runProcess(self, handle, filepath, download):
         print(download.isFinished())
-        print("Executing:" + "\"" + handle[1] + "\" " + filepath);
-        subprocess.Popen("\"" + handle[1] + "\" " + filepath, shell=True)
+        print("Executing:" + "\"" + handle[1] + "\" " + filepath + " " + str(os.getpid()));
+        subprocess.Popen("\"" + handle[1] + "\" " + filepath + " " + str(os.getpid()), shell=True)
 
     def openPdf(self, origUrl):
         self.pdfFile = "file:///" + self.pdfFile
