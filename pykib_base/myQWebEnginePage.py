@@ -101,8 +101,8 @@ class myQWebEnginePage(QWebEnginePage):
         if (args.setBrowserLanguage):
             self.profile().setHttpAcceptLanguage(args.setBrowserLanguage)
 
-        # When Autologin is enabled, se Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces which will otherwise show the Client detection which fails.
-        if (args.enableAutoLogon or args.setCitrixUserAgent):
+        # When setCitrixUserAgent is enabled, the Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces to skip Client detection.
+        if (args.setCitrixUserAgent):
             if (args.setBrowserLanguage):
                 self.profile().setHttpUserAgent(
                     "Mozilla/5.0 (Windows; U; Windows NT 6.1; de) AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
@@ -151,26 +151,26 @@ class myQWebEnginePage(QWebEnginePage):
             nameFiltersString.append("All files (*.*)");
             uploadDialog.setNameFilters(nameFiltersString)
 
-        uploadDialog.setFileMode(QFileDialog.ExistingFiles)
-        uploadDialog.setAcceptMode(QFileDialog.AcceptOpen)
+        uploadDialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
+        uploadDialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
 
-        options = QFileDialog.Options()
-        options |= QFileDialog.ReadOnly
-        options |= QFileDialog.DontUseNativeDialog
+        options = QFileDialog.Option.ReadOnly
+        options |= QFileDialog.Option.DontUseNativeDialog
 
         uploadDialog.setOptions(options)
 
-        if uploadDialog.exec_():
+        if uploadDialog.exec():
             fileName = uploadDialog.selectedFiles()
             return fileName
 
         return [""]
 
     def javaScriptConsoleMessage(self, msg, lineNumber, sourceID, category):
-        logging.debug(msg)
-        logging.debug(category)
-        logging.debug(lineNumber)
-        logging.debug(sourceID)
+        if(args.showJsConsole):
+            logging.debug(msg)
+            logging.debug(category)
+            logging.debug(lineNumber)
+            logging.debug(sourceID)
         # # #Ignore JS Failures
         pass
 
