@@ -38,9 +38,9 @@ from pykib_base.resetTimeout import ResetTimeout
 from PyQt6.QtWebEngineCore import QWebEnginePage
 from PyQt6 import QtCore
 from PyQt6.QtCore import QTimer, Qt, QEvent
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtGui import QGuiApplication, QPixmap
 
-from PyQt6.QtWidgets import QWidget, QSystemTrayIcon
+from PyQt6.QtWidgets import QWidget, QSystemTrayIcon, QLabel
 
 
 class MainWindow(QWidget):
@@ -62,7 +62,7 @@ class MainWindow(QWidget):
         # self.setAttribute(Qt.WA_DeleteOnClose)
 
         # Create WebView and WebPage
-        self.web = myQWebEngineView(self.args, dirname)
+        self.web = myQWebEngineView(self.args, dirname, self)
         self.web.setObjectName("view")
 
         self.page = myQWebEnginePage(self.args, dirname, self, True)
@@ -227,10 +227,12 @@ class MainWindow(QWidget):
 
     # Handling crash of wegengineproc
     def viewTerminated(self, status, exitCode):
-        if status == QWebEnginePage.NormalTerminationStatus:
+        if status == QWebEnginePage.RenderProcessTerminationStatus.NormalTerminationStatus:
             return True
         else:
             logging.error("WebEngineProcess stopped working. Stopping pykib")
+            logging.error(status)
+            logging.error(exitCode)
             os._exit(1)
 
     def closeBecauseMemoryCap(self, time_to_close, remaining_time_to_close):
@@ -450,7 +452,6 @@ class MainWindow(QWidget):
              """
                 self.page.runJavaScript(script)
             self.firstRun = False
-
 
     def loadingProgressChanged(self, percent):
         # Setting Zoomfactor

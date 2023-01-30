@@ -36,6 +36,7 @@ class RemotePykibUnixSocketServer(QtCore.QThread):
     activateInstance = pyqtSignal(int, int)
     moveInstance = pyqtSignal(int, int, list, float)
     changeTabWindow = pyqtSignal(int, int, int)
+    setPixmap = pyqtSignal(int, str)
 
     def __init__(self, config, args):
         super(RemotePykibUnixSocketServer, self).__init__()
@@ -68,8 +69,8 @@ class RemotePykibUnixSocketServer(QtCore.QThread):
         except Exception as e:
             logging.info(e)
 
-        try:
-            while True:
+        while True:
+            try:
                 try:
                     self.keepAliveThread.exit()
                     logging.debug("Stopped Unix Socket KeepAliveThread")
@@ -87,7 +88,11 @@ class RemotePykibUnixSocketServer(QtCore.QThread):
                     logging.info("Wait for Message")
                     try:
                         connection.settimeout(5)
-                        message = connection.recv(1024)
+                        message = connection.recv(256)
+                        #receive message until it end with b'\r\n')
+                        while not message.endswith(b'\r\n') and message:
+                            message += connection.recv(256)
+
                     except Exception as e:
                         logging.debug(e)
                         keepOpen = False
@@ -103,6 +108,7 @@ class RemotePykibUnixSocketServer(QtCore.QThread):
                         keepOpen = False
                     else:
                         try:
+                            logging.debug(message)
                             data = json.loads(message)
                         except Exception as e:
                             logging.debug(e)
@@ -137,6 +143,14 @@ class RemotePykibUnixSocketServer(QtCore.QThread):
                             except Exception as e:
                                 logging.debug(e)
                                 keepOpen = False
+                        elif data['action'] == 'setPixmap':
+                            logging.debug("UnixSocket:")
+                            logging.debug("  Apply Pixmap on Tab: " + str(data["tabId"]))
+                            self.setPixmap.emit(int(data["tabId"]), str(data['pixmap']))
+                            logging.info("------------------------------------------------------------")
+                            #connection.sendall(json.dumps([self.config]).encode()+b'\n')
+                            #keepOpen = False
+                            #continue
                         elif data['action'] == 'register':
                             logging.debug("UnixSocket:")
                             logging.debug("  Register:Return config")
@@ -200,15 +214,15 @@ class RemotePykibUnixSocketServer(QtCore.QThread):
                             "Ack": True}
                         ]).encode() + b'\n')
 
-        except Exception as e:
-            try:
-                logging.info(e)
-                self.closeInstance.emit(self.openSockets[unixSocket]["tabId"], self.openSockets[unixSocket]["windowId"])
-                logging.debug("Socket:")
-                logging.debug("  Connection to Tab lost. Closing")
-            except Exception as e2:
-                logging.warning(e2)
-                logging.warning(e)
+            except Exception as e:
+                try:
+                    logging.info(e)
+                    self.closeInstance.emit(self.openSockets[unixSocket]["tabId"], self.openSockets[unixSocket]["windowId"])
+                    logging.debug("Socket:")
+                    logging.debug("  Connection to Tab lost. Closing")
+                except Exception as e2:
+                    logging.warning(e2)
+                    logging.warning(e)
 
     def keepAliveExeeded(self):
         self.closeInstance.emit(0, 0)

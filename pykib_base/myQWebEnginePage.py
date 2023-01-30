@@ -26,7 +26,7 @@ import time
 
 from functools import partial
 
-from PyQt6.QtNetwork import QAuthenticator
+from PyQt6.QtNetwork import QAuthenticator, QNetworkCookie
 from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
 from PyQt6 import QtCore, QtWebEngineWidgets, QtWidgets, QtWebEngineCore
 from PyQt6.QtGui import QIcon
@@ -45,9 +45,28 @@ class myQWebEnginePage(QWebEnginePage):
         args = argsparsed
         global dirname
         dirname = currentdir
+
+        self.currentSiteCookies = []
+
         self.form = form
-        #Create Empty (private) profile
-        if(args.persistentProfilePath):
+
+        self.initBrowserProfile(createPrivateProfile)
+
+
+        # Modify Settings
+        # *********************************************************************
+        #Allow Fullscreen
+        self.settings().setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True)
+        if (args.allowDesktopSharing):
+            self.settings().setAttribute(QWebEngineSettings.WebAttribute.ScreenCaptureEnabled, True)
+
+        if (args.enablepdfsupport):
+            self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, 1)
+            self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessFileUrls, 1)
+
+    def initBrowserProfile(self, createPrivateProfile):
+        # Create Empty (private) profile
+        if (args.persistentProfilePath):
             profile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
             QtWebEngineCore.QWebEnginePage.__init__(self, profile, self.form.web)
 
@@ -75,18 +94,19 @@ class myQWebEnginePage(QWebEnginePage):
         self.newWindowRequested.connect(self.openInSameWindow)
         self.certificateError.connect(self.validateCertificateError)
 
-        #Modify Profile
-        #*********************************************************************
+        # Modify Profile
+        # *********************************************************************
 
-        #Connect to Download Handler
+        # Connect to Download Handler
         self.profile().downloadRequested.connect(self.on_downloadRequested)
 
-        #Register Teams URL Handler
+        # Register Teams URL Handler
         self.profile().installUrlSchemeHandler(b'msteams', myUrlSchemeHandler(self))
 
         # Browser Notification Popup Handler
         if args.allowBrowserNotifications:
             popup = NotificationPopup(self.form)
+
             def presentNotification(notification):
                 popup.present(notification)
 
@@ -94,7 +114,7 @@ class myQWebEnginePage(QWebEnginePage):
 
         # Enable Spell Checking
         if (args.enableSpellcheck):
-            #Seems not to work with current Version - Further investigation neccessary
+            # Seems not to work with current Version - Further investigation neccessary
             logging.info("Enable spell checking language: " + args.spellCheckingLanguage)
             self.profile().setSpellCheckEnabled(True)
 
@@ -109,20 +129,6 @@ class myQWebEnginePage(QWebEnginePage):
             else:
                 self.profile().setHttpUserAgent(
                     "Mozilla/5.0 (Windows; U; Windows NT 6.1; " + args.setBrowserLanguage + ") AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
-
-        # Modify Settings
-        # *********************************************************************
-
-        #Allow Fullscreen
-        self.settings().setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True)
-
-        if (args.allowDesktopSharing):
-            self.settings().setAttribute(QWebEngineSettings.WebAttribute.ScreenCaptureEnabled, True)
-
-        if (args.enablepdfsupport):
-            self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, 1)
-            self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessFileUrls, 1)
-
 
     def openInSameWindow(self, newWindowsRequest):
         self.form.web.load(newWindowsRequest.requestedUrl().toString())
@@ -415,3 +421,13 @@ class myQWebEnginePage(QWebEnginePage):
             print("Using autologin credentials")
             cred.setUser(args.autoLogonUser)
             cred.setPassword(args.autoLogonPassword)
+
+    def enableCleanupBrowserProfileOption(self):
+        self.profile().clearAllVisitedLinks()
+        self.profile().cookieStore().deleteAllCookies()
+        self.profile().cookieStore().deleteSessionCookies()
+        self.runJavaScript("localStorage.clear();")
+        self.runJavaScript("sessionStorage.clear();")
+        self.runJavaScript("location.reload();")
+        logging.info("Cleanup Browser Profile")
+

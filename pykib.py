@@ -23,7 +23,7 @@ import os
 import logging
 import tempfile
 import atexit
-import pprint
+from functools import partial
 from os.path import exists
 
 import pykib_base.ui
@@ -119,7 +119,7 @@ class Pykib():
                 proxy.setUser(self.args.proxyUsername);
                 proxy.setPassword(self.args.proxyPassword);
             elif (self.args.proxyUsername or self.args.proxyPassword):
-                print("It is not possible to use a proxy username without password")
+                logging.error("It is not possible to use a proxy username without password")
                 sys.exit()
 
             QtNetwork.QNetworkProxy.setApplicationProxy(proxy)
@@ -127,20 +127,20 @@ class Pykib():
         # Allow Webcam and Microfon Support. Warn if PyQt Version is to old
         if (self.args.allowWebcamAccess):
             if (PYQT_VERSION_STR < "5.15.0"):
-                logging.info(
+                logging.warning(
                     "Webcam Access is only supported with PyQt5 Version 5.15.0 and will be disabled. Currently installed Version:" + PYQT_VERSION_STR)
                 self.args.allowWebcamAccess = False;
 
         if (self.args.allowMicAccess):
             if (PYQT_VERSION_STR < "5.15.0"):
-                logging.info(
+                logging.warning(
                     "Microfon Access is only supported with PyQt5 Version 5.15.0 and will be disabled. . Currently installed Version:" + PYQT_VERSION_STR)
                 self.args.allowMicAccess = False;
 
         # Check if a configred Download Location exists
         if (self.args.downloadPath):
             if (os.path.isdir(self.args.downloadPath) != True):
-                print("The folder for downloadPath (" + self.args.downloadPath + ") does not exists or is unreachable")
+                logging.error("The folder for downloadPath (" + self.args.downloadPath + ") does not exists or is unreachable")
                 sys.exit()
 
         # Parse Download Handle
@@ -176,17 +176,17 @@ class Pykib():
         # Check if a configred temporarySessionTokenPath Location exists
         if (self.args.temporarySessionTokenPath):
             if (os.path.isdir(self.args.temporarySessionTokenPath) != True):
-                print("The folder for storing the temporary Session Token (" + self.args.temporarySessionTokenPath + ") does not exists or is unreachable")
+                logging.error("The folder for storing the temporary Session Token (" + self.args.temporarySessionTokenPath + ") does not exists or is unreachable")
                 sys.exit()
 
         # Ignoring Systems DPI Setting, allways ignored in remoteBrowserDaemon Mode
         if(self.args.ignoreSystemDpiSettings):
             QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.Floor)
             if (self.args.setZoomFactor < 25 or self.args.setZoomFactor > 500):
-                print("The Zoom factor must be a value between 25 and 500")
+                logging.error("The Zoom factor must be a value between 25 and 500")
                 sys.exit()
         elif(self.args.setZoomFactor != 100):
-            print("A Zoom factor can only be defined when --ignoreSystemDpiSettings is set ")
+            logging.error("A Zoom factor can only be defined when --ignoreSystemDpiSettings is set ")
             sys.exit()
 
         # Calculate Screen Offset when normalizeGeometry is set
@@ -199,6 +199,13 @@ class Pykib():
                             self.args.screenOffsetLeft = key.availableGeometry().left()
         except:
             self.args.screenOffsetLeft = 0
+
+        #Check allowed Values for remoteBrowserPixmapMonitorInterval
+        if (self.args.remoteBrowserPixmapMonitorInterval != 0 and
+                (self.args.remoteBrowserPixmapMonitorInterval < 50 or self.args.remoteBrowserPixmapMonitorInterval > 2000)):
+                logging.error("The remote browser pixmap monitor interval has to be 0 or between 50 and 2000 ")
+                sys.exit()
+
 
         # ----------------------------------------------------------
         # Define System application Name
@@ -217,7 +224,7 @@ class Pykib():
         # ----------------------------------------------------------
         if (self.args.remoteBrowserDaemon):
             if (self.args.remoteBrowserKeepAliveInterval != 0 and self.args.remoteBrowserKeepAliveInterval < 200):
-                print("The remote browser keep alive interval hast to 0 or  be greater than 200ms")
+                logging.error("The remote browser keep alive interval hast to 0 or  be greater than 200ms")
                 sys.exit()
             RemotePykib(self.args, self.dirname, tray)
 
@@ -227,8 +234,10 @@ class Pykib():
 
         # Check autologin Data
         if (self.args.enableAutoLogon and not (self.args.autoLogonUser and self.args.autoLogonPassword)):
-            print("When Autologin is enabled at least autoLogonUser and autoLogonPassword has to be set also")
-            sys.exit()
+            logging.error("When Autologin is enabled at least autoLogonUser and autoLogonPassword has to be set also")
+            sys.exit()      
+
+        self.view = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, tray)
 
         # ----------------------------------------------------------
         # Show Tray If configured and Add Menu
@@ -239,34 +248,43 @@ class Pykib():
             # Create the menu
             menu = QMenu()
 
+            if (self.args.enableCleanupBrowserProfileOption):
+                advancedMenu = menu.addMenu(QIcon(os.path.join(self.dirname, 'icons/settings.png')), 'Advanced')
+                # Delete All Cookies
+                deleteAllCookiesButton = QAction(QIcon(os.path.join(self.dirname, 'icons/cleanup.png')),
+                                                 'Cleanup Browser Profile')
+                deleteAllCookiesButton.setStatusTip('Delete Cookies for Current Site')
+                deleteAllCookiesButton.triggered.connect(partial(self.view.page.enableCleanupBrowserProfileOption))
+                advancedMenu.addAction(deleteAllCookiesButton)
+                menu.addSeparator()
+
             # Add a Quit option to the menu.
-            quit = QAction("Close Browser")
+            quit = QAction(QIcon(os.path.join(self.dirname, 'icons/close.png')),
+                    'Close Browser')
             quit.triggered.connect(sys.exit)
             menu.addAction(quit)
 
             # Add the menu to the tray
             tray.setContextMenu(menu)
-
-        self.view = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, tray)
-
+            
         # Set Dimensions
         if (self.args.fullscreen):
             if (len(self.args.geometry) != 2 and len(self.args.geometry) != 4):
-                print(
+                logging.error(
                     "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
                 sys.exit()
             self.view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
             self.view.showFullScreen()
         elif (self.args.maximized):
             if (len(self.args.geometry) != 2 and len(self.args.geometry) != 4):
-                print(
+                logging.error(
                     "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
                 sys.exit()
             self.view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
             self.view.showMaximized()
         else:
             if (len(self.args.geometry) != 4):
-                print(
+                logging.error(
                     "When geometry without maximized or fullsreen is set, you have to define the whole position an screen #left# #top# #width# #height#")
                 sys.exit()
             self.view.show()
@@ -282,7 +300,6 @@ class Pykib():
     def exitCleanup(self):
         try:
             logging.info("Closing Pykib, doing cleanup:")
-
             #Delete Session Token File if set
             if (self.args.useTemporarySessionToken):
                 logging.info("  Cleanup session token file")

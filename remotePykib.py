@@ -16,7 +16,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import base64
+import io
 import sys
 import os
 import logging
@@ -31,7 +32,7 @@ import pykib_base.mainWindow
 import pykib_base.remotePykibWebsocketServer
 import pykib_base.remotePykibUnixSocketServer
 
-from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtGui import QIcon, QAction, QPixmap
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 
 
@@ -57,6 +58,7 @@ class RemotePykib():
             "allowUserBasedRemoting": self.args.allowUserBasedRemoting,
             "remoteBrowserMoveInterval": self.args.remoteBrowserMoveInterval,
             "remoteDaemonProtocolVersion": self.args.remoteDaemonProtocolVersion,
+            "remoteBrowserPixmapMonitorInterval": self.args.remoteBrowserPixmapMonitorInterval,
         }
 
         # Configure a Remote Pykib Tray App
@@ -107,6 +109,7 @@ class RemotePykib():
         socketServer.activateInstance.connect(self.activateInstance)
         socketServer.moveInstance.connect(self.moveInstance)
         socketServer.changeTabWindow.connect(self.changeTabWindow)
+        socketServer.setPixmap.connect(self.setPixmap)
         socketServer.start()
 
         sys.exit(self.app.exec())
@@ -163,8 +166,11 @@ class RemotePykib():
                     for window in self.pykibInstances:
                         try:
                             for tab in self.pykibInstances[window]:
-                                self.pykibInstances[window][tab].web.close()
-                                self.pykibInstances[window][tab].close()
+                                try:
+                                    self.pykibInstances[window][tab].web.close()
+                                    self.pykibInstances[window][tab].close()
+                                except Exception as f:
+                                    logging.debug(f)
                         except Exception as i:
                             logging.warning(i)
                 except Exception as e:
@@ -266,6 +272,28 @@ class RemotePykib():
                 #Move Tab from old to new Window Id
                 self.pykibInstances[newWindowId][tabId] = self.pykibInstances[oldWindowId][tabId]
                 del self.pykibInstances[oldWindowId][tabId]
+            else:
+                logging.info("      Tab not found.")
+        except Exception as e:
+            logging.info(e)
+
+
+    def setPixmap(self, tabId, pixmap):
+        logging.info("RemotePykib:")
+        logging.info("  Apply Pixmap")
+        logging.info("    TabID: " + str(tabId))
+        try:
+            for pykibInstance in self.pykibInstances:
+                if(tabId in self.pykibInstances[pykibInstance]):
+                    pixmap = base64.b64decode(pixmap)
+                    f = io.BytesIO(pixmap)
+                    fh = open("/tmp/pixmap.png", "wb")
+                    fh.write(pixmap)
+                    fh.close()
+
+                    pixmap = QPixmap("/tmp/pixmap.png")
+                    self.pykibInstances[pykibInstance][tabId].web.parent.setMask(pixmap.mask())
+                    self.pykibInstances[pykibInstance][tabId].web.parent.mask()
             else:
                 logging.info("      Tab not found.")
         except Exception as e:

@@ -21,6 +21,7 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QIcon
 from PyQt6.QtGui import QAction
+from functools import partial
 
 import os
 import logging
@@ -28,12 +29,13 @@ import logging
 class myQWebEngineView(QWebEngineView):
     
 
-    def __init__(self, argsparsed, dirnameparsed):
+    def __init__(self, argsparsed, dirnameparsed, parent):
         global args
         args = argsparsed
 
         global dirname
         dirname = dirnameparsed
+        self.parent = parent;
         self.browser = QWebEngineView.__init__(self)
 
     def load(self, url):
@@ -56,11 +58,23 @@ class myQWebEngineView(QWebEngineView):
         #32 -> Save Page
         unwantedMenuEntries = {11, 16, 13, 14, 32, 30}
 
+        iconMap = {
+            0 : QIcon(os.path.join(dirname, 'icons/back.png')),
+            1 : QIcon(os.path.join(dirname, 'icons/forward.png')),
+            3 : QIcon(os.path.join(dirname, 'icons/refresh.png'))
+        }
+
         for menuAction in self.menu.actions():
             #Remove Item From Default Menu
             #View Source
             if(menuAction.data() in unwantedMenuEntries):
                 self.menu.removeAction(menuAction)
+            else:
+                logging.debug(str(menuAction.data()))
+                try:
+                    menuAction.setIcon(iconMap[menuAction.data()])
+                except:
+                    logging.debug('No Icon found for context menu entry ' + str(menuAction.data()))
 
         # Adding Close Button (for remoteDameonMode)
         if(args.remoteBrowserDaemon):
@@ -70,8 +84,30 @@ class myQWebEngineView(QWebEngineView):
             self.menu.addSeparator()
             self.menu.addAction(closeButton)
 
+        if(args.enableCleanupBrowserProfileOption):
+            self.menu.addSeparator()
+            advancedMenu = self.menu.addMenu(QIcon(os.path.join(dirname, 'icons/settings.png')), 'Advanced')
+
+            # Delete All Cookies
+            deleteAllCookiesButton = QAction(QIcon(os.path.join(dirname, 'icons/cleanup.png')),
+                                             'Cleanup Browser Profile', self)
+            deleteAllCookiesButton.setStatusTip('Delete Cookies for Current Site')
+            deleteAllCookiesButton.triggered.connect(partial(self.parent.page.enableCleanupBrowserProfileOption))
+            advancedMenu.addAction(deleteAllCookiesButton)
+
         self.menu.popup(event.globalPos())
 
     def closeByMenu(self):
-        self.close()
-        self.parent().close()
+
+        try:
+            self.close()
+        except:
+            logging.debug('Nothing to close')
+
+        try:
+            self.parent.close()
+            self.parent.deleteLater()
+            self.deleteLater()
+        except:
+            logging.debug('No Parent to close found')
+

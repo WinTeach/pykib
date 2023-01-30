@@ -23,10 +23,10 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.19')
+__version_info__ = ('devel', '3.0.20')
 __version__ = '-'.join(__version_info__)
 
-__remote_daemon_protocol_version__ = '1.0.0.6'
+__remote_daemon_protocol_version__ = '1.0.0.7'
 
 def getArguments(dirname):
     parser = ArgumentParser(
@@ -147,6 +147,12 @@ def getArguments(dirname):
     parser.add_argument("-ecm", "--enableContextMenu", dest="enableContextMenu", action='store_true', help="Enables a minimal context Menu")
     parser.add_argument("-etm", "--enableTrayMode", dest="enableTrayMode", action='store_true',
                         help="when this option is set the browser will be minimized to tray instead of closed")
+    parser.add_argument("-ecbpo", "--enableCleanupBrowserProfileOption", dest="enableCleanupBrowserProfileOption", action='store_true',
+                        help="when this option is set the user has the option to Cleanup the Browser Profile (in tray and "
+                             "context menu). When 'Cleanup Browser Profile' is performed it will:"
+                             "- remove all Browser Cookies"
+                             "- perform localStorage.clean() and sessionStorage.clean() via JS"
+                             "- reload the current Site")
 
     parser.add_argument("-g", "--geometry", dest="geometry", default=[100, 100, 1024, 600], nargs="+", type=int,
                         help="Set window geomety #left# #top# #width# #height#, when using a multimonitor envireoment you can define the monitor for fullscreen or maximized mode with #left# #top#")
@@ -192,6 +198,13 @@ def getArguments(dirname):
                         help="start a remote browser daemon")
     parser.add_argument("-rbmi", "--remoteBrowserMoveInterval", dest="remoteBrowserMoveInterval", type=int, default=50,
                         help="Define Interval in ms in which movement requests are send when moving the remote browser window - Default 50ms")
+    parser.add_argument("-rbmpmi", "--remoteBrowserPixmapMonitorInterval", dest="remoteBrowserPixmapMonitorInterval", type=int, default=500,
+                        help="This option allows you to define the interval at which the optionally installed "
+                             "server-side connector app monitors the viewport of the server-side browser for "
+                             "overlapping applications. If an overlapping application is detected, the server sends"
+                             " a pixmap to the remote browser, which cuts out the area of the overlapping application."
+                             "Lower values lead to a higher CPU load on the server side.   "
+                             "disabled = 0, min = 50, max = 2000, Default 300ms")
     parser.add_argument("-rl", "--remotingList", dest="remotingList", nargs="+", default='',
                         help="Defined a List of Urls which should be remoted - use * as wildcard")
     parser.add_argument("-aubr", "--allowUserBasedRemoting", dest="allowUserBasedRemoting", action='store_true',
