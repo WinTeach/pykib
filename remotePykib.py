@@ -278,23 +278,16 @@ class RemotePykib():
             logging.info(e)
 
 
-    def setPixmap(self, tabId, pixmap):
+    def setPixmap(self, tabId, pixmapData):
         logging.info("RemotePykib:")
         logging.info("  Apply Pixmap")
         logging.info("    TabID: " + str(tabId))
         try:
             for pykibInstance in self.pykibInstances:
                 if(tabId in self.pykibInstances[pykibInstance]):
-                    pixmap = base64.b64decode(pixmap)
-                    f = io.BytesIO(pixmap)
-                    fh = open("/tmp/pixmap.png", "wb")
-                    fh.write(pixmap)
-                    fh.close()
-
-                    pixmap = QPixmap("/tmp/pixmap.png")
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(base64.b64decode(pixmapData))
                     self.pykibInstances[pykibInstance][tabId].web.parent.setMask(pixmap.mask())
                     self.pykibInstances[pykibInstance][tabId].web.parent.mask()
-            else:
-                logging.info("      Tab not found.")
         except Exception as e:
             logging.info(e)
