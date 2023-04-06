@@ -157,7 +157,6 @@ class Pykib():
             tempInjectJavascript = []
             for x in self.args.injectJavascript:
                 handle = x.split("|")
-                logging.error(handle)
                 if (len(handle) != 0):
                     if not (exists(handle[0]) or exists(self.dirname + "\\" + handle[0])):
                         logging.error(handle[0] + "not found")

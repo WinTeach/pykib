@@ -75,7 +75,7 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                         logging.info("  Register:Return config")
                         logging.info("    Return config")
                         logging.info("    First Start - Closing all may opened Sessions")
-                        self.closeInstance.emit(0,0)
+                        #self.closeInstance.emit(0,0)
                         logging.info("------------------------------------------------------------")
                         await websocket.send(json.dumps(self.config))
                         keepOpen = False;
