@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.22')
+__version_info__ = ('devel', '3.0.23')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -209,8 +209,10 @@ def getArguments(dirname):
                         help="Defined a List of Urls which should be remoted - use * as wildcard")
     parser.add_argument("-aubr", "--allowUserBasedRemoting", dest="allowUserBasedRemoting", action='store_true',
                         help="When this option is set, the user on the remote side is allowed to define an own additional remoting list")
+    parser.add_argument("-rbix11", "--remoteBrowserIgnoreX11", dest="remoteBrowserIgnoreX11", action='store_true',
+                        help="With this Option X11BypassWindowManagerHint will be used to force the browser to top. Usually not needed")
 
-    # Settings only for Running Remote Browser Daemon in Socket Mode
+    # Settings only for Running Remote Browser Daemon in Unix Socket Mode
     parser.add_argument("-rbsp", "--remoteBrowserSocketPath", dest="remoteBrowserSocketPath", help="When this option is set, the remote browser Deamon will only listen "
                                                                                                    "to commands send to this socket. Any other communication options will be disabled")
     parser.add_argument("-rbkai", "--remoteBrowserKeepAliveInterval", dest="remoteBrowserKeepAliveInterval", type=int, default=1000,
@@ -218,7 +220,7 @@ def getArguments(dirname):
     parser.add_argument("-rbkael", "--remoteBrowserKeepAliveErrorLimit", dest="remoteBrowserKeepAliveErrorLimit", type=int, default=5,
                         help="Define interval how many keepAlive Signal losts in a row will be tolerated. Default 5")
 
-    # Settings only for Running Remote Browser Daemon in Channel Mode
+    # Settings only for Running Remote Browser Daemon in Websocket Mode
     parser.add_argument("-rbp", "--remoteBrowserPort", dest="remoteBrowserPort", type=int, default=8765,
                         help="Define the Port on which the remoteBrowserDaemon waits for incoming websocket connections")
     parser.add_argument("-rbst", "--remoteBrowserSessionToken", dest="remoteBrowserSessionToken",

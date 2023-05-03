@@ -244,7 +244,7 @@ class myQWebEnginePage(QWebEnginePage):
             suffix = QtCore.QFileInfo(download.suggestedFileName()).suffix()
             downloadDialog = QFileDialog()
 
-            if (args.alwaysOnTop or args.remoteBrowserDaemon):
+            if ((args.alwaysOnTop or args.remoteBrowserDaemon) and args.remoteBrowserIgnoreX11):
                 downloadDialog.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.X11BypassWindowManagerHint)
 
             if (args.downloadPath):

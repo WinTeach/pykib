@@ -143,8 +143,11 @@ class MainWindow(QWidget):
 
     def applyWindowHints(self):
         if (self.args.alwaysOnTop and self.args.removeWindowControls or self.args.remoteBrowserDaemon):
-            self.setWindowFlags(
-                Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
+            if (self.args.remoteBrowserIgnoreX11):
+                self.setWindowFlags(
+                    Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
+            else:
+                self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint)
         elif (self.args.removeWindowControls):
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         elif (self.args.alwaysOnTop):
@@ -159,26 +162,33 @@ class MainWindow(QWidget):
                 self.fullScreenState = False
                 self.showNormal()
                 self.applyWindowHints()
-                logging.info("Restore previous Windows Position")
-                if (self.oldgeometry == 'maximized'):
-                    self.showMaximized()
-                else:
-                    self.setGeometry(self.oldgeometry)
+                if (self.args.remoteBrowserIgnoreX11):
+                    logging.info("Restore previous Windows Position")
+                    if (self.oldgeometry == 'maximized'):
+                        self.showMaximized()
+                    else:
+                        self.setGeometry(self.oldgeometry)
+                self.show()
             else:
-                logging.info("Store Current Windows Position")
-                if (self.isMaximized()):
-                    self.oldgeometry = 'maximized'
-                else:
-                    self.oldgeometry = self.frameGeometry()
+                # remove Mask
+                self.web.parent.clearMask()
+
+                if (self.args.remoteBrowserIgnoreX11):
+                    logging.info("Store Current Windows Position")
+                    if (self.isMaximized()):
+                        self.oldgeometry = 'maximized'
+                    else:
+                        self.oldgeometry = self.frameGeometry()
 
                 logging.info("set Fullscreen")
                 self.fullScreenState = True
                 # Need to remove X11BypassWindowManagerHint because without showFullscreen not possible
-                if (self.args.remoteBrowserDaemon):
+                if (self.args.remoteBrowserIgnoreX11):
                     self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint)
+
                 self.showFullScreen()
                 # Need set X11BypassWindowManagerHint again after going to Fullscreen
-                if (self.args.remoteBrowserDaemon):
+                if (self.args.remoteBrowserIgnoreX11):
                     self.setWindowFlags(
                         Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.X11BypassWindowManagerHint)
                     self.show()
