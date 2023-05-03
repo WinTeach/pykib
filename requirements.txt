@@ -1,6 +1,6 @@
-PyQt6
-PyQt6-Qt
-PyQt6-Qt6
+PyQt6==6.4.2
+PyQt6-Qt==6.0.1
+PyQt6-Qt6==6.4.3
 PyQt6.Webengine==6.4.0
 PyQt6-WebEngine-Qt6==6.4.3
 PyQt6-Sip
