@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.24')
+__version_info__ = ('devel', '3.0.25')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -70,7 +70,7 @@ def getArguments(dirname):
 
     parser.add_argument("-ijs", "--injectJavascript", dest="injectJavascript", nargs='+',
                         help="With this option, a js script file can be defined which should be injected on every page when loadFinished is triggered."
-                             "Format: #pathToScript#|#once#|#argX#=argXvalue....."
+                             "Format: #pathToScript#|#once#|#argX#::argXvalue....."
                              "#pathToScript# = path to Script. Full path or relative to folder 'scripts' from installation dir"
                              "#once# = 0 or 1. If 1 it will be injected only when the first site load completes. With 0 or default it will be injected each time a site is loaded."
                              "#argX#::#value# = define Arguments which should be replaced in Script File at Runtime. in Script use {argX} in script file")
@@ -147,6 +147,8 @@ def getArguments(dirname):
     parser.add_argument("-ecm", "--enableContextMenu", dest="enableContextMenu", action='store_true', help="Enables a minimal context Menu")
     parser.add_argument("-etm", "--enableTrayMode", dest="enableTrayMode", action='store_true',
                         help="when this option is set the browser will be minimized to tray instead of closed")
+    parser.add_argument("-sih", "--startInTray", dest="startInTray", action='store_true',
+                        help="when this option is set the browser will start to Tray.")
     parser.add_argument("-ecbpo", "--enableCleanupBrowserProfileOption", dest="enableCleanupBrowserProfileOption", action='store_true',
                         help="when this option is set the user has the option to Cleanup the Browser Profile (in tray and "
                              "context menu). When 'Cleanup Browser Profile' is performed it will:"

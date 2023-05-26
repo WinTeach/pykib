@@ -286,7 +286,8 @@ class Pykib():
                 logging.error(
                     "When geometry without maximized or fullsreen is set, you have to define the whole position an screen #left# #top# #width# #height#")
                 sys.exit()
-            self.view.show()
+            if not (self.args.enableTrayMode and self.args.startInTray):
+                self.view.show()
             self.view.setGeometry(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1], self.args.geometry[2], self.args.geometry[3])
 
         sys.exit(self.app.exec())
