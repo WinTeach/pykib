@@ -273,14 +273,16 @@ class Pykib():
                     "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
                 sys.exit()
             self.view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
-            self.view.showFullScreen()
+            if not (self.args.enableTrayMode and self.args.startInTray):
+                self.view.showFullScreen()
         elif (self.args.maximized):
             if (len(self.args.geometry) != 2 and len(self.args.geometry) != 4):
                 logging.error(
                     "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
                 sys.exit()
             self.view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
-            self.view.showMaximized()
+            if not (self.args.enableTrayMode and self.args.startInTray):
+                self.view.showMaximized()
         else:
             if (len(self.args.geometry) != 4):
                 logging.error(
