@@ -231,10 +231,21 @@ class Pykib():
         # Eval Arguments for Default Pykib Start
         # ----------------------------------------------------------
 
+        #read variable autoLogonUser and autoLogonPassword from environment variables
+        if (self.args.enableAutoLogon and not (self.args.autoLogonUser and self.args.autoLogonPassword)):
+            self.args.autoLogonUser = os.environ.get('PYKIB_AUTOLOGON_USER')
+            self.args.autoLogonPassword = os.environ.get('PYKIB_AUTOLOGON_PASSWORD')
+            #if PYKIB_AUTOLOGON_DOMAIN is set override self.args.autoLogonDomain
+            if (os.environ.get('PYKIB_AUTOLOGON_DOMAIN')):
+                self.args.autoLogonDomain = os.environ.get('PYKIB_AUTOLOGON_DOMAIN')
+
         # Check autologin Data
         if (self.args.enableAutoLogon and not (self.args.autoLogonUser and self.args.autoLogonPassword)):
             logging.error("When Autologin is enabled at least autoLogonUser and autoLogonPassword has to be set also")
             sys.exit()      
+
+        logging.error(self.args.autoLogonUser)
+        logging.error(self.args.autoLogonPassword)
 
         self.view = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, tray)
 
