@@ -244,9 +244,6 @@ class Pykib():
             logging.error("When Autologin is enabled at least autoLogonUser and autoLogonPassword has to be set also")
             sys.exit()      
 
-        logging.error(self.args.autoLogonUser)
-        logging.error(self.args.autoLogonPassword)
-
         self.view = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, tray)
 
         # ----------------------------------------------------------
@@ -354,7 +351,6 @@ class Pykib():
             logging.info("Cleanup ended... goodbye")
         except:
             logging.info("Nothing to do... goodbye")
-
 
 
 
