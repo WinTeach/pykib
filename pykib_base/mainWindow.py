@@ -328,9 +328,9 @@ class MainWindow(QWidget):
             if (self.args.enableAutoLogon and self.firstRun == True):
                 logging.info("Perform AutoLogin")
                 # if(len(autologin) >= 2):
-                username = self.args.autoLogonUser.replace("\\", "\\\\")
-                password = self.args.autoLogonPassword.replace("\\", "\\\\")
-                domain = self.args.autoLogonDomain
+                username = self.args.autoLogonUser.replace("\\", "\\\\").replace("'", "\\'")
+                password = self.args.autoLogonPassword.replace("\\", "\\\\").replace("'", "\\'")
+                domain = self.args.autoLogonDomain.replace("'", "\\'")
                 usernameID = self.args.autoLogonUserID
                 passwordID = self.args.autoLogonPasswordID
                 domainID = self.args.autoLogonDomainID
