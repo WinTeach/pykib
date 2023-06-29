@@ -330,7 +330,7 @@ class MainWindow(QWidget):
                 # if(len(autologin) >= 2):
                 username = self.args.autoLogonUser.replace("\\", "\\\\").replace("'", "\\'")
                 password = self.args.autoLogonPassword.replace("\\", "\\\\").replace("'", "\\'")
-                domain = self.args.autoLogonDomain.replace("'", "\\'")
+                domain = self.args.autoLogonDomain.replace("'", "\\'") if self.args.autoLogonDomain else False
                 usernameID = self.args.autoLogonUserID
                 passwordID = self.args.autoLogonPasswordID
                 domainID = self.args.autoLogonDomainID
@@ -345,34 +345,42 @@ class MainWindow(QWidget):
 
                 # """+len(autologin)+"""<=3
                 script = r"""
-                                        document.onload=login();
-                                        async function login(){{                            
                                         usernameID = "False";
                                         passwordID = "False";
                                         domainID = "False";
-                                            if('{usernameID}' == "False"){{                         
-                                                if(document.getElementById('FrmLogin') && document.getElementById('DomainUserName') && document.getElementById('UserPass')){{ 
-                                                    usernameID = "DomainUserName";
-                                                    passwordID = "UserPass";                               
-                                                }}else if(document.getElementById('Enter user name')){{
-                                                    usernameID = "Enter user name";
-                                                    passwordID = "passwd";
-                                                }}else if(document.getElementById('user')){{
-                                                    usernameID = "user";
-                                                    passwordID = "password";
-                                                }}else{{
-                                                    usernameID = "username";
-                                                    passwordID = "password";
+                                        
+                                        document.onload=login();
+                                        
+                                        async function populateIDs(){{
+                                            if('{usernameID}' == "False"){{          
+                                                    if(document.getElementById('FrmLogin') && document.getElementById('DomainUserName') && document.getElementById('UserPass')){{ 
+                                                        usernameID = "DomainUserName";
+                                                        passwordID = "UserPass";                             
+                                                    }}else if(document.getElementById('passwd') && document.getElementById('login')){{
+                                                        usernameID = "login";
+                                                        passwordID = "passwd";                                              
+                                                    }}else if(document.getElementById('Enter user name')){{
+                                                        usernameID = "Enter user name";
+                                                        passwordID = "passwd";
+                                                    }}else if(document.getElementById('user')){{
+                                                        usernameID = "user";
+                                                        passwordID = "password";
+                                                    }}else{{
+                                                        usernameID = "username";
+                                                        passwordID = "password";                                             
+                                                    }}
+                                                }}else if('{usernameID}' != 'False'){{
+                                                    usernameID = "{usernameID}";
+                                                    passwordID = "{passwordID}";
+                                                    domainID = "{domainID}";
                                                 }}
-                                            }}else if('{usernameID}' != 'False'){{
-                                                usernameID = "{usernameID}";
-                                                passwordID = "{passwordID}";
-                                                domainID = "{domainID}";
-                                            }}
+                                        }}
+                                        async function login(){{                                                      
 
                                             //Wait until usernameID and PasswordID is loaded
-                                            while(!document.getElementById(usernameID) && !document.getElementById(passwordID)) {{                                  
-                                              await new Promise(r => setTimeout(r, 50));                                                                  
+                                            while(!document.getElementById(usernameID) && !document.getElementById(passwordID)) {{   
+                                              populateIDs();                               
+                                              await new Promise(r => setTimeout(r, 50));                                                           
                                             }}
 
                                             if('{domain}' != 'False' && domainID == 'False'){{                                 
@@ -386,9 +394,11 @@ class MainWindow(QWidget):
                                                 document.getElementById(usernameID).value='{username}';
                                                 document.getElementById(passwordID).value='{password}';
                                             }}    
-                                            //for the Storefront Login the Login Button had to be clicked
+                                            //for the Storefront/Citrix Netscaler Gateway Login the Login Button had to be clicked
                                             if(document.getElementById("loginBtn")){{
                                                 document.getElementById("loginBtn").click();
+                                            }}else if(document.getElementById("nsg-x1-logon-button")){{
+                                                document.getElementById("nsg-x1-logon-button").click();
                                             }}else{{
                                                 document.forms[0].submit();
                                             }}1
