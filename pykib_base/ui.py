@@ -112,7 +112,8 @@ def setupUi(form, args, dirname):
     
     if(args.removeTitleBar):
             form.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
-    elif(args.dynamicTitle):
+
+    if(args.dynamicTitle):
         form.web.titleChanged.connect(form.adjustTitle)
         form.web.iconUrlChanged.connect(form.adjustTitleIcon)
 
