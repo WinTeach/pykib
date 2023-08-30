@@ -24,8 +24,7 @@ from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QPushButton
 from PyQt6.QtWebEngineCore import QWebEngineNotification
 from PyQt6.QtGui import QPixmap, QMouseEvent, QCloseEvent, QFont, QGuiApplication, QIcon
-from PyQt6.QtMultimedia import QSoundEffect
-
+from PyQt6.QtMultimedia import QSoundEffect, QMediaDevices
 
 
 class NotificationPopup(QWidget):
@@ -36,8 +35,8 @@ class NotificationPopup(QWidget):
         self.setWindowFlags(Qt.WindowType.ToolTip | Qt.WindowType.WindowStaysOnTopHint)
 
         self.soundEffect = QSoundEffect()
+        self.soundEffect.setAudioDevice(QMediaDevices.defaultAudioOutput())
         self.soundEffect.setSource(QUrl.fromLocalFile(os.path.join(self.parent.dirname, 'sounds/bell.wav')))
-
         self.notificationTitle, self.notificationIcon, self.notificationMessage, self.notificationSender = QLabel(), QLabel(), QLabel(), QLabel()
 
         closeButton = QPushButton()
@@ -124,6 +123,7 @@ class NotificationPopup(QWidget):
         self.move(notificationPositionX, notificationPositionY)
 
         if self.parent.args.playNotificationSound:
+            logging.debug("Pay notification sound")
             self.soundEffect.play()
 
     def mouseReleaseEvent(self, event: QMouseEvent):
