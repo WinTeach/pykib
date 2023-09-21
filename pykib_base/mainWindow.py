@@ -25,6 +25,7 @@ import pykib_base.ui
 import pykib_base.arguments
 import pykib_base.mainWindow
 import platform
+from functools import partial
 
 from pykib_base.myQWebEngineView import myQWebEngineView
 from pykib_base.myQWebEnginePage import myQWebEnginePage
@@ -33,6 +34,7 @@ from pykib_base.memoryCap import MemoryCap
 from pykib_base.memoryDebug import MemoryDebug
 from pykib_base.autoReload import AutoReload
 from pykib_base.resetTimeout import ResetTimeout
+from pykib_base.oAuthFileHandler import OAuthFileHandler
 
 #
 from PyQt6.QtWebEngineCore import QWebEnginePage
@@ -82,6 +84,15 @@ class MainWindow(QWidget):
         # Definde Action when Fullscreen ist choosen
         self.page.fullScreenRequested.connect(self.toggleFullscreen)
 
+        if (self.args.oAuthInputFile):
+            logging.info(
+                "oAuthInputFile is set. Going to monitor the file each second and inject the content into the browser")
+            self.oAuthFileHandler = OAuthFileHandler(str(self.args.oAuthInputFile))
+            self.oAuthFileHandler.daemon = True  # Daemonize thread
+            self.oAuthFileHandler.oAuthFileChanged.connect(self.oAuthHandleInput)
+            self.oAuthFileHandler.start()
+            logging.debug(
+                "start")
         if (self.args.addMemoryCap):
             logging.info("Starting memory monitoring. Going to close browser when memory usage is over " + str(
                 self.args.addMemoryCap) + "MB")
@@ -126,6 +137,29 @@ class MainWindow(QWidget):
             if not self.windowState().__contains__(Qt.WindowState.WindowMinimized):
                 self.restoreState = self.windowState()
                 logging.debug("Set RestoreState = " + str(self.restoreState))
+
+    def oAuthHandleInput(self, url):
+        logging.debug("Handling oAuthInputFile URL " + str(url))
+        #temporary store current url for return after oAuth
+        currentUrl = self.web.url().toString()
+        #set url from file
+        self.web.load(url)
+        #if oAuthOutputFile is set, wait for loadFinished and write the current url to the file
+        if(self.args.oAuthOutputFile):
+            self.oAuthLoadFinished = self.web.loadFinished.connect(partial(self.oAuthHandleOutput, currentUrl))
+
+    def oAuthHandleOutput(self, restoreUrl):
+        #if current url contains oAuthOutputUrlIdentifier then
+        if(not self.args.oAuthOutputUrlIdentifier or self.web.url().toString().lower().find(self.args.oAuthOutputUrlIdentifier.lower()) != -1):
+            if not os.path.exists(self.args.oAuthOutputFile):
+                open(self.args.oAuthOutputFile, 'w').close()
+            with open(self.args.oAuthOutputFile, 'w') as f:
+                f.write(self.web.url().toString())
+            self.web.loadFinished.disconnect(self.oAuthLoadFinished)
+            if(self.oAuthOutputCloseSuccess):
+                self.closeWindow()
+            else:
+                self.web.load(restoreUrl)
 
     def resetTimerReset(self):
         logging.info(
@@ -208,6 +242,7 @@ class MainWindow(QWidget):
             logging.debug("Leave window")
 
     def onFeaturePermissionRequested(self, url, feature):
+        logging.info("Permission" + str(feature))
         if (self.args.allowMicAccess and feature == QWebEnginePage.Feature.MediaAudioCapture):
             self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
             logging.info("Permission" + str(feature) + " | granted")
@@ -321,6 +356,13 @@ class MainWindow(QWidget):
                         logging.debug("Inject Javascript")
                         logging.debug(injection)
                         script = open(injection[0], "r").read()
+                        if(self.args.enableAutoLogon):
+                            if(self.args.autoLogonUser):
+                                script = script.replace('{autoLogonUser}', self.args.autoLogonUser)
+                            if(self.args.autoLogonPassword):
+                                script = script.replace('{autoLogonPassword}', self.args.autoLogonPassword)
+                            if(self.args.autoLogonDomain):
+                                script = script.replace('{autoLogonDomain}', self.args.autoLogonDomain)
                         for parameter in injection[2::]:
                             script = script.replace('{'+parameter[0]+'}', parameter[1])
                         self.page.runJavaScript(script)

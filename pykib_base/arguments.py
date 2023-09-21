@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.34')
+__version_info__ = ('devel', '3.0.35')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -88,6 +88,13 @@ def getArguments(dirname):
                         help="Defines the ID of the HTML Element in which the password should be put in")
     parser.add_argument("-aldid", "--autoLogonDomainID", dest="autoLogonDomainID", default=False,
                         help="Defines the ID of the HTML Element in which the domain should be put in")
+
+    #these 2 are usefull for handling command line oauth urls which should be opened in the browser
+    parser.add_argument("-oaif", "--oAuthInputFile", dest="oAuthInputFile", nargs='?', type=str, help="Defines a file which is monitor. If the file contains a url the browser will be redirected to this url. The file contents will be cleared after the redirect.")
+    parser.add_argument("-oaof", "--oAuthOutputFile", dest="oAuthOutputFile", nargs='?', type=str, help="Defines a file which is written when the browser is redirected to a url (by oAuthInputFile). The file will contain the url to which the browser was redirected.")
+    parser.add_argument("-oaoui", "--oAuthOutputUrlIdentifier", dest="oAuthOutputUrlIdentifier", nargs='?', type=str, help="Defines string which should be part of the url to accept this for oAuthOutputFile")
+    parser.add_argument("-oaocs", "--oAuthOutputCloseSuccess", dest="oAuthOutputCloseSuccess", default=False, help="if set, the browser will be closed after a successful oAuth redirect instead of turning back")
+
 
     parser.add_argument("-es", "--enablespellcheck", dest="enableSpellcheck", action='store_true',
                         help="Enables spellchecking when set")
