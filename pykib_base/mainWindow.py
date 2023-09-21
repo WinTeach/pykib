@@ -156,7 +156,7 @@ class MainWindow(QWidget):
             with open(self.args.oAuthOutputFile, 'w') as f:
                 f.write(self.web.url().toString())
             self.web.loadFinished.disconnect(self.oAuthLoadFinished)
-            if(self.oAuthOutputCloseSuccess):
+            if(self.args.oAuthOutputCloseSuccess):
                 self.closeWindow()
             else:
                 self.web.load(restoreUrl)
