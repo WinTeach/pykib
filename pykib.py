@@ -35,7 +35,7 @@ import faulthandler
 from remotePykib import RemotePykib
 
 #
-from PyQt6 import QtNetwork
+
 from PyQt6.QtCore import PYQT_VERSION_STR, Qt
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PyQt6.QtGui import QGuiApplication, QIcon, QAction
@@ -108,21 +108,6 @@ class Pykib():
             self.args.url = self.args.defaultURL;
         elif (self.args.url is None and self.args.defaultURL is None):
             self.args.url = "https://github.com/WinTeach/pykib";
-
-        # Set Proxy
-        if (self.args.proxy):
-            proxy = QtNetwork.QNetworkProxy()
-            proxy.setType(QtNetwork.QNetworkProxy.ProxyType.HttpProxy)
-            proxy.setHostName(self.args.proxy)
-            proxy.setPort(self.args.proxyPort)
-            if (self.args.proxyUsername and self.args.proxyPassword):
-                proxy.setUser(self.args.proxyUsername);
-                proxy.setPassword(self.args.proxyPassword);
-            elif (self.args.proxyUsername or self.args.proxyPassword):
-                logging.error("It is not possible to use a proxy username without password")
-                sys.exit()
-
-            QtNetwork.QNetworkProxy.setApplicationProxy(proxy)
 
         # Allow Webcam and Microfon Support. Warn if PyQt Version is to old
         if (self.args.allowWebcamAccess):

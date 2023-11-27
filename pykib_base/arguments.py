@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.35')
+__version_info__ = ('devel', '3.0.36')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -53,6 +53,7 @@ def getArguments(dirname):
     parser.add_argument("-ppo", "--proxyPort", dest="proxyPort", help="Proxy Port", default=8080, type=int)
     parser.add_argument("-pu", "--proxyUsername", dest="proxyUsername", help="Enter Proxy username if needed")
     parser.add_argument("-pp", "--proxyPassword", dest="proxyPassword", help="Enter Proxy password if needed")
+    parser.add_argument("-pdlip", "--proxyDisabledForLocalIp", dest="proxyDisabledForLocalIp", help="Disable Proxy for local IPs", action='store_true')
 
     parser.add_argument("-ppp", "--persistentProfilePath", dest="persistentProfilePath",
                         help="Defines a folder where the webprofile should be stored. Browser will be allways in private mode if not defined")

@@ -21,13 +21,15 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QIcon
 from PyQt6.QtGui import QAction
+from PyQt6 import QtNetwork
+
 from functools import partial
 
 import os
 import logging
+import socket
 
 class myQWebEngineView(QWebEngineView):
-    
 
     def __init__(self, argsparsed, dirnameparsed, parent):
         global args
@@ -44,7 +46,35 @@ class myQWebEngineView(QWebEngineView):
              url = args.url
         if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file://')):
              url = 'http://' + url
+
+        if (args.proxy):
+            self.setProxy(url)
+
         self.setUrl(QUrl(url))
+
+    def setProxy(self, url):
+        # Set Proxy
+        ip = socket.gethostbyname(url.split('/')[2])
+        logging.debug("IP for " + url + " is " + ip)
+        if (args.proxyDisabledForLocalIp and (ip.startswith('192.168.') or ip.startswith('10.') or ip.startswith('172.16.'))):
+            # No Proxy for local IPs
+            logging.debug("No Proxy for:" + url)
+            QtNetwork.QNetworkProxy.setApplicationProxy(
+                QtNetwork.QNetworkProxy(QtNetwork.QNetworkProxy.ProxyType.NoProxy))
+            return
+
+        logging.debug("Set Proxy for:" + url)
+        proxy = QtNetwork.QNetworkProxy()
+        proxy.setType(QtNetwork.QNetworkProxy.ProxyType.HttpProxy)
+        proxy.setHostName(args.proxy)
+        proxy.setPort(args.proxyPort)
+        if (args.proxyUsername and args.proxyPassword):
+            proxy.setUser(args.proxyUsername);
+            proxy.setPassword(args.proxyPassword);
+        elif (args.proxyUsername or args.proxyPassword):
+            logging.error("It is not possible to use a proxy username without password")
+        QtNetwork.QNetworkProxy.setApplicationProxy(proxy)
+        return
 
     def contextMenuEvent(self, event):
         self.menu = self.createStandardContextMenu()
