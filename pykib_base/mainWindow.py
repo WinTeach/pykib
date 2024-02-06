@@ -16,20 +16,24 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import pathlib
 import sys
 import os
 import subprocess
 import logging
+import tempfile
+
+from PyQt6.QtPrintSupport import QPrintDialog, QPrinter
+
 import pykib_base.ui
 import pykib_base.arguments
-import pykib_base.mainWindow
 import platform
 from functools import partial
+from datetime import datetime
 
 from pykib_base.myQWebEngineView import myQWebEngineView
 from pykib_base.myQWebEnginePage import myQWebEnginePage
-from pykib_base.myQProgressBar import myQProgressBar
+from pykib_base.PrintPdf import PrintPdf
 from pykib_base.memoryCap import MemoryCap
 from pykib_base.memoryDebug import MemoryDebug
 from pykib_base.autoReload import AutoReload
@@ -40,10 +44,9 @@ from pykib_base.oAuthFileHandler import OAuthFileHandler
 from PyQt6.QtWebEngineCore import QWebEnginePage
 from PyQt6 import QtCore
 from PyQt6.QtCore import QTimer, Qt, QEvent
-from PyQt6.QtGui import QGuiApplication, QPixmap
+from PyQt6.QtGui import QGuiApplication
 
-from PyQt6.QtWidgets import QWidget, QSystemTrayIcon, QLabel
-
+from PyQt6.QtWidgets import QWidget, QSystemTrayIcon
 
 class MainWindow(QWidget):
     fullScreenState = False
@@ -54,6 +57,8 @@ class MainWindow(QWidget):
         self.args = transferargs
         self.dirname = dirname
         self.tray = tray
+        self.isLoading = True
+        self.printPdfThread = None
 
         if (self.args.remoteBrowserDaemon):
             super(MainWindow, self).__init__(parent, Qt.WindowType.Tool)
@@ -76,6 +81,8 @@ class MainWindow(QWidget):
         # Added progress Handling
         self.web.loadProgress.connect(self.loadingProgressChanged)
         self.web.loadFinished.connect(self.jsInjection)
+        self.web.loadStarted.connect(self.startLoading)
+        self.web.loadFinished.connect(self.loadFinished)
 
         self.web.renderProcessTerminated.connect(self.viewTerminated)
         self.removeDownloadBarTimer = QTimer(self)
@@ -131,6 +138,12 @@ class MainWindow(QWidget):
 
         # Start with url
         self.web.load(self.args.url)
+
+    def startLoading(self):
+        self.isLoading = True
+
+    def loadFinished(self):
+        self.isLoading = False
 
     def changeEvent(self, event: QEvent):
         if (event.type() == QEvent.Type.WindowStateChange):
@@ -515,6 +528,52 @@ class MainWindow(QWidget):
                 self.page.runJavaScript(script)
             self.firstRun = False
 
+    # Print Function
+    def printSiteRequest(self):
+        logging.info("Test if site is loaded")
+        if self.isLoading:
+            logging.debug("Site is still loading. Wait for loadFinished before printing")
+            self.web.loadFinished.connect(self.printSiteToPdf)
+        else:
+            self.printSiteToPdf()
+
+    def printSiteToPdf(self):
+        try:
+            self.web.loadFinished.disconnect(self.printSiteToPdf)
+        except Exception as e:
+            pass
+
+        tempPdfFolder = tempfile.gettempdir() + "/pykib/"
+        # check if folder exists
+        if not os.path.exists(tempPdfFolder):
+            os.makedirs(tempfile.gettempdir() + "/pykib/")
+
+        # create a unique filename
+        tempPdfFile = tempPdfFolder + datetime.now().strftime("%Y%m%d%H%M%S") + ".pdf"
+        logging.debug("Created temporary PDF for Printing: " + tempPdfFile)
+        self.web.printToPdf(tempPdfFile)
+
+        # Create Printer Dialog
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        printer.setResolution(300)
+        dialog = QPrintDialog(printer)
+
+        logging.debug("Show Print Dialog")
+        dialogResult = dialog.exec()
+        if(dialogResult == QPrintDialog.DialogCode.Accepted):
+            #Printing in Background Thread
+            self.printPdfThread = PrintPdf(tempPdfFile, printer)
+            self.printPdfThread.daemon = True
+            self.printPdfThread.printFinished.connect(self.printFinished)
+            self.printPdfThread.start()
+        else:
+            logging.debug("Print aborted by user")
+            if os.path.isfile(tempPdfFile):
+                os.remove(tempPdfFile)
+
+    def printFinished(self):
+        logging.debug("Finished print process")
+
     def loadingProgressChanged(self, percent):
         # Setting Zoomfactor
         logging.debug("Progress Changed" + str(percent))
@@ -542,6 +601,9 @@ class MainWindow(QWidget):
         ctrl = event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier
         alt = event.modifiers() & QtCore.Qt.KeyboardModifier.AltModifier
 
+        if(self.args.enablePrintSupport and ctrl and keyEvent.key() == QtCore.Qt.Key.Key_P):
+            logging.info("Print")
+            self.printSiteRequest()
         if (shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_B):
             logging.info("leave by shortcut")
             os._exit(0)

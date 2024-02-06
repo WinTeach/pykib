@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.36')
+__version_info__ = ('devel', '3.0.37')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -152,6 +152,10 @@ def getArguments(dirname):
     parser.add_argument("-sn", "--showNavigationButtons", dest="showNavigationButtons", action='store_true', help="Shows Navigation Buttons when set")
     parser.add_argument("-slpb", "--showLoadingProgressBar", dest="showLoadingProgressBar", action='store_true',
                         help="Shows a Progress Bar on site loading.")
+    parser.add_argument("-spb", "--showPrintButton", dest="showPrintButton", action='store_true',
+                        help="Shows a Print Button when set. enablePrintSupport will be set to True")
+    parser.add_argument("-epsu", "--enablePrintSupport", dest="enablePrintSupport", action='store_true',
+                        help="Allows Priting with CTRL+P and showing Navigation Buttons when set")
     parser.add_argument("-ecm", "--enableContextMenu", dest="enableContextMenu", action='store_true', help="Enables a minimal context Menu")
     parser.add_argument("-etm", "--enableTrayMode", dest="enableTrayMode", action='store_true',
                         help="when this option is set the browser will be minimized to tray instead of closed")

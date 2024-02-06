@@ -24,8 +24,6 @@ from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtCore import QSize, Qt
 from functools import partial
 
-from pykib_base.myQWebEngineView import myQWebEngineView
-from pykib_base.myQWebEnginePage import myQWebEnginePage
 from pykib_base.myQProgressBar import myQProgressBar
 
 def setupUi(form, args, dirname):        
@@ -99,15 +97,27 @@ def setupUi(form, args, dirname):
         
         form.navGridLayout.addWidget(form.homeButton, 0, navGridLayoutHorizontalPosition, 1, 1)
         navGridLayoutHorizontalPosition += 1
-    
+
+
     if (args.showAddressBar):
         form.addressBar = QtWidgets.QLineEdit(form)
         form.addressBar.setObjectName("addressBar")
         form.web.urlChanged['QUrl'].connect(form.adjustAdressbar)
         form.navGridLayout.addWidget(form.addressBar, 0, navGridLayoutHorizontalPosition, 1, 1)
         form.addressBar.returnPressed.connect(form.pressed)
+        navGridLayoutHorizontalPosition += 1
 
-    if (args.showNavigationButtons or args.showAddressBar):
+    if (args.showPrintButton):
+        form.printButton = QtWidgets.QPushButton(form)
+        form.printButton.setIcon(QIcon(os.path.join(dirname, 'icons/print.png')));
+        form.printButton.setIconSize(QSize(24, 24));
+        form.printButton.setObjectName("printButton")
+        form.printButton.clicked.connect(form.printSiteRequest)
+
+        form.navGridLayout.addWidget(form.printButton, 0, navGridLayoutHorizontalPosition, 1, 1)
+
+
+    if (args.showNavigationButtons or args.showAddressBar or args.showPrintButton):
         form.pageGridLayout.addWidget(form.navbar, 0, 0, 1, 0)
     
     if(args.removeTitleBar):

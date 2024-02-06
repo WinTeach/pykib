@@ -216,6 +216,11 @@ class Pykib():
         # Eval Arguments for Default Pykib Start
         # ----------------------------------------------------------
 
+        # Enable Print Support if showPrintButton is set
+        if (self.args.showPrintButton and not self.args.enablePrintSupport):
+            logging.info("Enabling Print Support because showPrintButton is set")
+            self.args.printSupport = True
+
         #read variable autoLogonUser and autoLogonPassword from environment variables
         if (self.args.enableAutoLogon and not (self.args.autoLogonUser and self.args.autoLogonPassword)):
             self.args.autoLogonUser = os.environ.get('PYKIB_AUTOLOGON_USER')
