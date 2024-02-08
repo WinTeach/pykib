@@ -88,6 +88,9 @@ class MainWindow(QWidget):
         self.removeDownloadBarTimer = QTimer(self)
         self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
 
+        if self.args.enablePrintSupport:
+            self.page.printRequested.connect(self.printSiteRequest)
+
         # Definde Action when Fullscreen ist choosen
         self.page.fullScreenRequested.connect(self.toggleFullscreen)
 

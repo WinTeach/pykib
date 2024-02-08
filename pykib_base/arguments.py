@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.37')
+__version_info__ = ('devel', '3.0.38')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -135,14 +135,14 @@ def getArguments(dirname):
     parser.add_argument("-isds", "--ignoreSystemDpiSettings", dest="ignoreSystemDpiSettings", action='store_true', help="When set, the Browser won't try to use the systems DPI Settings")
     parser.add_argument("-szf", "--setZoomFactor", dest="setZoomFactor", help="Set Zoom Factor for Webpages in percent. Allowed Values between 25 and 500. Allowed only in combination with ignoreSystemDpiSettings", default=100, type=int)
 
-    parser.add_argument("--no-sandbox", dest="no-sandbox", action='store_true',
+    parser.add_argument("--no-sandbox", dest="noSandbox", action='store_true',
                         help="Allows to run as root")
     parser.add_argument("--name", dest="name", help="Used to set the WM_CLASS", default="Pykib")
-    parser.add_argument("--disable-gpu", dest="disable-gpu", action='store_true',
+    parser.add_argument("--disable-gpu", dest="disableGpu", action='store_true',
                         help="Disables QTs GPU Support")
-    parser.add_argument("--js-flags", dest="js-flags", help="Allows setting js-flags")
+    parser.add_argument("--js-flags", dest="jsFlags", help="Allows setting js-flags")
     parser.add_argument("--single-process", dest="singleProcess", action='store_true', help="Allows to run the browser in one thread")
-    parser.add_argument("--remote-debugging-port", dest="remote-debugging-port",
+    parser.add_argument("--remote-debugging-port", dest="remoteDebuggingPort",
                         help="Allows to debug with chromes webbrowser console")
     parser.add_argument("-md", "--memoryDebug", dest="memoryDebug", action='store_true',
                         help="Show informations about the browser current memory usage")

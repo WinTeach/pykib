@@ -87,6 +87,36 @@ class Pykib():
         elif(self.args.logLevel == "DEBUG"):
             logging.getLogger().setLevel(logging.DEBUG)
 
+        #translate QTWEBENGINE_CHROMIUM_FLAGS command line args to env
+        try:
+            currentChromiumEnviromentVariable = os.environ['QTWEBENGINE_CHROMIUM_FLAGS']
+        except KeyError as e:
+            logging.debug("No QTWEBENGINE_CHROMIUM_FLAGS found in enviroment")
+            currentChromiumEnviromentVariable = ""
+
+        if self.args.noSandbox:
+            logging.debug("Set --no-sandbox flag for chromium")
+            currentChromiumEnviromentVariable = currentChromiumEnviromentVariable + " --no-sandbox"
+
+        if self.args.remoteDebuggingPort:
+            logging.debug("Set --remote-debugging-port for chromium")
+            currentChromiumEnviromentVariable = currentChromiumEnviromentVariable + " --remote-debugging-port="+str(self.args.remoteDebuggingPort)
+
+        if self.args.singleProcess:
+            logging.debug("Set --single-process for chromium")
+            currentChromiumEnviromentVariable = currentChromiumEnviromentVariable + " --single-process"
+
+        if self.args.jsFlags:
+            logging.debug("Set --js-flags for chromium")
+            currentChromiumEnviromentVariable = currentChromiumEnviromentVariable + " --js-flags="+self.args.jsFlags
+
+        if self.args.disableGpu:
+            logging.debug("Set --disable-gpu for chromium")
+            currentChromiumEnviromentVariable = currentChromiumEnviromentVariable + " --disable-gpu"
+
+        os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = currentChromiumEnviromentVariable
+        logging.debug("Flags:" + os.environ['QTWEBENGINE_CHROMIUM_FLAGS'])
+
         #Storing Process ID to file if set
         if (self.args.storePid):
             logging.info("Storing current process id:")
