@@ -26,8 +26,34 @@ class myUrlSchemeHandler(QWebEngineUrlSchemeHandler):
 
     def requestStarted(self, job):
         url = job.requestUrl().toString()
-        # Handling Teams Requests
-        if url.startswith('msteams:/'):
+        scheme = job.requestUrl().scheme()
+        logging.debug(scheme)
+
+        if scheme == 'workspaces':
+            # if url is empty try to get workspace url from error string
+            if url == "":
+                logging.warning("URL is empty but workspace request detected. Trying to get workspace URL from error string (Workaround)")
+                try:
+                    url_array = job.requestUrl().errorString().split('"')
+                    #find in url array the workspace url
+                    for i in range(len(url_array)):
+                        if url_array[i].startswith("workspaces://"):
+                            url = url_array[i]
+                            break
+                    logging.debug(url)
+                except:
+                    logging.debug("no URL found")
+                    return
+
+            if url != "":
+                if (platform.system().lower() == "linux"):
+                    logging.debug("Workspaces request detected trying to run: xdg-open '" + url + "'")
+                    subprocess.Popen("xdg-open '" + url + "'", shell=True)
+                else:
+                    logging.debug('Workspaces request detected trying to run "start ' + url)
+                    subprocess.Popen("start " + url, shell=True)
+
+        elif scheme == 'msteams':
             if (platform.system().lower() == "linux"):
                 logging.debug("Teams request detected trying to run: xdg-open '" + url + "'")
                 subprocess.Popen("xdg-open '" + url + "'", shell=True)

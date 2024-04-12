@@ -27,7 +27,7 @@ import time
 from functools import partial
 
 from PyQt6.QtNetwork import QAuthenticator, QNetworkCookie
-from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
+from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings, QWebEngineUrlScheme
 from PyQt6 import QtCore, QtWebEngineWidgets, QtWidgets, QtWebEngineCore
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QFileDialog
@@ -101,7 +101,10 @@ class myQWebEnginePage(QWebEnginePage):
         self.profile().downloadRequested.connect(self.on_downloadRequested)
 
         # Register Teams URL Handler
+
         self.profile().installUrlSchemeHandler(b'msteams', myUrlSchemeHandler(self))
+
+        self.profile().installUrlSchemeHandler(b'workspaces', myUrlSchemeHandler(self))
 
         # Browser Notification Popup Handler
         if args.allowBrowserNotifications:
