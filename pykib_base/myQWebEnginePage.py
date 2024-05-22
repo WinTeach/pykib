@@ -40,7 +40,7 @@ class myQWebEnginePage(QWebEnginePage):
     args = 0
     dirname = 0
 
-    def __init__(self, argsparsed, currentdir, form, createPrivateProfile = True):
+    def __init__(self, argsparsed, currentdir, form, createPrivateProfile = True, browserProfile = None):
         global args
         args = argsparsed
         global dirname
@@ -50,8 +50,7 @@ class myQWebEnginePage(QWebEnginePage):
 
         self.form = form
 
-        self.initBrowserProfile(createPrivateProfile)
-
+        self.initBrowserProfile(createPrivateProfile, browserProfile)
 
         # Modify Settings
         # *********************************************************************
@@ -64,11 +63,15 @@ class myQWebEnginePage(QWebEnginePage):
             self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, 1)
             self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessFileUrls, 1)
 
-    def initBrowserProfile(self, createPrivateProfile):
+    def initBrowserProfile(self, createPrivateProfile, browserProfile = None):
         # Create Empty (private) profile
-        if (args.persistentProfilePath):
-            profile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
-            QtWebEngineCore.QWebEnginePage.__init__(self, profile, self.form.web)
+        if browserProfile:
+            self.browserProfile = browserProfile
+            QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
+
+        elif args.persistentProfilePath:
+            self.browserProfile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
+            QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
 
             logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
             self.profile().setPersistentStoragePath(args.persistentProfilePath)
@@ -77,13 +80,12 @@ class myQWebEnginePage(QWebEnginePage):
             # Do persist Cookies
             self.profile().setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.AllowPersistentCookies)
 
-            logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
-
+            logging.info("Is profile in private mode:" + str(self.browserProfile.isOffTheRecord()))
         elif (createPrivateProfile):
             logging.info("Create new private Profile")
-            profile = QtWebEngineCore.QWebEngineProfile(self.form.web)
-            QtWebEngineCore.QWebEnginePage.__init__(self, profile, self.form.web)
-            logging.info("Is profile in private mode:" + str(profile.isOffTheRecord()))
+            self.browserProfile = QtWebEngineCore.QWebEngineProfile(self.form.web)
+            QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
+            logging.info("Is profile in private mode:" + str(self.browserProfile.isOffTheRecord()))
         else:
             logging.info("Create no new Profile")
             QtWebEngineCore.QWebEnginePage.__init__(self)

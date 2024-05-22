@@ -44,6 +44,7 @@ class RemotePykib():
         self.app = QApplication(sys.argv)
         self.tray = tray
         self.pykibInstances = {}
+        self.browserProfile = None
 
         self.startRemotePykib()
 
@@ -134,14 +135,23 @@ class RemotePykib():
             except:
                 logging.info("    Tab should be availeable but is not. May be closed manually. creating new: " + str(tabId))
                 self.args.url = url
-                currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray)
+                if self.browserProfile:
+                    currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray, self.browserProfile)
+                else:
+                    currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray)
+                    self.browserProfile = currentView.browserProfile
                 self.pykibInstances[windowId][tabId] = currentView
         else:
             logging.info("  Tab not found, create new an set as CurrentView:" + str(tabId))
             logging.info("    TabID: " + str(tabId))
             logging.info("    WindowID: " + str(windowId))
             self.args.url = url
-            currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray)
+            if self.browserProfile:
+                currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray,
+                                                               self.browserProfile)
+            else:
+                currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray)
+                self.browserProfile = currentView.browserProfile
             self.pykibInstances[windowId][tabId] = currentView
 
         for key in self.pykibInstances[windowId]:

@@ -52,13 +52,14 @@ class MainWindow(QWidget):
     fullScreenState = False
     firstRun = True
 
-    def __init__(self, transferargs, dirname, parent=None, tray: QSystemTrayIcon = None):
+    def __init__(self, transferargs, dirname, parent=None, tray: QSystemTrayIcon = None, browserProfile=None):
         print("running in: " + dirname)
         self.args = transferargs
         self.dirname = dirname
         self.tray = tray
         self.isLoading = True
         self.printPdfThread = None
+        self.browserProfile = browserProfile
 
         if (self.args.remoteBrowserDaemon):
             super(MainWindow, self).__init__(parent, Qt.WindowType.Tool)
@@ -72,7 +73,11 @@ class MainWindow(QWidget):
         self.web = myQWebEngineView(self.args, dirname, self)
         self.web.setObjectName("view")
 
-        self.page = myQWebEnginePage(self.args, dirname, self, True)
+        if self.browserProfile:
+            self.page = myQWebEnginePage(self.args, dirname, self, True, self.browserProfile)
+        else:
+            self.page = myQWebEnginePage(self.args, dirname, self, True)
+            self.browserProfile = self.page.browserProfile
         self.web.setPage(self.page)
 
         # Setup UI
@@ -83,7 +88,6 @@ class MainWindow(QWidget):
         self.web.loadFinished.connect(self.jsInjection)
         self.web.loadStarted.connect(self.startLoading)
         self.web.loadFinished.connect(self.loadFinished)
-
         self.web.renderProcessTerminated.connect(self.viewTerminated)
         self.removeDownloadBarTimer = QTimer(self)
         self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
@@ -184,12 +188,16 @@ class MainWindow(QWidget):
 
     def resetTimeoutExeeded(self):
         # Reset Page if resetTimeoutExeeded
-        self.page.deleteLater()
-        self.page = myQWebEnginePage(self.args, self.dirname, self, True)
-        self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
-        self.page.fullScreenRequested.connect(self.toggleFullscreen)
-        self.web.setPage(self.page)
-        self.web.load(self.args.url)
+        python = sys.executable
+        os.execl(python, python, *sys.argv) # Restart the Browser
+        # self.page.setParent(None)
+        # self.page.deleteLater()
+        # self.page = None
+        # self.page = myQWebEnginePage(self.args, self.dirname, self, False)
+        # self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
+        # self.page.fullScreenRequested.connect(self.toggleFullscreen)
+        # self.web.setPage(self.page)
+        # self.web.load(self.args.url)
 
     def applyWindowHints(self):
         if (self.args.alwaysOnTop and self.args.removeWindowControls or self.args.remoteBrowserDaemon):
@@ -554,6 +562,12 @@ class MainWindow(QWidget):
         # create a unique filename
         tempPdfFile = tempPdfFolder + datetime.now().strftime("%Y%m%d%H%M%S") + ".pdf"
         logging.debug("Created temporary PDF for Printing: " + tempPdfFile)
+        self.web.setStyleSheet("body { background: white; }")
+
+        script = "var bodyElement = document.querySelector('body');"
+        script += "bodyElement.style.backgroundColor = 'white';"
+
+        self.page.runJavaScript(script)
         self.web.printToPdf(tempPdfFile)
 
         # Create Printer Dialog
