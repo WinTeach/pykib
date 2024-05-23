@@ -65,18 +65,22 @@ class myQWebEnginePage(QWebEnginePage):
 
     def initBrowserProfile(self, createPrivateProfile, browserProfile = None):
         # Create Empty (private) profile
-        if browserProfile:
-            self.browserProfile = browserProfile
-            QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
-
-        elif args.persistentProfilePath:
-            self.browserProfile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
-            QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
+        if args.persistentProfilePath or browserProfile:
+            try:
+                if browserProfile:
+                    self.browserProfile = browserProfile
+                else:
+                    self.browserProfile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
+                QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
+            except Exception as e:
+                logging.info("Reuse of Profile failed: " + str(e))
+                self.browserProfile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
+                QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
 
             logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
             self.profile().setPersistentStoragePath(args.persistentProfilePath)
             # Set Cache to Memory
-            self.profile().setHttpCacheType(QWebEngineProfile.HttpCacheType.MemoryHttpCache)
+            self.profile().setHttpCacheType(QWebEngineProfile.HttpCacheType.DiskHttpCache)
             # Do persist Cookies
             self.profile().setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.AllowPersistentCookies)
 

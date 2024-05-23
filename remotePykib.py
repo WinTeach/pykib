@@ -128,7 +128,6 @@ class RemotePykib():
             logging.info("  Tab found, set as CurrentView:"+str(tabId))
             logging.info("    TabID: " + str(tabId))
             logging.info("    WindowID: " + str(windowId))
-            print(self.pykibInstances[windowId][tabId])
             currentView = self.pykibInstances[windowId][tabId]
             try:
                 currentView.web.load(url)
