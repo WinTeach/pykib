@@ -73,10 +73,19 @@ class Pykib():
         self.args = pykib_base.arguments.getArguments(self.dirname)
 
         #Set Logging:
-        logging.basicConfig(
-            format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s %(lineno) s - %(funcName)s: %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-        )
+        if(self.args.logFile):
+            logging.basicConfig(
+                filename=self.args.logFile,
+                filemode='w',
+                format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s %(lineno) s - %(funcName)s: %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S',
+            )
+        else:
+            logging.basicConfig(
+                format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s %(lineno) s - %(funcName)s: %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S',
+            )
+
         # logging.getLogger().setLevel(logging.INFO)
         if(self.args.logLevel == "ERROR"):
             logging.getLogger().setLevel(logging.ERROR)
