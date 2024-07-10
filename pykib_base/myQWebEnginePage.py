@@ -77,7 +77,7 @@ class myQWebEnginePage(QWebEnginePage):
                 self.browserProfile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
                 QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
 
-            logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
+            #logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
             self.profile().setPersistentStoragePath(args.persistentProfilePath)
             # Set Cache to Memory
             self.profile().setHttpCacheType(QWebEngineProfile.HttpCacheType.DiskHttpCache)

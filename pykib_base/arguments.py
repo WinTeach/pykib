@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.42')
+__version_info__ = ('devel', '3.0.43')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -185,6 +185,9 @@ def getArguments(dirname):
 
     parser.add_argument("-ll", "--logLevel", dest="logLevel", default="ERROR",
                         help="Setting the Level of Loggin. Allowed Values are ERROR, INFO, WARNING and DEBUG, Default is ERROR")
+    parser.add_argument("-lf", "--logFile", dest="logFile", default="",
+                        help="Specify a file where the log should be written to. If not set the log will be written to stdout")
+
     parser.add_argument("-sjsc", "--showJsConsole", dest="showJsConsole", action='store_true',
                         help="Showing all js console entry on in DEBUG log")
 
