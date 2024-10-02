@@ -98,6 +98,11 @@ class MainWindow(QWidget):
         # Definde Action when Fullscreen ist choosen
         self.page.fullScreenRequested.connect(self.toggleFullscreen)
 
+
+        if self.args.closeOnUrl:
+            logging.debug('closeOnUrl is set')
+            self.web.urlChanged.connect(self.closeOnUrl)
+
         if (self.args.oAuthInputFile):
             logging.info(
                 "oAuthInputFile is set. Going to monitor the file each second and inject the content into the browser")
@@ -157,6 +162,14 @@ class MainWindow(QWidget):
             if not self.windowState().__contains__(Qt.WindowState.WindowMinimized):
                 self.restoreState = self.windowState()
                 logging.debug("Set RestoreState = " + str(self.restoreState))
+
+    def closeOnUrl(self):
+        logging.debug(self.web.url().toString().lower());
+        logging.debug(self.args.closeOnUrl.lower());
+        logging.debug(self.web.url().toString().lower().find(self.args.closeOnUrl.lower()));
+        if self.web.url().toString().lower().find(self.args.closeOnUrl.lower()) != -1:
+            logging.info("CloseOnUrl is set. Closing Browser")
+            self.closeWindow()
 
     def oAuthHandleInput(self, url):
         logging.debug("Handling oAuthInputFile URL " + str(url))

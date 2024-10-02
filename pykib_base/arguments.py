@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.43')
+__version_info__ = ('devel', '3.0.44')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -89,6 +89,10 @@ def getArguments(dirname):
                         help="Defines the ID of the HTML Element in which the password should be put in")
     parser.add_argument("-aldid", "--autoLogonDomainID", dest="autoLogonDomainID", default=False,
                         help="Defines the ID of the HTML Element in which the domain should be put in")
+
+    parser.add_argument("-cou", "--closeOnUrl", dest="closeOnUrl", default=False,
+                        help="if set, the browser will be closed when a url contains this string")
+
 
     #these 2 are usefull for handling command line oauth urls which should be opened in the browser
     parser.add_argument("-oaif", "--oAuthInputFile", dest="oAuthInputFile", nargs='?', type=str, help="Defines a file which is monitor. If the file contains a url the browser will be redirected to this url. The file contents will be cleared after the redirect.")
