@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.44')
+__version_info__ = ('devel', '3.0.45')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -172,11 +172,16 @@ def getArguments(dirname):
                              "- perform localStorage.clean() and sessionStorage.clean() via JS"
                              "- reload the current Site")
 
-    parser.add_argument("-g", "--geometry", dest="geometry", default=[100, 100, 1024, 600], nargs="+", type=int,
+
+    parser.add_argument("-g", "--geometry", dest="geometry", nargs="+", type=int,
                         help="Set window geomety #left# #top# #width# #height#, when using a multimonitor envireoment you can define the monitor for fullscreen or maximized mode with #left# #top#")
     parser.add_argument("-ng", "--normalizeGeometry", dest="normalizeGeometry", action='store_true',
                         help="This Option makes the #left# geometry Parameter be calculated started from the primary screen (windows default behavior). "
                              "Specially help full in multi monitor enviroments when using the remote damon function")
+    parser.add_argument("-bw", "--browserWidth", dest="browserWidth",
+                        help="Set window width in pixel. Will be Overwritten if geometry is set", default=1000, type=int)
+    parser.add_argument("-bh", "--browserHeight", dest="browserHeight",
+                        help="Set window height in pixel. Will be Overwritten if geometry is set", default=800, type=int)
 
     parser.add_argument("-a", "--enableAdminKey", dest="adminKey",
                         help="Enables the admin key SHIFT+STRG+ALT+A and defines a Application which will be started when pushed")

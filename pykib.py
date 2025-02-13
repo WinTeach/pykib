@@ -321,13 +321,16 @@ class Pykib():
             if not (self.args.enableTrayMode and self.args.startInTray):
                 self.view.showMaximized()
         else:
-            if (len(self.args.geometry) != 4):
+            if (self.args.geometry and len(self.args.geometry) != 4):
                 logging.error(
                     "When geometry without maximized or fullsreen is set, you have to define the whole position an screen #left# #top# #width# #height#")
                 sys.exit()
             if not (self.args.enableTrayMode and self.args.startInTray):
                 self.view.show()
-            self.view.setGeometry(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1], self.args.geometry[2], self.args.geometry[3])
+            if (self.args.geometry):
+                self.view.setGeometry(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1], self.args.geometry[2], self.args.geometry[3])
+            else:
+                self.view.resize(self.args.browserWidth, self.args.browserHeight)
 
         sys.exit(self.app.exec())
     def bringToFront(self, reason):
