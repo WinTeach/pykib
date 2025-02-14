@@ -304,30 +304,32 @@ class Pykib():
             tray.setContextMenu(menu)
             
         # Set Dimensions
-        if (self.args.fullscreen):
-            if (len(self.args.geometry) != 2 and len(self.args.geometry) != 4):
-                logging.error(
-                    "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
-                sys.exit()
-            self.view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
+        if self.args.fullscreen:
+            if self.args.geometry:
+                if len(self.args.geometry) != 2 and len(self.args.geometry) != 4:
+                    logging.error(
+                        "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
+                    sys.exit()
+                self.view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
             if not (self.args.enableTrayMode and self.args.startInTray):
                 self.view.showFullScreen()
-        elif (self.args.maximized):
-            if (len(self.args.geometry) != 2 and len(self.args.geometry) != 4):
-                logging.error(
-                    "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
-                sys.exit()
-            self.view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
+        elif self.args.maximized:
+            if self.args.geometry:
+                if len(self.args.geometry) != 2 and len(self.args.geometry) != 4:
+                    logging.error(
+                        "When geometry is set with maximized or fullsreen only 2 parameters for starting point (#left# and #top#) is allowed")
+                    sys.exit()
+                self.view.move(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1])
             if not (self.args.enableTrayMode and self.args.startInTray):
                 self.view.showMaximized()
         else:
-            if (self.args.geometry and len(self.args.geometry) != 4):
+            if self.args.geometry and len(self.args.geometry) != 4:
                 logging.error(
                     "When geometry without maximized or fullsreen is set, you have to define the whole position an screen #left# #top# #width# #height#")
                 sys.exit()
             if not (self.args.enableTrayMode and self.args.startInTray):
                 self.view.show()
-            if (self.args.geometry):
+            if self.args.geometry:
                 self.view.setGeometry(self.args.geometry[0] + self.args.screenOffsetLeft, self.args.geometry[1], self.args.geometry[2], self.args.geometry[3])
             else:
                 self.view.resize(self.args.browserWidth, self.args.browserHeight)
