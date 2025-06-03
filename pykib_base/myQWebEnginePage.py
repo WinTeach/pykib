@@ -196,7 +196,53 @@ class myQWebEnginePage(QWebEnginePage):
             error.acceptCertificate()
             return True
         else:
-            return False
+            # Ask user whether to accept the certificate
+            details = f"Error: {error.description()}\nURL: {error.url().toString()}"
+            try:
+                certificateChain = error.certificateChain()
+                certinfo = ""
+                for idx, cert in enumerate(certificateChain):
+                    cert_details = f"Certificate {idx + 1}:\n"
+                    cert_details += f"  Issuer: {cert.issuerDisplayName()}\n"
+                    cert_details += f"  Subject: {cert.subjectDisplayName()}\n"
+                    cert_details += f"  Valid from: {cert.effectiveDate().toString()}\n"
+                    cert_details += f"  Valid until: {cert.expiryDate().toString()}\n"
+                    certinfo += cert_details + "\n"
+
+                details += "\n\nCertificate chain:\n" + certinfo
+
+            except Exception as e:
+                logging.error("Error getting additional information: " + str(e))
+                pass
+
+            msg = QtWidgets.QMessageBox()
+            # Set favicon if available
+            try:
+                favicon = self.form.windowIcon()
+                if not favicon.isNull():
+                    msg.setWindowIcon(favicon)
+                else:
+                    msg.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))
+            except Exception as e:
+                logging.error("Error setting window icon: " + str(e))
+                pass
+            msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+            msg.setText("Certificate error: Do you want to proceed anyway?")
+            msg.setInformativeText(details)
+            msg.setWindowTitle("Certificate Error")
+
+            acceptButton = QtWidgets.QPushButton("Proceed anyway")
+            rejectButton = QtWidgets.QPushButton("Cancel")
+            msg.addButton(acceptButton, QtWidgets.QMessageBox.ButtonRole.YesRole)
+            msg.addButton(rejectButton, QtWidgets.QMessageBox.ButtonRole.NoRole)
+            msg.setDefaultButton(rejectButton)
+            msg.exec()
+            if msg.clickedButton() == acceptButton:
+                error.acceptCertificate()
+                return True
+            else:
+                error.rejectCertificate()
+                return False
 
     # Download Handle
     @QtCore.pyqtSlot(QtWebEngineCore.QWebEngineDownloadRequest)
