@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.48')
+__version_info__ = ('devel', '3.0.49')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -75,6 +75,10 @@ def getArguments(dirname):
                              "#pathToScript# = path to Script. Full path or relative to folder 'scripts' from installation dir"
                              "#once# = 0 or 1. If 1 it will be injected only when the first site load completes. With 0 or default it will be injected each time a site is loaded."
                              "#argX#::#value# = define Arguments which should be replaced in Script File at Runtime. in Script use {argX} in script file")
+
+    parser.add_argument("-aush", "--addUrlSchemeHandler ", dest="addUrlSchemeHandler ", nargs='+',
+                        help="With this option, additional URL Schemes can be defined which should be handled by the browser. If a URL starts with one of the defined schemes, the browser will send them to xdg-open (linux) or start (windows) command. "
+                             "Example: teams workspaces customscheme ")
 
     parser.add_argument("-eal", "--enableAutoLogon", dest="enableAutoLogon", action='store_true',
                         help="Enables the autologon functionality, this function requires at least autoLogonUser and autoLogonPassword to be set. The Browser is preconfigured to work with Citrix Webinterface, Citrix Storefront and RDWeb Servers")
@@ -297,7 +301,7 @@ def parseConfigFile(args, parser):
             config_arguments[key] = True
         elif(key == 'geometry'):
             config_arguments[key] = list(map(int, val.split()))
-        elif(key == 'whiteList'):
+        elif(key == 'whiteList' or key == 'addUrlSchemeHandler'):
             config_arguments[key] = val.split(" ")
         elif(key == 'downloadHandle' or key == 'injectJavascript'):
             config_arguments[key] = val.split("\"")

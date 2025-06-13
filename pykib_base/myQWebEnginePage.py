@@ -106,11 +106,14 @@ class myQWebEnginePage(QWebEnginePage):
         # Connect to Download Handler
         self.profile().downloadRequested.connect(self.on_downloadRequested)
 
-        # Register Teams URL Handler
-
-        self.profile().installUrlSchemeHandler(b'msteams', myUrlSchemeHandler(self))
-
+        # Register workspaces URL Handler
         self.profile().installUrlSchemeHandler(b'workspaces', myUrlSchemeHandler(self))
+
+        #Register all URL Handlers given by parameters
+        if (args.addUrlSchemeHandler):
+            for handler in args.addUrlSchemeHandler:
+                logging.info("Registering URL Scheme Handler: " + handler)
+                self.profile().installUrlSchemeHandler(handler.encode('utf-8'), myUrlSchemeHandler(self))
 
         # Browser Notification Popup Handler
         if args.allowBrowserNotifications:

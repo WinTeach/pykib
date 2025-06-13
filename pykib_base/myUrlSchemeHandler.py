@@ -53,7 +53,8 @@ class myUrlSchemeHandler(QWebEngineUrlSchemeHandler):
                     logging.debug('Workspaces request detected trying to run "start ' + url)
                     subprocess.Popen("start " + url, shell=True)
 
-        elif scheme == 'msteams':
+        else:
+            logging.error(url)
             if (platform.system().lower() == "linux"):
                 logging.debug("Teams request detected trying to run: xdg-open '" + url + "'")
                 subprocess.Popen("xdg-open '" + url + "'", shell=True)
