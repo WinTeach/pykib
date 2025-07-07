@@ -18,25 +18,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+import logging
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import pyqtSignal
 
-class AutoReload(QtCore.QThread):
-    autoRefresh = pyqtSignal()
+class ResetTimeout(QtCore.QThread):
+    resetTimeoutExeeded = pyqtSignal()
     autoReloadTimer = 0
 
-    def __init__(self, autoReloadTimer):
-        super(AutoReload, self).__init__()
-        self.autoReloadTimer = autoReloadTimer
+    def __init__(self, resetTimeout):
+        super(ResetTimeout, self).__init__()
+        self.resetTimeout = resetTimeout
 
     def run(self):
-        secondsLeft = self.autoReloadTimer;
+        self.secondsLeft = self.resetTimeout;
         while(True):
-            if(secondsLeft > 0):
-                secondsLeft = secondsLeft - 1;
+            if(self.secondsLeft > 0):
+                self.secondsLeft = self.secondsLeft - 1;
+                logging.debug("browserResetTimeout time left: " + str(self.secondsLeft))
                 time.sleep(1)
             else:
-                self.autoRefresh.emit()
-                secondsLeft = self.autoReloadTimer;
+                self.resetTimeoutExeeded.emit()
+                logging.debug("browserResetTimeout exeeded")
+                self.secondsLeft = self.resetTimeout;
                 time.sleep(1);
+
+    def resetTimer(self):
+        self.secondsLeft = self.resetTimeout
+        logging.debug("browserResetTimeout cleared")

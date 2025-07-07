@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
 # Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
@@ -17,34 +17,67 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtCore import QUrl
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtCore import QUrl
+from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QAction
+from PyQt6 import QtNetwork
+
+from functools import partial
 
 import os
+import logging
+import socket
 
 class myQWebEngineView(QWebEngineView):
-    
 
-    def __init__(self, argsparsed, dirnameparsed):
+    def __init__(self, argsparsed, dirnameparsed, parent):
         global args
         args = argsparsed
 
         global dirname
         dirname = dirnameparsed
+        self.parent = parent;
         self.browser = QWebEngineView.__init__(self)
 
-    def load(self,url):
+    def load(self, url):
+        logging.debug("Load URL:" + url)
         if not url:
-            url = args.url
+             url = args.url
         if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file://')):
-            url = 'http://' + url
-        
+             url = 'http://' + url
+
+        if (args.proxy):
+            self.setProxy(url)
+
         self.setUrl(QUrl(url))
 
+    def setProxy(self, url):
+        # Set Proxy
+        ip = socket.gethostbyname(url.split('/')[2])
+        logging.debug("IP for " + url + " is " + ip)
+        if (args.proxyDisabledForLocalIp and (ip.startswith('192.168.') or ip.startswith('10.') or ip.startswith('172.16.'))):
+            # No Proxy for local IPs
+            logging.debug("No Proxy for:" + url)
+            QtNetwork.QNetworkProxy.setApplicationProxy(
+                QtNetwork.QNetworkProxy(QtNetwork.QNetworkProxy.ProxyType.NoProxy))
+            return
+
+        logging.debug("Set Proxy for:" + url)
+        proxy = QtNetwork.QNetworkProxy()
+        proxy.setType(QtNetwork.QNetworkProxy.ProxyType.HttpProxy)
+        proxy.setHostName(args.proxy)
+        proxy.setPort(args.proxyPort)
+        if (args.proxyUsername and args.proxyPassword):
+            proxy.setUser(args.proxyUsername);
+            proxy.setPassword(args.proxyPassword);
+        elif (args.proxyUsername or args.proxyPassword):
+            logging.error("It is not possible to use a proxy username without password")
+        QtNetwork.QNetworkProxy.setApplicationProxy(proxy)
+        return
+
     def contextMenuEvent(self, event):
-        self.menu = self.page().createStandardContextMenu()
+        self.menu = self.createStandardContextMenu()
 
         #Remove Menu Entryies by Id:
         #11 -> Paste and match Style
@@ -55,11 +88,23 @@ class myQWebEngineView(QWebEngineView):
         #32 -> Save Page
         unwantedMenuEntries = {11, 16, 13, 14, 32, 30}
 
+        iconMap = {
+            0 : QIcon(os.path.join(dirname, 'icons/back.png')),
+            1 : QIcon(os.path.join(dirname, 'icons/forward.png')),
+            3 : QIcon(os.path.join(dirname, 'icons/refresh.png'))
+        }
+
         for menuAction in self.menu.actions():
             #Remove Item From Default Menu
             #View Source
             if(menuAction.data() in unwantedMenuEntries):
                 self.menu.removeAction(menuAction)
+            else:
+                logging.debug(str(menuAction.data()))
+                try:
+                    menuAction.setIcon(iconMap[menuAction.data()])
+                except:
+                    logging.debug('No Icon found for context menu entry ' + str(menuAction.data()))
 
         # Adding Close Button (for remoteDameonMode)
         if(args.remoteBrowserDaemon):
@@ -69,8 +114,30 @@ class myQWebEngineView(QWebEngineView):
             self.menu.addSeparator()
             self.menu.addAction(closeButton)
 
+        if(args.enableCleanupBrowserProfileOption):
+            self.menu.addSeparator()
+            advancedMenu = self.menu.addMenu(QIcon(os.path.join(dirname, 'icons/settings.png')), 'Advanced')
+
+            # Delete All Cookies
+            deleteAllCookiesButton = QAction(QIcon(os.path.join(dirname, 'icons/cleanup.png')),
+                                             'Cleanup Browser Profile', self)
+            deleteAllCookiesButton.setStatusTip('Delete Cookies for Current Site')
+            deleteAllCookiesButton.triggered.connect(partial(self.parent.page.enableCleanupBrowserProfileOption))
+            advancedMenu.addAction(deleteAllCookiesButton)
+
         self.menu.popup(event.globalPos())
 
     def closeByMenu(self):
-        self.close()
-        self.parent().close()
+
+        try:
+            self.close()
+        except:
+            logging.debug('Nothing to close')
+
+        try:
+            self.parent.close()
+            self.parent.deleteLater()
+            self.deleteLater()
+        except:
+            logging.debug('No Parent to close found')
+

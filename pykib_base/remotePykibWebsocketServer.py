@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
 # Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
@@ -24,8 +24,8 @@ import json
 import logging
 import time
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSignal
+from PyQt6 import QtCore
+from PyQt6.QtCore import pyqtSignal
 
 
 class RemotePykibWebsocketServer(QtCore.QThread):
@@ -34,6 +34,7 @@ class RemotePykibWebsocketServer(QtCore.QThread):
     activateInstance = pyqtSignal(int, int)
     moveInstance = pyqtSignal(int, int, list, float)
     changeTabWindow = pyqtSignal(int, int, int)
+    setPixmap = pyqtSignal(int, str)
 
     def __init__(self, config, sessionToken, port):
         super(RemotePykibWebsocketServer, self).__init__()
@@ -57,7 +58,6 @@ class RemotePykibWebsocketServer(QtCore.QThread):
             while keepOpen:
                 message = await websocket.recv()
                 data = json.loads(message)
-
                 if(not self.sessionToken or self.sessionToken == data['sessionToken']):
                     if (data['action'] == 'tabAlive'):
                         logging.info("Websocket:")
@@ -75,9 +75,16 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                         logging.info("  Register:Return config")
                         logging.info("    Return config")
                         logging.info("    First Start - Closing all may opened Sessions")
-                        self.closeInstance.emit(0,0)
+                        #self.closeInstance.emit(0,0)
                         logging.info("------------------------------------------------------------")
                         await websocket.send(json.dumps(self.config))
+                        keepOpen = False;
+                    elif data['action'] == 'setPixmap':
+                        logging.debug(data)
+                        logging.debug("Websocket:")
+                        logging.debug("  Apply Pixmap on Tab: " + str(data["tabId"]))
+                        self.setPixmap.emit(int(data["tabId"]), str(data['pixmap']))
+                        logging.info("------------------------------------------------------------")
                         keepOpen = False;
                     elif(data['action'] == 'setTab'):
                         logging.info("Websocket:")
@@ -141,6 +148,7 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                 self.closeInstance.emit(self.openSockets[websocket]["tabId"], self.openSockets[websocket]["windowId"])
                 logging.info("Websocket:")
                 logging.info("  Connection to Tab lost. Closing")
+                logging.info(e)
                 logging.info(self.openSockets[websocket]["tabId"])
                 logging.info(self.openSockets[websocket]["windowId"])
             except Exception as e2:

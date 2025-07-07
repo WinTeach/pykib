@@ -16,96 +16,104 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import base64
+import io
 import sys
 import os
 import logging
 import random
 import string
 import tempfile
+import time
+
 import pykib_base.ui
 import pykib_base.arguments
 import pykib_base.mainWindow
 import pykib_base.remotePykibWebsocketServer
+import pykib_base.remotePykibUnixSocketServer
 
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction
+from PyQt6.QtGui import QIcon, QAction, QPixmap
+from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 
 
 #Workaround for Problem with relative File Paths
 class RemotePykib():
-    def __init__(self, args, dirname):
+    def __init__(self, args, dirname, tray):
         self.args = args
         self.dirname = dirname
         self.app = QApplication(sys.argv)
-
+        self.tray = tray
         self.pykibInstances = {}
+        self.browserProfile = None
 
         self.startRemotePykib()
 
     def startRemotePykib(self):
         logging.info("Pykib Remote Browser Daemon Mode")
 
-        #Create Temp Session Token if Option is set
-        if(self.args.useTemporarySessionToken):
-            logging.info("Temporary Session Token is used:")
-            characters = string.ascii_letters + string.digits
-            self.args.remoteBrowserSessionToken = ''.join(random.choice(characters) for i in range(128))
-            logging.info("  Token: " + self.args.remoteBrowserSessionToken)
-
-            token_path = tempfile.gettempdir()
-            if (self.args.temporarySessionTokenPath):
-                token_path = self.args.temporarySessionTokenPath
-
-            token_path = token_path.replace("\\", "/")+"/.pykibTemporarySessionToken"
-
-            with open(token_path, "w") as text_file:
-                text_file.write(self.args.remoteBrowserSessionToken)
-
-            logging.info("  Storing Token under: " + token_path)
-
-
         self.app.setQuitOnLastWindowClosed(False)
 
-        # Creating a Tray App
-        icon = QIcon(os.path.join(self.dirname, 'icons/pykib.png'))
-        tray = QSystemTrayIcon()
-        tray.setIcon(icon)
-        tray.setVisible(True)
-        tray.setToolTip("Rangee Remote Browser Daemon")
-
-        # Create the menu
-        menu = QMenu()
-
-        # Add a Quit option to the menu.
-        quit = QAction("Close Rangee Remote Browser Daemon")
-        quit.triggered.connect(sys.exit)
-        menu.addAction(quit)
-
-        # Build Configuration Array fpr Plugin
+        # Build Configuration Array for Plugin
         config = {
             "remotingList": self.args.remotingList.split(" "),
             "allowUserBasedRemoting": self.args.allowUserBasedRemoting,
             "remoteBrowserMoveInterval": self.args.remoteBrowserMoveInterval,
             "remoteDaemonProtocolVersion": self.args.remoteDaemonProtocolVersion,
+            "remoteBrowserPixmapMonitorInterval": self.args.remoteBrowserPixmapMonitorInterval,
         }
 
-        # Create an Start the Websocket Server Thread
-        websocketServer = pykib_base.remotePykibWebsocketServer.RemotePykibWebsocketServer(config,
-                                                                                           self.args.remoteBrowserSessionToken,
-                                                                                           self.args.remoteBrowserPort)
-        websocketServer.daemon = True  # Daemonize thread
-        websocketServer.configureInstance.connect(self.configureInstance)
-        websocketServer.closeInstance.connect(self.closeInstance)
-        websocketServer.activateInstance.connect(self.activateInstance)
-        websocketServer.moveInstance.connect(self.moveInstance)
-        websocketServer.changeTabWindow.connect(self.changeTabWindow)
-        websocketServer.start()
+        # Configure a Remote Pykib Tray App
+        self.tray.setVisible(True)
+        self.tray.setToolTip("Remote Browser Daemon")
+
+        # Create the menu
+        menu = QMenu()
+
+        # Add a Quit option to the menu.
+        quit = QAction("Close Remote Browser Daemon")
+        quit.triggered.connect(sys.exit)
+        menu.addAction(quit)
 
         # Add the menu to the tray
-        tray.setContextMenu(menu)
+        self.tray.setContextMenu(menu)
 
-        sys.exit(self.app.exec_())
+        if(self.args.remoteBrowserSocketPath):
+            # Create and Start the UnixSocket Server Thread
+            socketServer = pykib_base.remotePykibUnixSocketServer.RemotePykibUnixSocketServer(config,
+                                                                                               self.args)
+        else:
+            #Create Temp Session Token if Option is set
+            if(self.args.useTemporarySessionToken):
+                logging.info("Temporary Session Token is used:")
+                characters = string.ascii_letters + string.digits
+                self.args.remoteBrowserSessionToken = ''.join(random.choice(characters) for i in range(128))
+                logging.info("  Token: " + self.args.remoteBrowserSessionToken)
+
+                token_path = tempfile.gettempdir()
+                if (self.args.temporarySessionTokenPath):
+                    token_path = self.args.temporarySessionTokenPath
+
+                token_path = token_path.replace("\\", "/")+"/.pykibTemporarySessionToken"
+
+                with open(token_path, "w") as text_file:
+                    text_file.write(self.args.remoteBrowserSessionToken)
+
+                logging.info("  Storing Token under: " + token_path)
+
+            # Create and Start the Websocket Server Thread
+            socketServer = pykib_base.remotePykibWebsocketServer.RemotePykibWebsocketServer(config, self.args.remoteBrowserSessionToken,
+                                                                           self.args.remoteBrowserPort)
+
+        socketServer.daemon = True  # Daemonize thread
+        socketServer.configureInstance.connect(self.configureInstance)
+        socketServer.closeInstance.connect(self.closeInstance)
+        socketServer.activateInstance.connect(self.activateInstance)
+        socketServer.moveInstance.connect(self.moveInstance)
+        socketServer.changeTabWindow.connect(self.changeTabWindow)
+        socketServer.setPixmap.connect(self.setPixmap)
+        socketServer.start()
+
+        sys.exit(self.app.exec())
 
     def configureInstance(self, tabId, windowId, url):
         logging.info("RemotePykib:")
@@ -120,21 +128,29 @@ class RemotePykib():
             logging.info("  Tab found, set as CurrentView:"+str(tabId))
             logging.info("    TabID: " + str(tabId))
             logging.info("    WindowID: " + str(windowId))
-            print(self.pykibInstances[windowId][tabId])
             currentView = self.pykibInstances[windowId][tabId]
             try:
                 currentView.web.load(url)
             except:
                 logging.info("    Tab should be availeable but is not. May be closed manually. creating new: " + str(tabId))
                 self.args.url = url
-                currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname)
+                if self.browserProfile:
+                    currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray, self.browserProfile)
+                else:
+                    currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray)
+                    self.browserProfile = currentView.browserProfile
                 self.pykibInstances[windowId][tabId] = currentView
         else:
             logging.info("  Tab not found, create new an set as CurrentView:" + str(tabId))
             logging.info("    TabID: " + str(tabId))
             logging.info("    WindowID: " + str(windowId))
             self.args.url = url
-            currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname)
+            if self.browserProfile:
+                currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray,
+                                                               self.browserProfile)
+            else:
+                currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray)
+                self.browserProfile = currentView.browserProfile
             self.pykibInstances[windowId][tabId] = currentView
 
         for key in self.pykibInstances[windowId]:
@@ -159,8 +175,11 @@ class RemotePykib():
                     for window in self.pykibInstances:
                         try:
                             for tab in self.pykibInstances[window]:
-                                self.pykibInstances[window][tab].web.close()
-                                self.pykibInstances[window][tab].close()
+                                try:
+                                    self.pykibInstances[window][tab].web.close()
+                                    self.pykibInstances[window][tab].close()
+                                except Exception as f:
+                                    logging.debug(f)
                         except Exception as i:
                             logging.warning(i)
                 except Exception as e:
@@ -223,12 +242,16 @@ class RemotePykib():
         try:
             if(tabId in self.pykibInstances[windowId]):
                 logging.debug("      Tab found. Moving/Resizing")
-                self.args.setZoomFactor = zoomFactor * 100
+                if(self.args.ignoreSystemDpiSettings == True):
+                    self.args.setZoomFactor = zoomFactor * 100
+                    dpi = 1
+                else:
+                    dpi = self.pykibInstances[windowId][tabId].devicePixelRatio()
                 #self.pykibInstances[windowId][tabId].web.setZoomFactor(zoomFactor)
                 logging.debug("      1")
                 logging.debug(geometry)
                 logging.debug(self.args.screenOffsetLeft)
-                self.pykibInstances[windowId][tabId].setGeometry(int(geometry[0] + self.args.screenOffsetLeft), int(geometry[1]), int(geometry[2]), int(geometry[3]))
+                self.pykibInstances[windowId][tabId].setGeometry(int(geometry[0] / dpi + self.args.screenOffsetLeft), int(geometry[1] / dpi), int(geometry[2] / dpi), int(geometry[3] / dpi))
                 logging.debug("      2")
                 self.pykibInstances[windowId][tabId].show()
                 logging.debug("      3")
@@ -260,5 +283,20 @@ class RemotePykib():
                 del self.pykibInstances[oldWindowId][tabId]
             else:
                 logging.info("      Tab not found.")
+        except Exception as e:
+            logging.info(e)
+
+
+    def setPixmap(self, tabId, pixmapData):
+        logging.info("RemotePykib:")
+        logging.info("  Apply Pixmap")
+        logging.info("    TabID: " + str(tabId))
+        try:
+            for pykibInstance in self.pykibInstances:
+                if(tabId in self.pykibInstances[pykibInstance]):
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(base64.b64decode(pixmapData))
+                    self.pykibInstances[pykibInstance][tabId].web.parent.setMask(pixmap.mask())
+                    self.pykibInstances[pykibInstance][tabId].web.parent.mask()
         except Exception as e:
             logging.info(e)

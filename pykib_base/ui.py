@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
 # Copyright (C) 2021 Tobias Wintrich
 #
 # This file is part of pykib.
@@ -19,13 +19,11 @@
 
 import os
 
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtGui import QIcon, QFont
-from PyQt5.QtCore import QSize
+from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtGui import QIcon, QFont
+from PyQt6.QtCore import QSize, Qt
+from functools import partial
 
-
-from pykib_base.myQWebEngineView import myQWebEngineView
-from pykib_base.myQWebEnginePage import myQWebEnginePage
 from pykib_base.myQProgressBar import myQProgressBar
 
 def setupUi(form, args, dirname):        
@@ -95,24 +93,37 @@ def setupUi(form, args, dirname):
         form.homeButton.setIcon(QIcon(os.path.join(dirname, 'icons/home.png')));
         form.homeButton.setIconSize(QSize(24, 24));
         form.homeButton.setObjectName("homeButton")
-        form.homeButton.clicked.connect(form.web.load)
+        form.homeButton.clicked.connect(partial(form.web.load, ""))
         
         form.navGridLayout.addWidget(form.homeButton, 0, navGridLayoutHorizontalPosition, 1, 1)
         navGridLayoutHorizontalPosition += 1
-    
+
+
     if (args.showAddressBar):
         form.addressBar = QtWidgets.QLineEdit(form)
         form.addressBar.setObjectName("addressBar")
         form.web.urlChanged['QUrl'].connect(form.adjustAdressbar)
         form.navGridLayout.addWidget(form.addressBar, 0, navGridLayoutHorizontalPosition, 1, 1)
         form.addressBar.returnPressed.connect(form.pressed)
+        navGridLayoutHorizontalPosition += 1
 
-    if (args.showNavigationButtons or args.showAddressBar):
+    if (args.showPrintButton):
+        form.printButton = QtWidgets.QPushButton(form)
+        form.printButton.setIcon(QIcon(os.path.join(dirname, 'icons/print.png')));
+        form.printButton.setIconSize(QSize(24, 24));
+        form.printButton.setObjectName("printButton")
+        form.printButton.clicked.connect(form.printSiteRequest)
+
+        form.navGridLayout.addWidget(form.printButton, 0, navGridLayoutHorizontalPosition, 1, 1)
+
+
+    if (args.showNavigationButtons or args.showAddressBar or args.showPrintButton):
         form.pageGridLayout.addWidget(form.navbar, 0, 0, 1, 0)
     
     if(args.removeTitleBar):
-            form.setWindowFlags(QtCore.Qt.FramelessWindowHint)
-    elif(args.dynamicTitle):
+            form.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
+
+    if(args.dynamicTitle):
         form.web.titleChanged.connect(form.adjustTitle)
         form.web.iconUrlChanged.connect(form.adjustTitleIcon)
 
@@ -123,7 +134,8 @@ def setupUi(form, args, dirname):
         form.memoryCapCloseBar.setTextVisible(True)
         form.memoryCapCloseBar.setFixedHeight(40)
 
-        form.memoryCapCloseBar.setLayoutDirection(1)
+
+        form.memoryCapCloseBar.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         alertFont = QFont("arial", 16)
         form.memoryCapCloseBar.setFont(alertFont)
         form.memoryCapCloseBar.changeStyle("memorycap")
@@ -220,7 +232,7 @@ def setupUi(form, args, dirname):
     form.searchBarGridLayout.addWidget(form.searchUp, 0, 1, 1, 1)
 
     #Add Spacer Item
-    spacerItem = QtWidgets.QSpacerItem(24, 24, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+    spacerItem = QtWidgets.QSpacerItem(24, 24, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
     form.searchBarGridLayout.addItem(spacerItem, 0, 3, 1, 1)
 
     #Add Close Button
@@ -235,7 +247,7 @@ def setupUi(form, args, dirname):
     # ###########################################################
     #Context Menu
     if(not args.enableContextMenu):
-        form.web.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
+        form.web.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
 
     # ###########################################################
 
