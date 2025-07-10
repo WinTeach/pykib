@@ -31,17 +31,21 @@ import socket
 
 class myQWebEngineView(QWebEngineView):
 
-    def __init__(self, argsparsed, dirnameparsed, parent):
+    def __init__(self, argsparsed, dirnameparsed, parent, tabIndex=0):
         global args
         args = argsparsed
 
         global dirname
         dirname = dirnameparsed
-        self.parent = parent;
+        self.parent = parent
+        self.tabIndex = tabIndex
+
+        #create random debug id
+        self.randomId = str(os.urandom(8).hex())
         self.browser = QWebEngineView.__init__(self)
 
     def load(self, url):
-        logging.debug("Load URL:" + url)
+        logging.debug("Load URL:" + str(url))
         if not url:
              url = args.url
         if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file://')):
@@ -81,12 +85,15 @@ class myQWebEngineView(QWebEngineView):
 
         #Remove Menu Entryies by Id:
         #11 -> Paste and match Style
-        #13 -> Open in New Tab
-        #14 -> Open in New Window
+        #13 -> Open in New Window
+        #14 -> Open in New Tab
         #16 -> Save Link
         #30 -> View Source
         #32 -> Save Page
-        unwantedMenuEntries = {11, 16, 13, 14, 32, 30}
+        if (args.allowManageTabs):
+            unwantedMenuEntries = {11, 13, 16, 30, 32}
+        else:
+            unwantedMenuEntries = {11, 16, 13, 14, 32, 30}
 
         iconMap = {
             0 : QIcon(os.path.join(dirname, 'icons/back.png')),
@@ -122,7 +129,7 @@ class myQWebEngineView(QWebEngineView):
             deleteAllCookiesButton = QAction(QIcon(os.path.join(dirname, 'icons/cleanup.png')),
                                              'Cleanup Browser Profile', self)
             deleteAllCookiesButton.setStatusTip('Delete Cookies for Current Site')
-            deleteAllCookiesButton.triggered.connect(partial(self.parent.page.enableCleanupBrowserProfileOption))
+            deleteAllCookiesButton.triggered.connect(partial(self.parent.enableCleanupBrowserProfileOption))
             advancedMenu.addAction(deleteAllCookiesButton)
 
         self.menu.popup(event.globalPos())

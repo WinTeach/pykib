@@ -22,7 +22,6 @@ import asyncio
 import websockets
 import json
 import logging
-import time
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import pyqtSignal
@@ -44,21 +43,21 @@ class RemotePykibWebsocketServer(QtCore.QThread):
         self.openSockets = {}
 
     def run(self):
+        asyncio.run(self.startWebsocket())
+
+    async def startWebsocket(self):
         logging.info("Websocket: Starting Websocket Server:")
-        logging.info("  Listening on 0.0.0.0:"+str(self.port))
+        logging.info("  Listening on 0.0.0.0:" + str(self.port))
+        self.server = await websockets.serve(self.handler, "0.0.0.0", self.port)
+        await self.server.wait_closed()
 
-        websockloop = asyncio.new_event_loop()
-        start_server = websockets.serve(self.handler, "0.0.0.0", self.port, loop=websockloop)
-        websockloop.run_until_complete(start_server)
-        websockloop.run_forever()
-
-    async def handler(self, websocket, path):
+    async def handler(self, websocket):
         try:
             keepOpen = True
             while keepOpen:
                 message = await websocket.recv()
                 data = json.loads(message)
-                if(not self.sessionToken or self.sessionToken == data['sessionToken']):
+                if (not self.sessionToken or self.sessionToken == data['sessionToken']):
                     if (data['action'] == 'tabAlive'):
                         logging.info("Websocket:")
                         logging.info("  Tab registered")
@@ -75,7 +74,7 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                         logging.info("  Register:Return config")
                         logging.info("    Return config")
                         logging.info("    First Start - Closing all may opened Sessions")
-                        #self.closeInstance.emit(0,0)
+                        # self.closeInstance.emit(0,0)
                         logging.info("------------------------------------------------------------")
                         await websocket.send(json.dumps(self.config))
                         keepOpen = False;
@@ -86,7 +85,7 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                         self.setPixmap.emit(int(data["tabId"]), str(data['pixmap']))
                         logging.info("------------------------------------------------------------")
                         keepOpen = False;
-                    elif(data['action'] == 'setTab'):
+                    elif (data['action'] == 'setTab'):
                         logging.info("Websocket:")
                         logging.info("  set Tab:")
                         logging.info("    TabID: " + str(data["tabId"]))
@@ -95,14 +94,14 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                         logging.info("------------------------------------------------------------")
                         keepOpen = False;
                         self.configureInstance.emit(int(data["tabId"]), int(data["windowId"]), data['url'])
-                    elif(data['action'] == 'setTabActive'):
+                    elif (data['action'] == 'setTabActive'):
                         logging.info("Websocket:")
                         logging.info("  set Tab Active:")
                         logging.info("    TabID: " + str(data["tabId"]))
                         logging.info("    WindowID: " + str(data["windowId"]))
                         logging.info("------------------------------------------------------------")
                         self.activateInstance.emit(int(data["tabId"]), int(data["windowId"]))
-                    elif(data['action'] == 'closeTab'):
+                    elif (data['action'] == 'closeTab'):
                         logging.info("Websocket:")
                         logging.info("  Closing Tab:")
                         logging.info("    TabID: " + str(data["tabId"]))
@@ -113,13 +112,13 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                             self.closeInstance.emit(int(data["tabId"]), int(data["windowId"]["windowId"]))
                         except:
                             self.closeInstance.emit(int(data["tabId"]), int(data["windowId"]))
-                    elif(data['action'] == 'closeAllTabs'):
+                    elif (data['action'] == 'closeAllTabs'):
                         logging.info("Websocket:")
                         logging.info("  Closing All Tabs:")
                         logging.info("    WindowID: " + str(data["windowId"]))
                         logging.info("------------------------------------------------------------")
                         self.closeInstance.emit(0, int(data["windowId"]))
-                    elif(data['action'] == 'moveTab'):
+                    elif (data['action'] == 'moveTab'):
                         logging.debug("Websocket:")
                         logging.debug("  Moving Tab:")
                         logging.debug("    TabID: " + str(data["tabId"]))
@@ -128,15 +127,17 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                         if (data['geometry'][1] < 0):
                             self.activateInstance.emit(0, int(data["windowId"]))
                         else:
-                            self.moveInstance.emit(int(data["tabId"]), int(data["windowId"]), data['geometry'], float(data['zoomFactor']))
-                    elif(data['action'] == 'changeTabWindow'):
+                            self.moveInstance.emit(int(data["tabId"]), int(data["windowId"]), data['geometry'],
+                                                   float(data['zoomFactor']))
+                    elif (data['action'] == 'changeTabWindow'):
                         logging.info("Websocket:")
                         logging.info("  change Tab Window:")
                         logging.info("    TabID: " + str(data["tabId"]))
                         logging.info("    oldWindowId: " + str(data["oldWindowId"]))
                         logging.info("    newWindowId: " + str(data['newWindowId']))
                         logging.info("------------------------------------------------------------")
-                        self.changeTabWindow.emit(int(data["tabId"]), int(data["oldWindowId"]), int(data['newWindowId']))
+                        self.changeTabWindow.emit(int(data["tabId"]), int(data["oldWindowId"]),
+                                                  int(data['newWindowId']))
                         self.openSockets[websocket]["windowId"] = data['newWindowId']
                 else:
                     await websocket.send(json.dumps({"ErrorCode": 1}))
@@ -153,19 +154,14 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                 logging.info(self.openSockets[websocket]["windowId"])
             except Exception as e2:
                 logging.warning(e2)
-            if(e == websockets.exceptions.ConnectionClosedError):
+            if (e == websockets.exceptions.ConnectionClosedError):
                 logging.warning("Websocket:")
                 logging.warning("  Connection closed with error - Closing all Windows")
                 logging.warning("------------------------------------------------------------")
                 self.closeInstance.emit(0, 0)
-            elif(e.__class__ != websockets.exceptions.ConnectionClosedOK):
+            elif (e.__class__ != websockets.exceptions.ConnectionClosedOK):
                 logging.info("Websocket:")
                 logging.info("  Connection closed cleanly")
                 logging.info("------------------------------------------------------------")
             else:
                 logging.warning(e)
-
-
-
-
-

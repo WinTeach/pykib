@@ -22,13 +22,11 @@ import os
 import urllib.parse
 import tempfile
 import logging
-import time
-
 from functools import partial
 
-from PyQt6.QtNetwork import QAuthenticator, QNetworkCookie
-from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings, QWebEngineUrlScheme
-from PyQt6 import QtCore, QtWebEngineWidgets, QtWidgets, QtWebEngineCore
+from PyQt6.QtNetwork import QAuthenticator
+from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
+from PyQt6 import QtCore, QtWidgets, QtWebEngineCore
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QFileDialog
 from PyQt6.QtCore import QSize, QUrl, Qt
@@ -70,12 +68,12 @@ class myQWebEnginePage(QWebEnginePage):
                 if browserProfile:
                     self.browserProfile = browserProfile
                 else:
-                    self.browserProfile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
-                QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
+                    self.browserProfile = QtWebEngineCore.QWebEngineProfile('/')
+                QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile)
             except Exception as e:
                 logging.info("Reuse of Profile failed: " + str(e))
-                self.browserProfile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
-                QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
+                self.browserProfile = QtWebEngineCore.QWebEngineProfile('/')
+                QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile)
 
             #logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
             self.profile().setPersistentStoragePath(args.persistentProfilePath)
@@ -87,8 +85,8 @@ class myQWebEnginePage(QWebEnginePage):
             logging.info("Is profile in private mode:" + str(self.browserProfile.isOffTheRecord()))
         elif (createPrivateProfile):
             logging.info("Create new private Profile")
-            self.browserProfile = QtWebEngineCore.QWebEngineProfile(self.form.web)
-            QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
+            self.browserProfile = QtWebEngineCore.QWebEngineProfile()
+            QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile)
             logging.info("Is profile in private mode:" + str(self.browserProfile.isOffTheRecord()))
         else:
             logging.info("Create no new Profile")
@@ -97,7 +95,8 @@ class myQWebEnginePage(QWebEnginePage):
 
         self.authenticationRequired.connect(self.webAuthenticationRequired)
 
-        self.newWindowRequested.connect(self.openInSameWindow)
+
+        self.newWindowRequested.connect(self.windowRequested)
         self.certificateError.connect(self.validateCertificateError)
 
         # Modify Profile
@@ -107,7 +106,7 @@ class myQWebEnginePage(QWebEnginePage):
         self.profile().downloadRequested.connect(self.on_downloadRequested)
 
         # Register workspaces URL Handler
-        self.profile().installUrlSchemeHandler(b'workspaces', myUrlSchemeHandler(self))
+        #self.profile().installUrlSchemeHandler(b'workspaces', myUrlSchemeHandler(self))
 
         #Register all URL Handlers given by parameters
         if (args.addUrlSchemeHandler):
@@ -142,8 +141,13 @@ class myQWebEnginePage(QWebEnginePage):
                 self.profile().setHttpUserAgent(
                     "Mozilla/5.0 (Windows; U; Windows NT 6.1; " + args.setBrowserLanguage + ") AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
 
-    def openInSameWindow(self, newWindowsRequest):
-        self.form.web.load(newWindowsRequest.requestedUrl().toString())
+    def windowRequested(self, newWindowsRequest):
+        if(args.allowManageTabs):
+            # If Tabs are enabled, we will open the new window in a new tab
+            logging.info("New Window Request: " + newWindowsRequest.requestedUrl().toString())
+            self.form.addTab(newWindowsRequest.requestedUrl().toString())
+        else:
+            self.form.tabs[self.form.currentTabIndex]['web'].load(newWindowsRequest.requestedUrl().toString())
 
     def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):
         # Format acceptedMimeTypes
@@ -198,7 +202,7 @@ class myQWebEnginePage(QWebEnginePage):
             print("Certificate Error")
             error.acceptCertificate()
             return True
-        else:
+        elif not args.remoteBrowserDaemon:
             # Ask user whether to accept the certificate
             details = f"Error: {error.description()}\nURL: {error.url().toString()}"
             try:
@@ -239,6 +243,7 @@ class myQWebEnginePage(QWebEnginePage):
             msg.addButton(acceptButton, QtWidgets.QMessageBox.ButtonRole.YesRole)
             msg.addButton(rejectButton, QtWidgets.QMessageBox.ButtonRole.NoRole)
             msg.setDefaultButton(rejectButton)
+
             msg.exec()
             if msg.clickedButton() == acceptButton:
                 error.acceptCertificate()
@@ -378,9 +383,9 @@ class myQWebEnginePage(QWebEnginePage):
         else:
             self.form.pdfpage = myQWebEnginePage(args, dirname, self.form, True)
 
-        self.form.web.setPage(self.form.pdfpage)
-        self.form.web.load(pdfjsurl)
-        self.form.PDFnavbar.show()
+        self.form.tabs[self.form.currentTabIndex]['web'].setPage(self.form.pdfpage)
+        self.form.tabs[self.form.currentTabIndex]['web'].load(pdfjsurl)
+        self.form.PDFnavbar.setVisible(True)
         # self.form.navbar.hide()
         self.form.progress.disabled = True
 
@@ -390,7 +395,7 @@ class myQWebEnginePage(QWebEnginePage):
     def closePDFPage(self):
         if(args.pdfreadermode):
             self.form.closeWindow()
-        self.form.web.setPage(self.form.page)
+        self.form.tabs[self.form.currentTabIndex]['web'].setPage(self.form.tabs[self.form.currentTabIndex]['page'])
         self.form.PDFnavbar.hide()
         if (args.showNavigationButtons or args.showAddressBar):
             self.form.navbar.show()
@@ -412,10 +417,10 @@ class myQWebEnginePage(QWebEnginePage):
     def pdfDownloadAction(self):
         # Remove Extension From URL
         try:
-            self.form.web.load((self.pdfFile + "?downloadPdfFromPykib").replace("\\", "/").replace("////", "///"))
+            self.form.tabs[self.form.currentTabIndex]['web'].load((self.pdfFile + "?downloadPdfFromPykib").replace("\\", "/").replace("////", "///"))
             print("Downloading: " + (self.pdfFile + "?downloadPdfFromPykib").replace("\\", "/").replace("////", "///"))
         except:
-            # self.form.web.load(self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib")
+            # self.form.tabs[self.form.currentTabIndex]['web'].load(self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib")
             print("An exception while downloading a pdf occurred")
 
     def checkWhitelist(self, url: QUrl, is_main_frame: bool):
@@ -467,9 +472,9 @@ class myQWebEnginePage(QWebEnginePage):
         retval = msg.exec()
 
         if (retval == 0):
-            self.form.web.stop()
+            self.form.tabs[self.form.currentTabIndex]['web'].stop()
         else:
-            self.form.web.load(args.url)
+            self.form.tabs[self.form.currentTabIndex]['web'].load(args.url[0])
 
         return False
 

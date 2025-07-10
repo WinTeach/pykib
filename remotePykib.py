@@ -17,14 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import base64
-import io
 import sys
-import os
 import logging
 import random
 import string
 import tempfile
-import time
 
 import pykib_base.ui
 import pykib_base.arguments
@@ -32,8 +29,8 @@ import pykib_base.mainWindow
 import pykib_base.remotePykibWebsocketServer
 import pykib_base.remotePykibUnixSocketServer
 
-from PyQt6.QtGui import QIcon, QAction, QPixmap
-from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
+from PyQt6.QtGui import QAction, QPixmap
+from PyQt6.QtWidgets import QApplication, QMenu
 
 
 #Workaround for Problem with relative File Paths
@@ -119,21 +116,22 @@ class RemotePykib():
         logging.info("RemotePykib:")
 
         #Create Window Array if not exist
-        try:
-            self.pykibInstances[windowId]
-        except:
+        if windowId in self.pykibInstances:
+            logging.info("  Instance exists: " + str(windowId))
+        else:
+            logging.info("  Create new Instance: " + str(windowId))
             self.pykibInstances[windowId] = {}
 
-        if(tabId in self.pykibInstances[windowId] and self.pykibInstances[windowId][tabId].web):
+        if(tabId in self.pykibInstances[windowId] and self.pykibInstances[windowId][tabId] and self.pykibInstances[windowId][tabId].tabs[0]['web']):
             logging.info("  Tab found, set as CurrentView:"+str(tabId))
             logging.info("    TabID: " + str(tabId))
             logging.info("    WindowID: " + str(windowId))
             currentView = self.pykibInstances[windowId][tabId]
             try:
-                currentView.web.load(url)
+                self.loadInCurrentTab(currentView, url)
             except:
-                logging.info("    Tab should be availeable but is not. May be closed manually. creating new: " + str(tabId))
-                self.args.url = url
+                logging.info("    Tab should be available but is not. May be closed manually. creating new: " + str(tabId))
+                self.args.url = [url]
                 if self.browserProfile:
                     currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray, self.browserProfile)
                 else:
@@ -144,7 +142,7 @@ class RemotePykib():
             logging.info("  Tab not found, create new an set as CurrentView:" + str(tabId))
             logging.info("    TabID: " + str(tabId))
             logging.info("    WindowID: " + str(windowId))
-            self.args.url = url
+            self.args.url = [url]
             if self.browserProfile:
                 currentView = pykib_base.mainWindow.MainWindow(self.args, self.dirname, None, self.tray,
                                                                self.browserProfile)
@@ -158,13 +156,11 @@ class RemotePykib():
                 logging.info("  Hiding Tabs with:")
                 logging.info("    TabID: " + str(key))
                 logging.info("    WindowID: " + str(windowId))
-
-                currentView.hide()
+                self.pykibInstances[windowId][key].hide()
 
         logging.info("  Showing CurrenView")
         logging.info("------------------------------------------------------------")
         currentView.show()
-        #currentView.activateWindow()
 
     def closeInstance(self, tabId, windowId):
         logging.info("RemotePykib:")
@@ -176,8 +172,7 @@ class RemotePykib():
                         try:
                             for tab in self.pykibInstances[window]:
                                 try:
-                                    self.pykibInstances[window][tab].web.close()
-                                    self.pykibInstances[window][tab].close()
+                                    self.closeCurrentTab(self.pykibInstances[window][tab])
                                 except Exception as f:
                                     logging.debug(f)
                         except Exception as i:
@@ -191,17 +186,16 @@ class RemotePykib():
                 try:
                     for tab in self.pykibInstances[windowId]:
                         logging.info("      Tab closed: " + str(tab))
-                        self.pykibInstances[windowId][tab].web.close()
-                        self.pykibInstances[windowId][tab].close()
+                        self.closeCurrentTab(self.pykibInstances[windowId][tab])
                 except Exception as e:
                     logging.warning(e)
             elif (tabId in self.pykibInstances[windowId]):
                 logging.info("  Closing Tabs:")
                 logging.info("    TabID: " + str(tabId))
                 logging.info("    WindowID: " + str(windowId))
-                self.pykibInstances[windowId][tabId].web.close()
-                self.pykibInstances[windowId][tabId].close()
-                del self.pykibInstances[windowId][tabId]
+                self.closeCurrentTab(self.pykibInstances[windowId][tabId])
+                #self.pykibInstances[windowId][tabId].close()
+                #del self.pykibInstances[windowId][tabId]
         except Exception as e:
             logging.warning(e)
             return False
@@ -214,13 +208,6 @@ class RemotePykib():
         logging.info("    WindowID: " + str(windowId))
 
         try:
-            if (tabId in self.pykibInstances[windowId]):
-                logging.info("      Tab found. Set as CurrentView")
-                self.pykibInstances[windowId][tabId].show()
-                #self.pykibInstances[windowId][tabId].activateWindow()
-            else:
-                logging.info("      Tab not found - Nothing to bring in Front.")
-
             for tab in self.pykibInstances[windowId]:
                 if (tab != tabId):
                     logging.info("  Hiding Tabs with:")
@@ -230,7 +217,15 @@ class RemotePykib():
                         self.pykibInstances[windowId][tab].hide()
                     except Exception as e:
                         logging.info("  Error, Tab not found")
+
+            if (tabId in self.pykibInstances[windowId]):
+                logging.info("      Tab found. Show Tab")
+                self.pykibInstances[windowId][tabId].show()
+            else:
+                logging.info("      Tab not found - Nothing to bring in Front.")
+
         except Exception as e:
+            logging.error(e)
             logging.info("  Error, WindowID not configured")
         logging.info("------------------------------------------------------------")
 
@@ -247,15 +242,10 @@ class RemotePykib():
                     dpi = 1
                 else:
                     dpi = self.pykibInstances[windowId][tabId].devicePixelRatio()
-                #self.pykibInstances[windowId][tabId].web.setZoomFactor(zoomFactor)
-                logging.debug("      1")
                 logging.debug(geometry)
                 logging.debug(self.args.screenOffsetLeft)
                 self.pykibInstances[windowId][tabId].setGeometry(int(geometry[0] / dpi + self.args.screenOffsetLeft), int(geometry[1] / dpi), int(geometry[2] / dpi), int(geometry[3] / dpi))
-                logging.debug("      2")
                 self.pykibInstances[windowId][tabId].show()
-                logging.debug("      3")
-                #self.pykibInstances[windowId][tabId].activateWindow()
             else:
                 logging.debug("      Tab not found.")
         except Exception as e:
@@ -296,7 +286,17 @@ class RemotePykib():
                 if(tabId in self.pykibInstances[pykibInstance]):
                     pixmap = QPixmap()
                     pixmap.loadFromData(base64.b64decode(pixmapData))
-                    self.pykibInstances[pykibInstance][tabId].web.parent.setMask(pixmap.mask())
-                    self.pykibInstances[pykibInstance][tabId].web.parent.mask()
+                    if 0 in self.pykibInstances[pykibInstance][tabId].tabs:
+                        self.pykibInstances[pykibInstance][tabId].setMask(pixmap.mask())
+                        self.pykibInstances[pykibInstance][tabId].mask()
+
         except Exception as e:
             logging.info(e)
+
+
+    def loadInCurrentTab(self, mainWindow, url):
+        mainWindow.tabs[0]['web'].load(url)
+
+    def closeCurrentTab(self, mainWindow):
+        mainWindow.tabs[0]['web'].close()
+        mainWindow.close()

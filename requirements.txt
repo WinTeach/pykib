@@ -8,3 +8,4 @@ websockets
 psutil
 pypdfium2
 pillow
+requests

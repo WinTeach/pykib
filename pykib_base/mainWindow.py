@@ -44,13 +44,15 @@ from pykib_base.oAuthFileHandler import OAuthFileHandler
 from PyQt6.QtWebEngineCore import QWebEnginePage
 from PyQt6 import QtCore
 from PyQt6.QtCore import QTimer, Qt, QEvent
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtGui import QGuiApplication, QIcon
 
-from PyQt6.QtWidgets import QWidget, QSystemTrayIcon
+from PyQt6.QtWidgets import QWidget, QSystemTrayIcon, QLabel, QHBoxLayout, QTabBar, QSizePolicy, QToolButton
+
 
 class MainWindow(QWidget):
     fullScreenState = False
     firstRun = True
+    dirname = None
 
     def __init__(self, transferargs, dirname, parent=None, tray: QSystemTrayIcon = None, browserProfile=None):
         print("running in: " + dirname)
@@ -60,6 +62,8 @@ class MainWindow(QWidget):
         self.isLoading = True
         self.printPdfThread = None
         self.browserProfile = browserProfile
+        self.tabs = {}
+        self.currentTabIndex = 0
 
         if (self.args.remoteBrowserDaemon):
             super(MainWindow, self).__init__(parent, Qt.WindowType.Tool)
@@ -67,41 +71,9 @@ class MainWindow(QWidget):
             super(MainWindow, self).__init__(parent)
 
         self.applyWindowHints()
-        # self.setAttribute(Qt.WA_DeleteOnClose)
-
-        # Create WebView and WebPage
-        self.web = myQWebEngineView(self.args, dirname, self)
-        self.web.setObjectName("view")
-
-        if self.browserProfile:
-            self.page = myQWebEnginePage(self.args, dirname, self, True, self.browserProfile)
-        else:
-            self.page = myQWebEnginePage(self.args, dirname, self, True)
-            self.browserProfile = self.page.browserProfile
-        self.web.setPage(self.page)
 
         # Setup UI
         pykib_base.ui.setupUi(self, self.args, dirname)
-
-        # Added progress Handling
-        self.web.loadProgress.connect(self.loadingProgressChanged)
-        self.web.loadFinished.connect(self.jsInjection)
-        self.web.loadStarted.connect(self.startLoading)
-        self.web.loadFinished.connect(self.loadFinished)
-        self.web.renderProcessTerminated.connect(self.viewTerminated)
-        self.removeDownloadBarTimer = QTimer(self)
-        self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
-
-        if self.args.enablePrintSupport:
-            self.page.printRequested.connect(self.printSiteRequest)
-
-        # Definde Action when Fullscreen ist choosen
-        self.page.fullScreenRequested.connect(self.toggleFullscreen)
-
-
-        if self.args.closeOnUrl:
-            logging.debug('closeOnUrl is set')
-            self.web.urlChanged.connect(self.closeOnUrl)
 
         if (self.args.oAuthInputFile):
             logging.info(
@@ -142,14 +114,25 @@ class MainWindow(QWidget):
             self.resetTimeout.daemon = True  # Daemonize thread
             self.resetTimeout.resetTimeoutExeeded.connect(self.resetTimeoutExeeded)
             self.resetTimeout.start()
-            self.web.loadProgress.connect(self.resetTimerReset)
-            self.web.urlChanged.connect(self.resetTimerReset)
 
-        # Store initial Restore State
-        self.restoreState = self.windowState()
+        for url in self.args.url:
+            self.addTab(url)
 
-        # Start with url
-        self.web.load(self.args.url)
+    def goForward(self):
+        if self.currentTabIndex in self.tabs:
+            self.tabs[self.currentTabIndex]['web'].forward()
+
+    def goBack(self):
+        if self.currentTabIndex in self.tabs:
+            self.tabs[self.currentTabIndex]['web'].back()
+
+    def goHome(self):
+        if self.currentTabIndex in self.tabs:
+            self.tabs[self.currentTabIndex]['web'].load(self.args.url[0])
+
+    def openBookmark(self, url):
+        if self.currentTabIndex in self.tabs:
+            self.tabs[self.currentTabIndex]['web'].load(url)
 
     def startLoading(self):
         self.isLoading = True
@@ -164,35 +147,35 @@ class MainWindow(QWidget):
                 logging.debug("Set RestoreState = " + str(self.restoreState))
 
     def closeOnUrl(self):
-        logging.debug(self.web.url().toString().lower());
+        logging.debug(self.tabs[self.currentTabIndex]['web'].url().toString().lower());
         logging.debug(self.args.closeOnUrl.lower());
-        logging.debug(self.web.url().toString().lower().find(self.args.closeOnUrl.lower()));
-        if self.web.url().toString().lower().find(self.args.closeOnUrl.lower()) != -1:
+        logging.debug(self.tabs[self.currentTabIndex]['web'].url().toString().lower().find(self.args.closeOnUrl.lower()));
+        if self.tabs[self.currentTabIndex]['web'].url().toString().lower().find(self.args.closeOnUrl.lower()) != -1:
             logging.info("CloseOnUrl is set. Closing Browser")
             self.closeWindow()
 
     def oAuthHandleInput(self, url):
         logging.debug("Handling oAuthInputFile URL " + str(url))
         #temporary store current url for return after oAuth
-        currentUrl = self.web.url().toString()
+        currentUrl = self.tabs[self.currentTabIndex]['web'].url().toString()
         #set url from file
-        self.web.load(url)
+        self.tabs[self.currentTabIndex]['web'].load(url)
         #if oAuthOutputFile is set, wait for loadFinished and write the current url to the file
         if(self.args.oAuthOutputFile):
-            self.oAuthLoadFinished = self.web.loadFinished.connect(partial(self.oAuthHandleOutput, currentUrl))
+            self.oAuthLoadFinished = self.tabs[self.currentTabIndex]['web'].loadFinished.connect(partial(self.oAuthHandleOutput, currentUrl))
 
     def oAuthHandleOutput(self, restoreUrl):
         #if current url contains oAuthOutputUrlIdentifier then
-        if(not self.args.oAuthOutputUrlIdentifier or self.web.url().toString().lower().find(self.args.oAuthOutputUrlIdentifier.lower()) != -1):
+        if(not self.args.oAuthOutputUrlIdentifier or self.tabs[self.currentTabIndex]['web'].url().toString().lower().find(self.args.oAuthOutputUrlIdentifier.lower()) != -1):
             if not os.path.exists(self.args.oAuthOutputFile):
                 open(self.args.oAuthOutputFile, 'w').close()
             with open(self.args.oAuthOutputFile, 'w') as f:
-                f.write(self.web.url().toString())
-            self.web.loadFinished.disconnect(self.oAuthLoadFinished)
+                f.write(self.tabs[self.currentTabIndex]['web'].url().toString())
+            self.tabs[self.currentTabIndex]['web'].loadFinished.disconnect(self.oAuthLoadFinished)
             if(self.args.oAuthOutputCloseSuccess):
                 self.closeWindow()
             else:
-                self.web.load(restoreUrl)
+                self.tabs[self.currentTabIndex]['web'].load(restoreUrl)
 
     def resetTimerReset(self):
         logging.info(
@@ -203,14 +186,14 @@ class MainWindow(QWidget):
         # Reset Page if resetTimeoutExeeded
         python = sys.executable
         os.execl(python, python, *sys.argv) # Restart the Browser
-        # self.page.setParent(None)
-        # self.page.deleteLater()
-        # self.page = None
-        # self.page = myQWebEnginePage(self.args, self.dirname, self, False)
-        # self.page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
-        # self.page.fullScreenRequested.connect(self.toggleFullscreen)
-        # self.web.setPage(self.page)
-        # self.web.load(self.args.url)
+        # self.tabs[self.currentTabIndex]['page'].setParent(None)
+        # self.tabs[self.currentTabIndex]['page'].deleteLater()
+        # self.tabs[self.currentTabIndex]['page'] = None
+        # self.tabs[self.currentTabIndex]['page'] = myQWebEnginePage(self.args, self.dirname, self, False)
+        # self.tabs[self.currentTabIndex]['page'].featurePermissionRequested.connect(self.onFeaturePermissionRequested)
+        # self.tabs[self.currentTabIndex]['page'].fullScreenRequested.connect(self.toggleFullscreen)
+        # self.tabs[self.currentTabIndex]['web'].setPage(self.tabs[self.currentTabIndex]['page'])
+        # self.tabs[self.currentTabIndex]['web'].load(self.args.url)
 
     def applyWindowHints(self):
         if (self.args.alwaysOnTop and self.args.removeWindowControls or self.args.remoteBrowserDaemon):
@@ -242,7 +225,7 @@ class MainWindow(QWidget):
                 self.show()
             else:
                 # remove Mask
-                self.web.parent.clearMask()
+                self.tabs[self.currentTabIndex]['web'].parent.clearMask()
 
                 if (self.args.remoteBrowserIgnoreX11):
                     logging.info("Store Current Windows Position")
@@ -281,29 +264,29 @@ class MainWindow(QWidget):
     def onFeaturePermissionRequested(self, url, feature):
         logging.info("Permission" + str(feature))
         if (self.args.allowMicAccess and feature == QWebEnginePage.Feature.MediaAudioCapture):
-            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+            self.tabs[self.currentTabIndex]['page'].setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
             logging.info("Permission" + str(feature) + " | granted")
             return True
         if (self.args.allowWebcamAccess and feature == QWebEnginePage.Feature.MediaVideoCapture):
-            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+            self.tabs[self.currentTabIndex]['page'].setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
             logging.info("Permission" + str(feature) + " | granted")
             return True
         if (
                 self.args.allowMicAccess and self.args.allowWebcamAccess and feature == QWebEnginePage.Feature.MediaAudioVideoCapture):
             logging.info("Permission" + str(feature) + " | granted")
-            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+            self.tabs[self.currentTabIndex]['page'].setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
             return True
         if (self.args.allowDesktopSharing and (
                 feature == QWebEnginePage.Feature.DesktopVideoCapture or feature == QWebEnginePage.Feature.DesktopAudioVideoCapture)):
             logging.info("Permission" + str(feature) + " | granted")
-            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+            self.tabs[self.currentTabIndex]['page'].setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
             return True
         if (self.args.allowBrowserNotifications and feature == QWebEnginePage.Feature.Notifications):
             logging.info("Permission" + str(feature) + " | granted")
-            self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+            self.tabs[self.currentTabIndex]['page'].setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
             return True
 
-        self.page.setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionDeniedByUser)
+        self.tabs[self.currentTabIndex]['page'].setFeaturePermission(url, feature, QWebEnginePage.PermissionPolicy.PermissionDeniedByUser)
         logging.info("Permission " + str(feature) + " | denied")
         return False
 
@@ -319,13 +302,13 @@ class MainWindow(QWidget):
 
     def closeBecauseMemoryCap(self, time_to_close, remaining_time_to_close):
         progress_percent = 100 / time_to_close * remaining_time_to_close
-        self.memoryCapBar.show()
+        self.memoryCapBar.setVisible(True)
         self.memoryCapCloseBar.setValue(int(progress_percent))
         self.memoryCapCloseBar.setFormat("Speicherlimit überschritten, beende Anwendung automatisch in " + str(
             remaining_time_to_close) + " Sekunden")
 
     def autoRefresh(self):
-        self.web.reload()
+        self.tabs[self.currentTabIndex]['web'].reload()
         logging.info("Auto reloading Webpage")
 
     def memoryDebugUpdate(self, currentMemUse, currentSwapUse):
@@ -351,10 +334,10 @@ class MainWindow(QWidget):
         sys.exit(0)
 
     def pressed(self):
-        self.web.load(self.addressBar.displayText())
+        self.tabs[self.currentTabIndex]['web'].load(self.addressBar.displayText())
 
     def downloadProgressChanged(self, bytesReceived, bytesTotal):
-        self.downloadProgress.show()
+        self.downloadProgress.setVisible(True)
         percent = round(100 / bytesTotal * bytesReceived)
         self.downloadProgress.setValue(percent)
 
@@ -362,7 +345,7 @@ class MainWindow(QWidget):
             round(bytesTotal / 1024 / 1024, 2)) + "MB completed")
 
     def downloadFinished(self):
-        self.downloadProgress.show()
+        self.downloadProgress.setVisible(True)
         if (platform.system().lower() == "linux"):
             self.downloadProgress.setFormat("Download finished....(Syncing File System)")
             logging.info("Running 'sync' after download")
@@ -381,7 +364,7 @@ class MainWindow(QWidget):
         self.timeToHideDownloadBar -= 1
         if (self.timeToHideDownloadBar == -1):
             self.removeDownloadBarTimer.stop()
-            self.downloadProgress.hide()
+            self.downloadProgress.setVisible(False)
 
     def jsInjection(self, loadFinished):
         if (self.args.injectJavascript):
@@ -402,7 +385,7 @@ class MainWindow(QWidget):
                                 script = script.replace('{autoLogonDomain}', self.args.autoLogonDomain)
                         for parameter in injection[2::]:
                             script = script.replace('{'+parameter[0]+'}', parameter[1])
-                        self.page.runJavaScript(script)
+                        self.tabs[self.currentTabIndex]['page'].runJavaScript(script)
         if (loadFinished):
             if (self.args.enableAutoLogon and self.firstRun == True):
                 logging.info("Perform AutoLogin")
@@ -485,7 +468,7 @@ class MainWindow(QWidget):
                                         """.format(username=username, password=password, domain=domain,
                                                    usernameID=usernameID,
                                                    passwordID=passwordID, domainID=domainID)
-                self.page.runJavaScript(script)
+                self.tabs[self.currentTabIndex]['page'].runJavaScript(script)
 
             if (self.args.enableMouseDrag):
                 logging.info("Perform Mouse Drag Mode Scripts")
@@ -549,7 +532,7 @@ class MainWindow(QWidget):
             }}
 
              """
-                self.page.runJavaScript(script)
+                self.tabs[self.currentTabIndex]['page'].runJavaScript(script)
             self.firstRun = False
 
     # Print Function
@@ -557,13 +540,13 @@ class MainWindow(QWidget):
         logging.info("Test if site is loaded")
         if self.isLoading:
             logging.debug("Site is still loading. Wait for loadFinished before printing")
-            self.web.loadFinished.connect(self.printSiteToPdf)
+            self.tabs[self.currentTabIndex]['web'].loadFinished.connect(self.printSiteToPdf)
         else:
             self.printSiteToPdf()
 
     def printSiteToPdf(self):
         try:
-            self.web.loadFinished.disconnect(self.printSiteToPdf)
+            self.tabs[self.currentTabIndex]['web'].loadFinished.disconnect(self.printSiteToPdf)
         except Exception as e:
             pass
 
@@ -575,13 +558,13 @@ class MainWindow(QWidget):
         # create a unique filename
         tempPdfFile = tempPdfFolder + datetime.now().strftime("%Y%m%d%H%M%S") + ".pdf"
         logging.debug("Created temporary PDF for Printing: " + tempPdfFile)
-        self.web.setStyleSheet("body { background: white; }")
+        self.tabs[self.currentTabIndex]['web'].setStyleSheet("body { background: white; }")
 
         script = "var bodyElement = document.querySelector('body');"
         script += "bodyElement.style.backgroundColor = 'white';"
 
-        self.page.runJavaScript(script)
-        self.web.printToPdf(tempPdfFile)
+        self.tabs[self.currentTabIndex]['page'].runJavaScript(script)
+        self.tabs[self.currentTabIndex]['web'].printToPdf(tempPdfFile)
 
         # Create Printer Dialog
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
@@ -598,8 +581,11 @@ class MainWindow(QWidget):
             self.printPdfThread.start()
         else:
             logging.debug("Print aborted by user")
-            if os.path.isfile(tempPdfFile):
-                os.remove(tempPdfFile)
+            try:
+                if os.path.isfile(tempPdfFile):
+                    os.remove(tempPdfFile)
+            except:
+                logging.error("Error removing temporary PDF file: " + tempPdfFile)
 
     def printFinished(self):
         logging.debug("Finished print process")
@@ -607,7 +593,7 @@ class MainWindow(QWidget):
     def loadingProgressChanged(self, percent):
         # Setting Zoomfactor
         logging.debug("Progress Changed" + str(percent))
-        self.web.setZoomFactor(self.args.setZoomFactor / 100)
+        self.tabs[self.currentTabIndex]['web'].setZoomFactor(self.args.setZoomFactor / 100)
 
         if (not self.args.showLoadingProgressBar):
             self.progress.hide()
@@ -631,6 +617,8 @@ class MainWindow(QWidget):
         ctrl = event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier
         alt = event.modifiers() & QtCore.Qt.KeyboardModifier.AltModifier
 
+        if (self.args.allowManageTabs and ctrl and keyEvent.key() == QtCore.Qt.Key.Key_T):
+            self.addTab()
         if(self.args.enablePrintSupport and ctrl and keyEvent.key() == QtCore.Qt.Key.Key_P):
             logging.info("Print")
             self.printSiteRequest()
@@ -638,7 +626,7 @@ class MainWindow(QWidget):
             logging.info("leave by shortcut")
             os._exit(0)
         if ((keyEvent.key() == QtCore.Qt.Key.Key_F5) or (ctrl and keyEvent.key() == QtCore.Qt.Key.Key_R)):
-            self.web.reload()
+            self.tabs[self.currentTabIndex]['web'].reload()
             logging.info("Refresh")
         if (self.args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_A):
             logging.info("Hit admin key")
@@ -665,19 +653,42 @@ class MainWindow(QWidget):
             event.ignore()
 
     def adjustTitle(self):
-        self.setWindowTitle(self.web.title())
+        self.setWindowTitle(self.tabs[self.currentTabIndex]['web'].title())
 
     def adjustTitleIcon(self):
-        self.setWindowIcon(self.web.icon())
+        self.setWindowIcon(self.tabs[self.currentTabIndex]['web'].icon())
         if self.args.enableTrayMode:
-            self.tray.setIcon(self.web.icon())
+            self.tray.setIcon(self.tabs[self.currentTabIndex]['web'].icon())
+
+    def adjustTabTitle(self, tabIndex):
+        logging.debug("Adjust Tab Title for Tab Index " + str(tabIndex))
+        logging.debug("Adjust Tab Title for Tab to " + self.tabs[tabIndex]['web'].title())
+        try:
+            self.tabs[tabIndex]['label'].setText(self.tabs[tabIndex]['web'].title())
+        except Exception as e:
+            logging.error("Error adjusting Tab Title for Tab Index " + str(tabIndex) + ": " + str(e))
+
+    def adjustTabTitleIcon(self, tabIndex):
+        logging.debug("Adjust Tab Title Icon for Tab Index " + str(tabIndex))
+        try:
+            icon = self.tabs[tabIndex]['web'].icon()
+            pixmap = icon.pixmap(16, 16)
+            self.tabs[tabIndex]['icon'].setPixmap(pixmap)
+
+        except Exception as e:
+            logging.error("Error adjusting Tab Title Icon for Tab Index " + str(tabIndex) + ": " + str(e))
 
     def adjustAdressbar(self):
-        if (not self.web.url().toString().lower().endswith('.pdf')):
-            self.addressBar.setText(self.web.url().toString())
+        if (
+                self.currentTabIndex in self.tabs and
+                'web' in self.tabs[self.currentTabIndex] and
+                self.args.showAddressBar and
+                not self.tabs[self.currentTabIndex]['web'].url().toString().lower().endswith('.pdf')
+        ):
+            self.addressBar.setText(self.tabs[self.currentTabIndex]['web'].url().toString())
 
     def openSearchBar(self):
-        self.searchBar.show()
+        self.searchBar.setVisible(True)
         self.searchText.setFocus()
         self.searchText.setSelection(0, self.searchText.maxLength())
 
@@ -687,6 +698,198 @@ class MainWindow(QWidget):
     def searchOnPage(self):
         signalFrom = self.sender().objectName()
         if (signalFrom == "searchUpButton"):
-            self.page.findText(self.searchText.text(), QWebEnginePage.FindBackward)
+            self.tabs[self.currentTabIndex]['page'].findText(self.searchText.text(), QWebEnginePage.FindBackward)
         else:
-            self.page.findText(self.searchText.text())
+            self.tabs[self.currentTabIndex]['page'].findText(self.searchText.text())
+
+    def enableCleanupBrowserProfileOption(self):
+        self.tabs[self.currentTabIndex]['page'].enableCleanupBrowserProfileOption()
+
+    def addTab(self, url = False):
+        # Create WebView and WebPage
+        web = myQWebEngineView(self.args, self.dirname, self)
+
+        if self.browserProfile:
+            page = myQWebEnginePage(self.args, self.dirname, self, True, self.browserProfile)
+        else:
+            page = myQWebEnginePage(self.args, self.dirname, self, True)
+            self.browserProfile = page.browserProfile
+        web.setPage(page)
+
+        if (self.args.enableTabs):
+            self.currentTabIndex = self.tabWidget.addTab("")
+            web.tabIndex = self.currentTabIndex
+
+            textLabel = QLabel(web.url().toString())
+            textLabel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+            textLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+
+            iconLabel = QLabel()
+
+            labelContainer = QWidget()
+            if self.args.allowManageTabs:
+                labelContainer.setMinimumWidth(160)
+                labelContainer.setMaximumWidth(160)
+            else:
+                labelContainer.setMinimumWidth(175)
+                labelContainer.setMaximumWidth(175)
+            labelContainer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+            labelLayout = QHBoxLayout(labelContainer)
+            labelLayout.setContentsMargins(4, 0, 4, 0)
+            labelLayout.setSpacing(4)
+            labelLayout.addWidget(iconLabel)
+            labelLayout.addWidget(textLabel)
+
+            tabButtonWidget = QWidget()
+            tabLayout = QHBoxLayout(tabButtonWidget)
+            tabLayout.setContentsMargins(0, 0, 4, 0)
+            tabLayout.setSpacing(0)
+            tabLayout.addWidget(labelContainer)
+            if self.args.allowManageTabs:
+                closeButton = QToolButton()
+                closeButton.setIcon(QIcon(os.path.join(self.dirname, 'icons/close.png')))
+                closeButton.setStyleSheet("QToolButton { border: none; padding: 0px; }")
+                closeButton.setCursor(Qt.CursorShape.PointingHandCursor)
+                closeButton.setFixedSize(16, 16)
+                closeButton.setStyleSheet("""
+                    QToolButton {
+                        border: none;
+                        padding: 0px;
+                        background: transparent;
+                    }
+                    QToolButton:hover {
+                        border: 1px solid #888;
+                        border-radius: 3px;
+                        background-color: #f0f0f0;
+                    }
+                """)
+                closeButton.clicked.connect(lambda: self.closeTab(web.tabIndex))
+                tabLayout.addWidget(closeButton)
+
+            self.tabWidget.setTabButton(self.currentTabIndex, QTabBar.ButtonPosition.LeftSide, tabButtonWidget)
+
+
+            self.tabWidget.setCurrentIndex(self.currentTabIndex)
+        else:
+            self.currentTabIndex = 0
+            iconLabel = QLabel()
+            textLabel = QLabel()
+
+        self.tabs[self.currentTabIndex] = {}
+        self.tabs[self.currentTabIndex]['web'] = web
+        self.tabs[self.currentTabIndex]['page'] = page
+        self.tabs[self.currentTabIndex]['icon'] = iconLabel
+        self.tabs[self.currentTabIndex]['label'] = textLabel
+        self.pageGridLayout.addWidget(web, 4, 0, 1, 0)
+        self.pageGridLayout.addWidget(self.downloadProgress, 5, 0, 1, 0)
+        self.pageGridLayout.addWidget(self.progress, 6, 0, 1, 0)
+
+        # ###########################################################
+        web.urlChanged['QUrl'].connect(self.adjustAdressbar)
+
+        if (self.args.dynamicTitle):
+            web.titleChanged.connect(self.adjustTitle)
+            web.iconUrlChanged.connect(self.adjustTitleIcon)
+
+        if(self.args.enableTabs):
+            web.titleChanged.connect(partial(self.adjustTabTitle, web.tabIndex))
+            web.iconUrlChanged.connect(partial(self.adjustTabTitleIcon, web.tabIndex))
+
+        # Context Menu
+        if (not self.args.enableContextMenu):
+            web.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
+
+        # PDF Handling if buttons are generated
+        try:
+            self.PDFbackButton.clicked.connect(page.closePDFPage)
+            self.PDFDownloadButton.clicked.connect(page.pdfDownloadAction)
+        except:
+            logging.debug("PDF Buttons not found. Skipping PDF Button Setup")
+
+        # Added progress Handling
+        web.loadProgress.connect(self.loadingProgressChanged)
+        web.loadFinished.connect(self.jsInjection)
+        web.loadStarted.connect(self.startLoading)
+        web.loadFinished.connect(self.loadFinished)
+
+        web.renderProcessTerminated.connect(self.viewTerminated)
+        self.removeDownloadBarTimer = QTimer(self)
+        page.featurePermissionRequested.connect(self.onFeaturePermissionRequested)
+
+        if self.args.enablePrintSupport:
+            page.printRequested.connect(self.printSiteRequest)
+
+        # Definde Action when Fullscreen ist choosen
+        page.fullScreenRequested.connect(self.toggleFullscreen)
+
+        if self.args.closeOnUrl:
+            logging.debug('closeOnUrl is set')
+            web.urlChanged.connect(self.closeOnUrl)
+
+        if (self.args.browserResetTimeout):
+            web.loadProgress.connect(self.resetTimerReset)
+            web.urlChanged.connect(self.resetTimerReset)
+
+        # Store initial Restore State
+        self.restoreState = self.windowState()
+
+        # Start with url
+        if url == False:
+            web.load(self.args.url[0])
+        else:
+            logging.debug("loading url %s" % url)
+            web.load(url)
+
+    def onTabChanged(self):
+        self.currentTabIndex = self.tabWidget.currentIndex()
+        logging.debug("Tab changed to " + str(self.currentTabIndex))
+        # Hide all Tabs
+        for tabIndex in self.tabs:
+            if(self.currentTabIndex != tabIndex):
+                logging.debug("Hiding Tab " + str(tabIndex))
+                self.tabs[tabIndex]['web'].hide()
+
+        if (self.currentTabIndex in self.tabs):
+            self.tabs[self.currentTabIndex]['web'].show()
+            self.adjustTitle()
+            self.adjustAdressbar()
+            self.adjustTitleIcon()
+        else:
+            logging.error("Tab " + str(self.tabWidget.currentIndex()) + " not found")
+
+    def closeTab(self, index):
+        logging.debug("Closing Tab " + str(index))
+        if self.tabWidget.count() == 1:
+            if self.args.fullscreen:
+                logging.info("Ignore Close Tab because fullscreen is set")
+                return
+            if self.args.enableTrayMode:
+                logging.debug("Ignore Close last Tab and hide window because enableTrayMode is set")
+                self.hide()
+                return
+
+        if index in self.tabs:
+
+            # Remove WebView from GridLayout
+            #self.pageGridLayout.removeWidget(self.tabs[index]['web'])
+            # Delete WebView and Page
+            self.tabs[index]['web'].deleteLater()
+            self.tabs[index]['page'].deleteLater()
+            del self.tabs[index]
+
+            new_tabs = {}
+            for i, key in enumerate(sorted(self.tabs.keys())):
+                new_tabs[i] = self.tabs[key]
+                new_tabs[i]['web'].tabIndex = i
+            self.tabs = new_tabs
+            logging.info("Remaining tabs: " + str(self.tabs))
+            # Remove Tab from TabWidget
+            self.tabWidget.removeTab(index)
+
+            logging.debug("Tab " + str(index) + " closed")
+            if self.tabWidget.count() <= 0:
+                logging.debug("No Tabs left. Closing Browser")
+                self.closeWindow()
+
+        else:
+            logging.error("Tab " + str(index) + " not found")
