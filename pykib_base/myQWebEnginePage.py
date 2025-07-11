@@ -387,7 +387,7 @@ class myQWebEnginePage(QWebEnginePage):
         self.form.tabs[self.form.currentTabIndex]['web'].load(pdfjsurl)
         self.form.PDFnavbar.setVisible(True)
         # self.form.navbar.hide()
-        self.form.progress.disabled = True
+        self.form.progressModal.disabled = True
 
         if args.showAddressBar:
             self.form.addressBar.setText(origUrl)
@@ -404,7 +404,7 @@ class myQWebEnginePage(QWebEnginePage):
                 self.form.pdfpage.deleteLater()
         except:
             pass
-        self.form.progress.disabled = False
+        self.form.progressModal.disabled = False
 
         #CleanUp Tempoary PDFs
         try:

@@ -596,14 +596,14 @@ class MainWindow(QWidget):
         self.tabs[self.currentTabIndex]['web'].setZoomFactor(self.args.setZoomFactor / 100)
 
         if (not self.args.showLoadingProgressBar):
-            self.progress.hide()
-        elif (not self.progress.disabled):
-            self.progress.show()
-            self.progress.setValue(percent)
-            self.progress.changeStyle("loading")
+            self.progressModal.hide()
+        elif (not self.progressModal.disabled):
+            self.progressModal.show()
+            self.progressModal.setValue(percent)
+            self.progressModal.changeStyle("loading")
 
             if (percent == 100):
-                self.progress.hide()
+                self.progressModal.hide()
 
     # catch defined Shortcuts
 
@@ -640,6 +640,7 @@ class MainWindow(QWidget):
             logging.info("Alt +F4 is disabled")
         if (ctrl and keyEvent.key() == QtCore.Qt.Key.Key_F):
             self.openSearchBar()
+            logging.debug("Open Search Bar")
         if (keyEvent.key() == QtCore.Qt.Key.Key_Escape):
             self.closeSearchBar()
 
@@ -688,17 +689,40 @@ class MainWindow(QWidget):
             self.addressBar.setText(self.tabs[self.currentTabIndex]['web'].url().toString())
 
     def openSearchBar(self):
-        self.searchBar.setVisible(True)
-        self.searchText.setFocus()
+        self.updateSearchModalPosition()
         self.searchText.setSelection(0, self.searchText.maxLength())
+        self.searchModal.show()
+        self.searchModal.raise_()
+        self.searchText.setFocus()
 
     def closeSearchBar(self):
-        self.searchBar.hide()
+        self.searchModal.hide()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.updateSearchModalPosition()
+        self.updateLoadingModalPosition()
+
+    def updateSearchModalPosition(self):
+        self.searchModal.setFixedWidth(max(int(self.width() * 0.6), 400))
+        self.searchModal.move(
+            10,
+            self.height() - self.searchModal.height() - 10
+        )
+        self.searchModal.raise_()
+
+    def updateLoadingModalPosition(self):
+        self.progressModal.setFixedWidth(self.width())
+        self.progressModal.move(
+            0,
+            self.height() - self.progressModal.height() - 0
+        )
+        self.progressModal.raise_()
 
     def searchOnPage(self):
         signalFrom = self.sender().objectName()
         if (signalFrom == "searchUpButton"):
-            self.tabs[self.currentTabIndex]['page'].findText(self.searchText.text(), QWebEnginePage.FindBackward)
+            self.tabs[self.currentTabIndex]['page'].findText(self.searchText.text(), QWebEnginePage.FindFlag.FindBackward)
         else:
             self.tabs[self.currentTabIndex]['page'].findText(self.searchText.text())
 
@@ -781,8 +805,6 @@ class MainWindow(QWidget):
         self.tabs[self.currentTabIndex]['icon'] = iconLabel
         self.tabs[self.currentTabIndex]['label'] = textLabel
         self.pageGridLayout.addWidget(web, 4, 0, 1, 0)
-        self.pageGridLayout.addWidget(self.downloadProgress, 5, 0, 1, 0)
-        self.pageGridLayout.addWidget(self.progress, 6, 0, 1, 0)
 
         # ###########################################################
         web.urlChanged['QUrl'].connect(self.adjustAdressbar)

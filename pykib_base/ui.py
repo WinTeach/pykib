@@ -19,7 +19,7 @@
 import logging
 import os
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtCore import QSize, Qt
 from functools import partial
@@ -27,6 +27,8 @@ from urllib.parse import urlparse
 import requests
 from PyQt6.QtGui import QIcon, QPixmap
 from io import BytesIO
+
+from PyQt6.QtWidgets import QPushButton, QVBoxLayout, QWidget, QLabel
 
 from pykib_base.myQProgressBar import myQProgressBar
 
@@ -36,43 +38,87 @@ def setupUi(form, args, dirname):
     form.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))
     font = QFont("arial", 10)
     form.setFont(font)
-    # form.setStyleSheet("background-color: rgb(77, 77, 77);")
     form.pageGridLayout = QtWidgets.QGridLayout(form)
     form.pageGridLayout.setVerticalSpacing(0)
     form.pageGridLayout.setObjectName("pageGridLayout")
     form.pageGridLayout.setContentsMargins(0, 0, 0, 0)
 
+    if (args.removeTitleBar):
+        form.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
+
+    if (args.enableTabs):
+        addTabBar(form, args, dirname)
+
+    addNavBar(form, args, dirname)
+
+    if args.bookmarks and len(args.bookmarks) > 0:
+        addBookmarkBar(form, args)
+
+    if (args.enablepdfsupport):
+        addPdfBar(form, args, dirname)
+
+    if (args.addMemoryCap):
+        addMemoryCapBar(form)
+
+    # # Loading Progress Bar
+    form.progressModal = myQProgressBar(form)
+    form.progressModal.setObjectName("progressModal")
+
+    addDownloadProgressBar(form)
+
+    addSearchBar(form, dirname)
+
+    if (args.memoryDebug):
+        addMemoryDebugBar(form)
+
+    retranslateUi(form)
+    QtCore.QMetaObject.connectSlotsByName(form)
+
+def addTabBar(form, args, dirname):
     # Create Navbar
+    form.tabbar = QtWidgets.QWidget(form)
+    form.tabbar.setMaximumHeight(40)
+    form.tabbar.setObjectName("tabbar")
+
+    # Create Navbar Grid Layout
+    form.tabGridLayout = QtWidgets.QGridLayout(form.tabbar)
+    form.tabGridLayout.setObjectName("tabGridLayout")
+    form.tabGridLayout.setContentsMargins(0, 0, 0, 0)
+
+    # Add Tab Button
+    if (args.allowManageTabs):
+        form.addTabButton = QtWidgets.QPushButton(form)
+        form.addTabButton.setFixedWidth(32)
+        form.addTabButton.setIcon(QIcon(os.path.join(dirname, 'icons/plus.png')))
+        form.addTabButton.setIconSize(QSize(24, 24))
+        form.addTabButton.setObjectName("addTabButton")
+        form.addTabButton.clicked.connect(form.addTab)
+
+        form.tabGridLayout.addWidget(form.addTabButton, 0, 0, 1, 1)
+
+    form.tabWidget = QtWidgets.QTabBar(form)
+    form.tabWidget.setMaximumHeight(40)
+    form.tabWidget.setObjectName("tabBar")
+    form.tabWidget.setExpanding(False)
+    form.tabWidget.setDocumentMode(True)
+    form.tabWidget.setTabsClosable(False)
+    form.tabWidget.currentChanged.connect(form.onTabChanged)
+
+    # set Tab height to 40px and fixed width to 60px
+    form.tabWidget.setStyleSheet("QTabBar::tab {height: 32px; min-width:200px; max-width:200px;}")
+
+    form.tabGridLayout.addWidget(form.tabWidget, 0, 1, 1, 1)
+    form.pageGridLayout.addWidget(form.tabbar, 0, 0, 1, 0)
+
+def addNavBar(form, args, dirname):
     form.navbar = QtWidgets.QWidget(form)
     form.navbar.setMaximumHeight(40)
     form.navbar.setObjectName("navbar")
 
     # Create Navbar Grid Layout
     form.navGridLayout = QtWidgets.QGridLayout(form.navbar)
-    #form.navGridLayout.setContentsMargins(9, 9, 9, 0)
     form.navGridLayout.setObjectName("navGridLayout")
     form.navGridLayout.setContentsMargins(0, 0, 0, 0)
-
-    if (args.enablepdfsupport):
-        # Create PDF Navbar
-        form.PDFnavbar = QtWidgets.QWidget(form)
-        form.PDFnavbar.setMaximumHeight(40)
-        form.PDFnavbar.setObjectName("PDFnavbar")
-
-        # Create PDF Navbar Grid Layout
-        form.PDFGridLayout = QtWidgets.QGridLayout(form.PDFnavbar)
-        form.PDFGridLayout.setContentsMargins(3, 0, 3, 3)
-        form.PDFGridLayout.setObjectName("PDFGridLayout")
-
-    if (args.addMemoryCap):
-        # Create memoryCapBar
-        form.memoryCapBar = QtWidgets.QWidget(form)
-        form.memoryCapBar.setMaximumHeight(40)
-        form.memoryCapBar.setObjectName("memoryCapBar")
-
-        form.memoryCapGridLayout = QtWidgets.QGridLayout(form.memoryCapBar)
-        form.memoryCapGridLayout.setContentsMargins(0, 5, 0, 0)
-        form.memoryCapGridLayout.setObjectName("memoryCapGridLayout")
 
     navGridLayoutHorizontalPosition = 0
     if (args.showNavigationButtons):
@@ -127,129 +173,56 @@ def setupUi(form, args, dirname):
     if (args.showNavigationButtons or args.showAddressBar or args.showPrintButton):
         form.pageGridLayout.addWidget(form.navbar, 1, 0, 1, 0)
 
-    if (args.enableTabs):
-        # Create Navbar
-        form.tabbar = QtWidgets.QWidget(form)
-        form.tabbar.setMaximumHeight(40)
-        form.tabbar.setObjectName("tabbar")
+def addBookmarkBar(form, args):
+    form.bookmarksBar = QtWidgets.QWidget(form)
+    form.bookmarksBar.setFixedHeight(32)
+    form.bookmarksBar.setObjectName("bookmarksBar")
+    form.bookmarksBar.setContentsMargins(0, -10, 0, 0)
 
-        # Create Navbar Grid Layout
-        form.tabGridLayout = QtWidgets.QGridLayout(form.tabbar)
-        #form.tabGridLayout.setContentsMargins(9, 9, 9, 0)
-        form.tabGridLayout.setObjectName("tabGridLayout")
-        form.tabGridLayout.setContentsMargins(0, 0, 0, 0)
+    # Create Navbar Grid Layout
+    form.bookmarksGridLayout = QtWidgets.QGridLayout(form.bookmarksBar)
+    form.bookmarksGridLayout.setObjectName("bookmarksGridLayout")
 
-        # Add Tab Button
-        if(args.allowManageTabs):
-            form.addTabButton = QtWidgets.QPushButton(form)
-            form.addTabButton.setFixedWidth(32)
-            form.addTabButton.setIcon(QIcon(os.path.join(dirname, 'icons/plus.png')))
-            form.addTabButton.setIconSize(QSize(24, 24))
-            form.addTabButton.setObjectName("addTabButton")
-            form.addTabButton.clicked.connect(form.addTab)
+    for idx, bookmark in enumerate(args.bookmarks):
+        bookmarkButton = QtWidgets.QPushButton(form)
+        bookmarkButton.setFixedHeight(28)
+        bookmarkButton.setIconSize(QSize(16, 16))
+        bookmarkButton.setStyleSheet("text-align: left; padding-left: 8px; padding-right: 11px;")
+        if len(bookmark) == 2:
+            bookmarkButton.setText(bookmark[0])
+            url = bookmark[1]
+        elif len(bookmark) == 1:
+            url = bookmark[0]
+            bookmarkButton.setText(bookmark[0])
+        else:
+            break
+        bookmarkButton.setToolTip(url)
 
-            form.tabGridLayout.addWidget(form.addTabButton, 0, 0, 1, 1)
+        # Favicon laden und setzen
+        favicon = get_favicon_from_url(url)
+        if favicon:
+            bookmarkButton.setIcon(favicon)
 
-        form.tabWidget = QtWidgets.QTabBar(form)
-        form.tabWidget.setMaximumHeight(40)
-        form.tabWidget.setObjectName("tabBar")
-        form.tabWidget.setExpanding(False)
-        form.tabWidget.setDocumentMode(True)
-        form.tabWidget.setTabsClosable(False)
-        form.tabWidget.currentChanged.connect(form.onTabChanged)
+        bookmarkButton.clicked.connect(partial(form.openBookmark, url))
+        form.bookmarksGridLayout.addWidget(bookmarkButton, 0, idx, 1, 1)
 
+    # Add  SpacerItem
+    form.bookmarksGridLayout.addItem(
+        QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum),
+        0, len(args.bookmarks), 1, 1)
 
-        # set Tab height to 40px and fixed width to 60px
-        form.tabWidget.setStyleSheet("QTabBar::tab {height: 32px; min-width:200px; max-width:200px;}")
+    form.pageGridLayout.addWidget(form.bookmarksBar, 2, 0, 1, 0)
 
-        form.tabGridLayout.addWidget(form.tabWidget, 0, 1, 1, 1)
-        form.pageGridLayout.addWidget(form.tabbar, 0, 0, 1, 0)
+def addPdfBar(form, args, dirname):
+    # Create PDF Navbar
+    form.PDFnavbar = QtWidgets.QWidget(form)
+    form.PDFnavbar.setMaximumHeight(40)
+    form.PDFnavbar.setObjectName("PDFnavbar")
 
-    #Bookmarks Bar
-    if args.bookmarks and len(args.bookmarks) > 0:
-        # Create Navbar
-        form.bookmarksBar = QtWidgets.QWidget(form)
-        form.bookmarksBar.setFixedHeight(32)
-        form.bookmarksBar.setObjectName("bookmarksBar")
-        form.bookmarksBar.setContentsMargins(0, -10, 0, 0)
-
-        # Create Navbar Grid Layout
-        form.bookmarksGridLayout = QtWidgets.QGridLayout(form.bookmarksBar)
-        form.bookmarksGridLayout.setObjectName("bookmarksGridLayout")
-
-        for idx, bookmark in enumerate(args.bookmarks):
-            bookmarkButton = QtWidgets.QPushButton(form)
-            bookmarkButton.setFixedHeight(28)
-            bookmarkButton.setIconSize(QSize(16, 16))
-            bookmarkButton.setStyleSheet("text-align: left; padding-left: 8px; padding-right: 11px;")
-            if len(bookmark) == 2:
-                bookmarkButton.setText(bookmark[0])
-                url = bookmark[1]
-            elif len(bookmark) == 1:
-                url=bookmark[0]
-                bookmarkButton.setText(bookmark[0])
-            else:
-                break
-            bookmarkButton.setToolTip(url)
-
-            # Favicon laden und setzen
-            favicon = get_favicon_from_url(url)
-            if favicon:
-                bookmarkButton.setIcon(favicon)
-
-            bookmarkButton.clicked.connect(partial(form.openBookmark, url))
-            form.bookmarksGridLayout.addWidget(bookmarkButton, 0, idx, 1, 1)
-
-        # Add  SpacerItem
-        form.bookmarksGridLayout.addItem(
-            QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum),
-            0, len(args.bookmarks), 1, 1)
-
-        form.pageGridLayout.addWidget(form.bookmarksBar, 2, 0, 1, 0)
-
-    if (args.removeTitleBar):
-        form.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
-
-    # Closing Browser because Memory Cap Bar
-    if (args.addMemoryCap):
-        form.memoryCapCloseBar = myQProgressBar(form)
-        form.memoryCapCloseBar.setMaximum(100)
-        form.memoryCapCloseBar.setTextVisible(True)
-        form.memoryCapCloseBar.setFixedHeight(40)
-
-        form.memoryCapCloseBar.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        alertFont = QFont("arial", 16)
-        form.memoryCapCloseBar.setFont(alertFont)
-        form.memoryCapCloseBar.changeStyle("memorycap")
-
-        #
-        form.memoryCapGridLayout.addWidget(form.memoryCapCloseBar, 0, 0, 1, 1)
-
-        form.MemoryCapCloseButton = QtWidgets.QPushButton(form)
-        form.MemoryCapCloseButton.setFixedHeight(35)
-        form.MemoryCapCloseButton.setObjectName("MemoryCapCloseButton")
-        form.MemoryCapCloseButton.setText("Browser schließen")
-        form.MemoryCapCloseButton.clicked.connect(form.closeWindow)
-
-        form.memoryCapGridLayout.addWidget(form.MemoryCapCloseButton, 0, 1, 1, 1)
-        form.pageGridLayout.addWidget(form.memoryCapBar, 3, 0, 1, 0)
-
-        form.memoryCapBar.setVisible(False)
-
-    # Download Progress Bar
-    form.downloadProgress = myQProgressBar(form)
-    form.downloadProgress.setMaximum(100)
-    form.downloadProgress.setTextVisible(True)
-    form.downloadProgress.changeStyle("download")
-
-    form.downloadProgress.setVisible(False)
-    form.pageGridLayout.addWidget(form.downloadProgress, 5, 0, 1, 0)
-
-    # Loading Progress Bar
-    form.progress = myQProgressBar(form)
-    form.progress.setMaximum(100)
-    form.progress.setTextVisible(False)
-    form.pageGridLayout.addWidget(form.progress, 6, 0, 1, 0)
+    # Create PDF Navbar Grid Layout
+    form.PDFGridLayout = QtWidgets.QGridLayout(form.PDFnavbar)
+    form.PDFGridLayout.setContentsMargins(3, 0, 3, 3)
+    form.PDFGridLayout.setObjectName("PDFGridLayout")
 
     ##Buttons for PDF Support
     if (args.enablepdfsupport):
@@ -274,84 +247,121 @@ def setupUi(form, args, dirname):
                 form.PDFDownloadButton.setIconSize(QSize(24, 24))
 
             form.PDFGridLayout.addWidget(form.PDFDownloadButton, 0, 1, 1, 1)
-        form.pageGridLayout.addWidget(form.PDFnavbar, 7, 0, 1, 0)
+        form.pageGridLayout.addWidget(form.PDFnavbar, 6, 0, 1, 0)
         form.PDFnavbar.setVisible(False)
 
-    # ###########################################################
-    # Create Search Bar
-    form.searchBar = QtWidgets.QWidget(form)
-    form.searchBar.setFixedHeight(0)
-    form.searchBar.setObjectName("searchBar")
+def addMemoryCapBar(form):
+    # Create memoryCapBar
+    form.memoryCapBar = QtWidgets.QWidget(form)
+    form.memoryCapBar.setMaximumHeight(40)
+    form.memoryCapBar.setObjectName("memoryCapBar")
 
-    # Create Search Bar Grid Layout
-    form.searchBarGridLayout = QtWidgets.QGridLayout(form.searchBar)
-    form.searchBarGridLayout.setContentsMargins(9, 0, 9, 9)
-    form.searchBarGridLayout.setObjectName("searchBarLayout")
+    form.memoryCapGridLayout = QtWidgets.QGridLayout(form.memoryCapBar)
+    form.memoryCapGridLayout.setContentsMargins(0, 5, 0, 0)
+    form.memoryCapGridLayout.setObjectName("memoryCapGridLayout")
+
+    form.memoryCapCloseBar = myQProgressBar(form)
+    form.memoryCapCloseBar.setMaximum(100)
+    form.memoryCapCloseBar.setTextVisible(True)
+    form.memoryCapCloseBar.setFixedHeight(40)
+
+    form.memoryCapCloseBar.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+    alertFont = QFont("arial", 16)
+    form.memoryCapCloseBar.setFont(alertFont)
+    form.memoryCapCloseBar.changeStyle("memorycap")
+
+    #
+    form.memoryCapGridLayout.addWidget(form.memoryCapCloseBar, 0, 0, 1, 1)
+
+    form.MemoryCapCloseButton = QtWidgets.QPushButton(form)
+    form.MemoryCapCloseButton.setFixedHeight(35)
+    form.MemoryCapCloseButton.setObjectName("MemoryCapCloseButton")
+    form.MemoryCapCloseButton.setText("Browser schließen")
+    form.MemoryCapCloseButton.clicked.connect(form.closeWindow)
+
+    form.memoryCapGridLayout.addWidget(form.MemoryCapCloseButton, 0, 1, 1, 1)
+    form.pageGridLayout.addWidget(form.memoryCapBar, 3, 0, 1, 0)
+
+    form.memoryCapBar.setVisible(False)
+
+def addSearchBar(form, dirname):
+    form.searchModal = QWidget(form)
+    form.searchModal.setObjectName("modal")
+    form.searchModal.setFixedHeight(40)
+
+    grid = QtWidgets.QGridLayout(form.searchModal)
+    grid.setContentsMargins(10, 5, 10, 5)
+    grid.setSpacing(8)
 
     # Add Search Field
     form.searchText = QtWidgets.QLineEdit(form)
+    form.searchText.setMaximumHeight(32)
     form.searchText.setObjectName("lineEdit")
     form.searchText.setClearButtonEnabled(1)
     form.searchText.textChanged.connect(form.searchOnPage)
     form.searchText.returnPressed.connect(form.searchOnPage)
-    form.searchBarGridLayout.addWidget(form.searchText, 0, 0, 1, 1)
+    grid.addWidget(form.searchText, 0, 0)
 
     # Add Search Direction Buttons
-    form.searchDown = QtWidgets.QPushButton(form)
-    form.searchDown.setObjectName("searchDownButton")
-    form.searchDown.setIcon(QIcon(os.path.join(dirname, 'icons/down.png')))
-    form.searchDown.setIconSize(QSize(24, 24))
-    form.searchDown.clicked.connect(form.searchOnPage)
-
-    form.searchBarGridLayout.addWidget(form.searchDown, 0, 2, 1, 1)
-
     form.searchUp = QtWidgets.QPushButton(form)
     form.searchUp.setObjectName("searchUpButton")
     form.searchUp.setIcon(QIcon(os.path.join(dirname, 'icons/up.png')))
     form.searchUp.setIconSize(QSize(24, 24))
     form.searchUp.clicked.connect(form.searchOnPage)
+    grid.addWidget(form.searchUp, 0, 1)
 
-    form.searchBarGridLayout.addWidget(form.searchUp, 0, 1, 1, 1)
-
-    # Add Spacer Item
-    spacerItem = QtWidgets.QSpacerItem(24, 24, QtWidgets.QSizePolicy.Policy.Expanding,
-                                       QtWidgets.QSizePolicy.Policy.Minimum)
-    form.searchBarGridLayout.addItem(spacerItem, 0, 3, 1, 1)
+    form.searchDown = QtWidgets.QPushButton(form)
+    form.searchDown.setObjectName("searchDownButton")
+    form.searchDown.setIcon(QIcon(os.path.join(dirname, 'icons/down.png')))
+    form.searchDown.setIconSize(QSize(24, 24))
+    form.searchDown.clicked.connect(form.searchOnPage)
+    grid.addWidget(form.searchDown, 0, 2)
 
     # Add Close Button
-    form.closeSearchButton = QtWidgets.QPushButton(form)
+    form.closeSearchButton = QtWidgets.QPushButton(form.searchModal)
     form.closeSearchButton.setObjectName("closeSearchButton")
     form.closeSearchButton.setIcon(QIcon(os.path.join(dirname, 'icons/close.png')))
     form.closeSearchButton.setIconSize(QSize(24, 24))
     form.closeSearchButton.clicked.connect(form.closeSearchBar)
+    grid.addWidget(form.closeSearchButton, 0, 3)
 
-    form.searchBarGridLayout.addWidget(form.closeSearchButton, 0, 4, 1, 1)
+    # Change the style of the search modal
+    palette = form.palette()
+    background_color = palette.color(QtGui.QPalette.ColorRole.Base)
+    form.searchModal.setStyleSheet(f"""
+        QWidget#modal {{
+            background-color: {background_color.name()};
+            border: 1px solid #888;
+            border-radius: 3px;
+        }}
+    """)
+    form.searchModal.hide()
 
-    # ###########################################################
+def addDownloadProgressBar(form):
+    # Download Progress Bar
+    form.downloadProgress = myQProgressBar(form)
+    form.downloadProgress.setMaximum(100)
+    form.downloadProgress.setTextVisible(True)
+    form.downloadProgress.changeStyle("download")
 
-    form.pageGridLayout.addWidget(form.searchBar, 8, 0, 1, 0)
-    form.searchBar.setVisible(False)
+    form.downloadProgress.setVisible(False)
+    form.pageGridLayout.addWidget(form.downloadProgress, 5, 0, 1, 0)
 
-    # Add the memory Debug bar
-    if (args.memoryDebug):
-        # Loading Progress Bar
-        form.memoryDebug = myQProgressBar(form)
-        form.memoryDebug.setMaximum(100)
-        form.memoryDebug.setValue(100)
-        form.memoryDebug.setTextVisible(True)
-        form.pageGridLayout.addWidget(form.memoryDebug, 9, 0, 1, 0)
-        form.memoryDebug.changeStyle("loading")
-
-    retranslateUi(form)
-    QtCore.QMetaObject.connectSlotsByName(form)
-
+def addMemoryDebugBar(form):
+    # Loading Progress Bar
+    form.memoryDebug = myQProgressBar(form)
+    form.memoryDebug.setMaximum(100)
+    form.memoryDebug.setValue(100)
+    form.memoryDebug.setTextVisible(True)
+    form.pageGridLayout.addWidget(form.memoryDebug, 7, 0, 1, 0)
+    form.memoryDebug.changeStyle("loading")
 
 def retranslateUi(form):
     _translate = QtCore.QCoreApplication.translate
     # Form.setWindowTitle(_translate("Form", "Form"))
 
 
-def get_favicon_from_url( url):
+def get_favicon_from_url(url):
     try:
         # URL parsen, um die Domain zu extrahieren
         parsed_url = urlparse(url)
