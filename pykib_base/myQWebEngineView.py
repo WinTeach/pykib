@@ -16,15 +16,16 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+from PyQt6.QtWebEngineCore import QWebEnginePage
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QIcon
 from PyQt6.QtGui import QAction
 from PyQt6 import QtNetwork
+from urllib.parse import quote, urlparse
 
 from functools import partial
-
+import re
 import os
 import logging
 import socket
@@ -32,35 +33,58 @@ import socket
 class myQWebEngineView(QWebEngineView):
 
     def __init__(self, argsparsed, dirnameparsed, parent, tabIndex=0):
-        global args
-        args = argsparsed
-
-        global dirname
-        dirname = dirnameparsed
+        self.args = argsparsed
+        self.dirname = dirnameparsed
         self.parent = parent
         self.tabIndex = tabIndex
 
         #create random debug id
         self.randomId = str(os.urandom(8).hex())
-        self.browser = QWebEngineView.__init__(self)
+        super().__init__()
 
     def load(self, url):
-        logging.debug("Load URL:" + str(url))
-        if not url:
-             url = args.url
-        if not (url.startswith('http://') or url.startswith('https://') or url.startswith('file://')):
-             url = 'http://' + url
-
-        if (args.proxy):
+        # Prepare and load the given URL.
+        # If a proxy is configured, set it before loading the URL.
+        url = self.getUrl(url.strip())
+        if (self.args.proxy):
             self.setProxy(url)
-
         self.setUrl(QUrl(url))
+
+    def getUrl(self, url) -> str:
+        # Returns a valid URL string.
+        # If the input is already a valid URL, return it.
+        # If it looks like a domain, prepend 'https://'.
+        # Otherwise, use the configured search engine to build a search URL.
+        parsed = urlparse(url)
+        if bool(parsed.scheme and parsed.netloc):
+            return url
+
+        if self.isUrl(url):
+            return "https://" + url
+
+        if (self.args.addressBarSearchEngine):
+            # Search with search engine
+            query = quote(url)
+            url = self.args.addressBarSearchEngine.replace('{query}', query)
+            logging.debug("Search with search engine: " + url)
+            return url
+
+        # If the input is not a valid URL or domain, prepend 'https://' and hope for the best.
+        return "https://" + url
+
+    def isUrl(self, url) -> bool:
+        # Checks if the given string is a valid URL (domain format).
+        # Returns True if it matches a domain pattern, otherwise False.
+        if " " in url:
+            return False
+
+        return re.match(r"^[\w\-\.]+\.[a-z]{2,}(\/.*)?$", url, re.IGNORECASE) is not None
 
     def setProxy(self, url):
         # Set Proxy
         ip = socket.gethostbyname(url.split('/')[2])
         logging.debug("IP for " + url + " is " + ip)
-        if (args.proxyDisabledForLocalIp and (ip.startswith('192.168.') or ip.startswith('10.') or ip.startswith('172.16.'))):
+        if (self.args.proxyDisabledForLocalIp and (ip.startswith('192.168.') or ip.startswith('10.') or ip.startswith('172.16.'))):
             # No Proxy for local IPs
             logging.debug("No Proxy for:" + url)
             QtNetwork.QNetworkProxy.setApplicationProxy(
@@ -70,12 +94,12 @@ class myQWebEngineView(QWebEngineView):
         logging.debug("Set Proxy for:" + url)
         proxy = QtNetwork.QNetworkProxy()
         proxy.setType(QtNetwork.QNetworkProxy.ProxyType.HttpProxy)
-        proxy.setHostName(args.proxy)
-        proxy.setPort(args.proxyPort)
-        if (args.proxyUsername and args.proxyPassword):
-            proxy.setUser(args.proxyUsername);
-            proxy.setPassword(args.proxyPassword);
-        elif (args.proxyUsername or args.proxyPassword):
+        proxy.setHostName(self.args.proxy)
+        proxy.setPort(self.args.proxyPort)
+        if (self.args.proxyUsername and self.args.proxyPassword):
+            proxy.setUser(self.args.proxyUsername);
+            proxy.setPassword(self.args.proxyPassword);
+        elif (self.args.proxyUsername or self.args.proxyPassword):
             logging.error("It is not possible to use a proxy username without password")
         QtNetwork.QNetworkProxy.setApplicationProxy(proxy)
         return
@@ -83,22 +107,22 @@ class myQWebEngineView(QWebEngineView):
     def contextMenuEvent(self, event):
         self.menu = self.createStandardContextMenu()
 
-        #Remove Menu Entryies by Id:
-        #11 -> Paste and match Style
-        #13 -> Open in New Window
-        #14 -> Open in New Tab
-        #16 -> Save Link
-        #30 -> View Source
-        #32 -> Save Page
-        if (args.allowManageTabs):
-            unwantedMenuEntries = {11, 13, 16, 30, 32}
-        else:
-            unwantedMenuEntries = {11, 16, 13, 14, 32, 30}
+        #Remove Menu Entries:
+        unwantedMenuEntries = {
+            QWebEnginePage.WebAction.PasteAndMatchStyle.value,
+            QWebEnginePage.WebAction.OpenLinkInNewWindow.value,
+            QWebEnginePage.WebAction.DownloadLinkToDisk.value,
+            QWebEnginePage.WebAction.SavePage.value,
+            QWebEnginePage.WebAction.ViewSource.value
+        }
+
+        if (not self.args.allowManageTabs):
+            unwantedMenuEntries.add(QWebEnginePage.WebAction.OpenLinkInNewTab.value)
 
         iconMap = {
-            0 : QIcon(os.path.join(dirname, 'icons/back.png')),
-            1 : QIcon(os.path.join(dirname, 'icons/forward.png')),
-            3 : QIcon(os.path.join(dirname, 'icons/refresh.png'))
+            0 : QIcon(os.path.join(self.dirname, 'icons/back.png')),
+            1 : QIcon(os.path.join(self.dirname, 'icons/forward.png')),
+            3 : QIcon(os.path.join(self.dirname, 'icons/refresh.png'))
         }
 
         for menuAction in self.menu.actions():
@@ -114,19 +138,19 @@ class myQWebEngineView(QWebEngineView):
                     logging.debug('No Icon found for context menu entry ' + str(menuAction.data()))
 
         # Adding Close Button (for remoteDameonMode)
-        if(args.remoteBrowserDaemon):
-            closeButton = QAction(QIcon(os.path.join(dirname, 'icons/close.png')), 'Close Remote Tab', self)
+        if(self.args.remoteBrowserDaemon):
+            closeButton = QAction(QIcon(os.path.join(self.dirname, 'icons/close.png')), 'Close Remote Tab', self)
             closeButton.setStatusTip('Close Remote Browser Tab')
             closeButton.triggered.connect(self.closeByMenu)
             self.menu.addSeparator()
             self.menu.addAction(closeButton)
 
-        if(args.enableCleanupBrowserProfileOption):
+        if(self.args.enableCleanupBrowserProfileOption):
             self.menu.addSeparator()
-            advancedMenu = self.menu.addMenu(QIcon(os.path.join(dirname, 'icons/settings.png')), 'Advanced')
+            advancedMenu = self.menu.addMenu(QIcon(os.path.join(self.dirname, 'icons/settings.png')), 'Advanced')
 
             # Delete All Cookies
-            deleteAllCookiesButton = QAction(QIcon(os.path.join(dirname, 'icons/cleanup.png')),
+            deleteAllCookiesButton = QAction(QIcon(os.path.join(self.dirname, 'icons/cleanup.png')),
                                              'Cleanup Browser Profile', self)
             deleteAllCookiesButton.setStatusTip('Delete Cookies for Current Site')
             deleteAllCookiesButton.triggered.connect(partial(self.parent.enableCleanupBrowserProfileOption))
@@ -145,6 +169,8 @@ class myQWebEngineView(QWebEngineView):
             self.parent.close()
             self.parent.deleteLater()
             self.deleteLater()
-        except:
-            logging.debug('No Parent to close found')
+        except AttributeError as e:
+            logging.debug(f'No Parent to close found: {e}')
+        except Exception as e:
+            logging.error(f'Unexpected error while closing parent: {e}')
 

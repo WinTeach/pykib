@@ -663,8 +663,8 @@ class MainWindow(QWidget):
 
     def adjustTabTitle(self, tabIndex):
         logging.debug("Adjust Tab Title for Tab Index " + str(tabIndex))
-        logging.debug("Adjust Tab Title for Tab to " + self.tabs[tabIndex]['web'].title())
         try:
+            logging.debug("Adjust Tab Title for Tab to " + self.tabs[tabIndex]['web'].title())
             self.tabs[tabIndex]['label'].setText(self.tabs[tabIndex]['web'].title())
         except Exception as e:
             logging.error("Error adjusting Tab Title for Tab Index " + str(tabIndex) + ": " + str(e))

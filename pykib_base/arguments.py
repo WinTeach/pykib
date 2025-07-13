@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '4.0.2')
+__version_info__ = ('devel', '4.0.3')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -157,6 +157,9 @@ def getArguments(dirname):
 
     parser.add_argument("-sa", "--showAddressBar", dest="showAddressBar", action='store_true',
                         help="Shows a Address Bar when set")
+    parser.add_argument("-abse", "--addressBarSearchEngine", dest="addressBarSearchEngine",
+                        help="With this option, you can send text that is not directly recognized as a URL to any website (search engine). The search engines Google, Bing, Ecosia and DuckDuckGo are already preconfigured and can be activated by specifying google/bing/ecosia/duckduckgo. Other servers can be specified in this format: https://www.yourOwnServer.com/search?q={query}")
+
     parser.add_argument("-sn", "--showNavigationButtons", dest="showNavigationButtons", action='store_true', help="Shows Navigation Buttons when set")
     parser.add_argument("-slpb", "--showLoadingProgressBar", dest="showLoadingProgressBar", action='store_true',
                         help="Shows a Progress Bar on site loading.")

@@ -201,6 +201,19 @@ class Pykib():
                     tempInjectJavascript.append(handle)
             self.args.injectJavascript = tempInjectJavascript
 
+        # predefined Search Engines:
+        if (self.args.addressBarSearchEngine):
+            match self.args.addressBarSearchEngine.lower():
+                case 'google':
+                    self.args.addressBarSearchEngine = "https://www.google.com/search?q={query}"
+                case 'bing':
+                    self.args.addressBarSearchEngine = "https://www.bing.com/search?q={query}"
+                case 'ecosia':
+                    self.args.addressBarSearchEngine = "https://www.ecosia.org/search?method=index&q={query}"
+                case 'duckduckgo':
+                    self.args.addressBarSearchEngine = "https://duckduckgo.com/?q={query}"
+
+
         # Check if a configred temporarySessionTokenPath Location exists
         if (self.args.temporarySessionTokenPath):
             if (os.path.isdir(self.args.temporarySessionTokenPath) != True):

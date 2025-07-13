@@ -130,6 +130,7 @@ class myQWebEnginePage(QWebEnginePage):
             self.profile().setSpellCheckEnabled(True)
 
         if (args.setBrowserLanguage):
+            # Setze Sprache
             self.profile().setHttpAcceptLanguage(args.setBrowserLanguage)
 
         # When setCitrixUserAgent is enabled, the Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces to skip Client detection.
@@ -199,58 +200,64 @@ class myQWebEnginePage(QWebEnginePage):
     # Certificate Error handling
     def validateCertificateError(self, error):
         if (args.ignoreCertificates):
-            print("Certificate Error")
+            logging.info("Certificate Error ignored: " + error.description())
             error.acceptCertificate()
             return True
         elif not args.remoteBrowserDaemon:
-            # Ask user whether to accept the certificate
-            details = f"Error: {error.description()}\nURL: {error.url().toString()}"
-            try:
-                certificateChain = error.certificateChain()
-                certinfo = ""
-                for idx, cert in enumerate(certificateChain):
-                    cert_details = f"Certificate {idx + 1}:\n"
-                    cert_details += f"  Issuer: {cert.issuerDisplayName()}\n"
-                    cert_details += f"  Subject: {cert.subjectDisplayName()}\n"
-                    cert_details += f"  Valid from: {cert.effectiveDate().toString()}\n"
-                    cert_details += f"  Valid until: {cert.expiryDate().toString()}\n"
-                    certinfo += cert_details + "\n"
-
-                details += "\n\nCertificate chain:\n" + certinfo
-
-            except Exception as e:
-                logging.error("Error getting additional information: " + str(e))
-                pass
-
-            msg = QtWidgets.QMessageBox()
-            # Set favicon if available
-            try:
-                favicon = self.form.windowIcon()
-                if not favicon.isNull():
-                    msg.setWindowIcon(favicon)
-                else:
-                    msg.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))
-            except Exception as e:
-                logging.error("Error setting window icon: " + str(e))
-                pass
-            msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-            msg.setText("Certificate error: Do you want to proceed anyway?")
-            msg.setInformativeText(details)
-            msg.setWindowTitle("Certificate Error")
-
-            acceptButton = QtWidgets.QPushButton("Proceed anyway")
-            rejectButton = QtWidgets.QPushButton("Cancel")
-            msg.addButton(acceptButton, QtWidgets.QMessageBox.ButtonRole.YesRole)
-            msg.addButton(rejectButton, QtWidgets.QMessageBox.ButtonRole.NoRole)
-            msg.setDefaultButton(rejectButton)
-
-            msg.exec()
-            if msg.clickedButton() == acceptButton:
-                error.acceptCertificate()
-                return True
-            else:
-                error.rejectCertificate()
+            if not error.isMainFrame():
+                logging.info("Certificate Error outside of Main Frame: " + error.url().toString())
                 return False
+            else:
+                logging.info("Certificate Error in Main Frame: " + error.url().toString())
+                 # Ask user whether to accept the certificate
+                details = f"Error: {error.description()}\nURL: {error.url().toString()}"
+                try:
+                    certificateChain = error.certificateChain()
+                    certinfo = ""
+                    for idx, cert in enumerate(certificateChain):
+                        cert_details = f"Certificate {idx + 1}:\n"
+                        cert_details += f"  Issuer: {cert.issuerDisplayName()}\n"
+                        cert_details += f"  Subject: {cert.subjectDisplayName()}\n"
+                        cert_details += f"  Valid from: {cert.effectiveDate().toString()}\n"
+                        cert_details += f"  Valid until: {cert.expiryDate().toString()}\n"
+                        certinfo += cert_details + "\n"
+
+                    details += "\n\nCertificate chain:\n" + certinfo
+
+                except Exception as e:
+                    logging.error("Error getting additional information: " + str(e))
+                    pass
+
+                msg = QtWidgets.QMessageBox()
+                # Set favicon if available
+                try:
+                    favicon = self.form.windowIcon()
+                    if not favicon.isNull():
+                        msg.setWindowIcon(favicon)
+                    else:
+                        msg.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))
+                except Exception as e:
+                    logging.error("Error setting window icon: " + str(e))
+                    pass
+                msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                msg.setText("Certificate error: Do you want to proceed anyway?")
+                msg.setInformativeText(details)
+                msg.setWindowTitle("Certificate Error")
+
+                acceptButton = QtWidgets.QPushButton("Proceed anyway")
+                rejectButton = QtWidgets.QPushButton("Cancel")
+                msg.addButton(acceptButton, QtWidgets.QMessageBox.ButtonRole.YesRole)
+                msg.addButton(rejectButton, QtWidgets.QMessageBox.ButtonRole.NoRole)
+                msg.setDefaultButton(rejectButton)
+
+                msg.exec()
+
+                if msg.clickedButton() == acceptButton:
+                    error.acceptCertificate()
+                    return True
+                else:
+                    error.rejectCertificate()
+                    return False
 
     # Download Handle
     @QtCore.pyqtSlot(QtWebEngineCore.QWebEngineDownloadRequest)
