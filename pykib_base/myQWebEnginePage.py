@@ -25,9 +25,9 @@ import logging
 from functools import partial
 
 from PyQt6.QtNetwork import QAuthenticator
-from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
+from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings, QWebEngineDesktopMediaRequest
 from PyQt6 import QtCore, QtWidgets, QtWebEngineCore
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QGuiApplication
 from PyQt6.QtWidgets import QFileDialog
 from PyQt6.QtCore import QSize, QUrl, Qt
 
@@ -56,6 +56,7 @@ class myQWebEnginePage(QWebEnginePage):
         self.settings().setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True)
         if (args.allowDesktopSharing):
             self.settings().setAttribute(QWebEngineSettings.WebAttribute.ScreenCaptureEnabled, True)
+            self.desktopMediaRequested.connect(self.onDesktopMediaRequest)
 
         if (args.enablepdfsupport):
             self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, 1)
@@ -117,7 +118,6 @@ class myQWebEnginePage(QWebEnginePage):
         # Browser Notification Popup Handler
         if args.allowBrowserNotifications:
             popup = NotificationPopup(self.form)
-
             def presentNotification(notification):
                 popup.present(notification)
 
@@ -131,6 +131,7 @@ class myQWebEnginePage(QWebEnginePage):
 
         if (args.setBrowserLanguage):
             # Setze Sprache
+            logging.info(args.setBrowserLanguage)
             self.profile().setHttpAcceptLanguage(args.setBrowserLanguage)
 
         # When setCitrixUserAgent is enabled, the Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces to skip Client detection.
@@ -347,6 +348,116 @@ class myQWebEnginePage(QWebEnginePage):
         self.form.downloadFinished()
         print("Download finished")
 
+    def onDesktopMediaRequest(self, request: QWebEngineDesktopMediaRequest):
+        # Check if desktop sharing is allowed, otherwise cancel the request
+        if not args.allowDesktopSharing:
+            request.cancel()
+            return
+
+        # Get models for available screens and application windows
+        screens_model = request.screensModel()
+        windows_model = request.windowsModel()
+        # If neither screens nor windows are available, cancel the request
+        if (not screens_model or screens_model.rowCount() == 0) and (
+                not windows_model or windows_model.rowCount() == 0):
+            request.cancel()
+            return
+
+        # Create the selection dialog
+        dialog = QtWidgets.QDialog()
+        # Set the window icon (fallback to default if not available)
+        try:
+            dialog.setWindowIcon(self.form.windowIcon())
+        except Exception as e:
+            logging.error("Error setting window icon: " + str(e))
+            dialog.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))
+
+        dialog.setWindowTitle("Share screen or application")
+        layout = QtWidgets.QVBoxLayout(dialog)
+        label = QtWidgets.QLabel("Please select a screen or application:")
+        layout.addWidget(label)
+
+        # Create tab widget for screens and applications
+        tab_widget = QtWidgets.QTabWidget()
+        # --- Screens Tab ---
+        screen_tab = QtWidgets.QWidget()
+        screen_layout = QtWidgets.QVBoxLayout(screen_tab)
+        screen_list = QtWidgets.QListView()
+        screen_list.setModel(screens_model)
+        screen_layout.addWidget(screen_list)
+        # Preview label for screen screenshot
+        screen_preview = QtWidgets.QLabel()
+        screen_preview.setFixedSize(320, 180)
+        screen_layout.addWidget(screen_preview)
+        tab_widget.addTab(screen_tab, "Screens")
+
+        # Prepare screenshots for all available screens
+        screen_pixmaps = []
+        for screen in QGuiApplication.screens():
+            pixmap = screen.grabWindow(0)
+            screen_pixmaps.append(pixmap)
+
+        # Update the preview when a screen is selected
+        def updateScreenPreview(index):
+            if index.isValid():
+                screen_idx = index.row()
+                if 0 <= screen_idx < len(screen_pixmaps):
+                    screen_preview.setPixmap(screen_pixmaps[screen_idx].scaled(
+                        screen_preview.size(),
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
+                    ))
+                else:
+                    screen_preview.clear()
+            else:
+                screen_preview.clear()
+
+        screen_list.selectionModel().currentChanged.connect(updateScreenPreview)
+
+        # --- Applications Tab ---
+        window_tab = QtWidgets.QWidget()
+        window_layout = QtWidgets.QVBoxLayout(window_tab)
+        window_list = QtWidgets.QListView()
+        window_list.setModel(windows_model)
+        window_layout.addWidget(window_list)
+        tab_widget.addTab(window_tab, "Applications")
+
+        layout.addWidget(tab_widget)
+
+        # Dialog buttons (OK/Cancel)
+        button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+        layout.addWidget(button_box)
+
+        # Handle OK/Cancel actions
+        def accept():
+            current_tab = tab_widget.currentIndex()
+            if current_tab == 0:
+                index = screen_list.currentIndex()
+                if index.isValid():
+                    request.selectScreen(index)
+                    dialog.accept()
+                    return
+            elif current_tab == 1:
+                index = window_list.currentIndex()
+                if index.isValid():
+                    request.selectWindow(index)
+                    dialog.accept()
+                    return
+            # Show warning if nothing is selected
+            QtWidgets.QMessageBox.warning(dialog, "No selection", "Please select a screen or application.")
+
+        def reject():
+            request.cancel()
+            dialog.reject()
+
+        button_box.accepted.connect(accept)
+        button_box.rejected.connect(reject)
+
+        # Show the dialog and handle cancellation
+        if not dialog.exec():
+            request.cancel()
+
     def runProcess(self, handle, filepath, download):
         print(download.isFinished())
         print("Executing:" + "\"" + handle[1] + "\" " + filepath);
@@ -421,6 +532,7 @@ class myQWebEnginePage(QWebEnginePage):
                     os.remove(os.path.join(tempfile.gettempdir() + "/pykib/", item))
         except:
             logging.info("An exception while cleanup PDF TMP Folder")
+
     def pdfDownloadAction(self):
         # Remove Extension From URL
         try:
