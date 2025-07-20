@@ -103,12 +103,12 @@ def addTabBar(form, args, dirname):
     form.tabWidget.setDocumentMode(True)
     form.tabWidget.setTabsClosable(False)
 
+    form.tabWidget.currentChanged.connect(form.onTabChanged)
     if args.allowManageTabs:
         form.tabWidget.middleMouseButtonClicked.connect(form.closeTab)
         form.tabWidget.closeTabClicked.connect(form.closeTab)
         form.tabWidget.setMovable(True)
         form.tabWidget.tabMoved.connect(form.onTabMoved)
-        form.tabWidget.currentChanged.connect(form.onTabChanged)
 
     # set Tab height to 40px and fixed width to 60px
     form.tabWidget.setStyleSheet("QTabBar::tab {height: 32px; min-width:200px; max-width:200px;}")
