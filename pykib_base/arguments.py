@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2022 Tobias Wintrich
+# Copyright (C) 2025 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '4.0.4')
+__version_info__ = ('devel', '4.0.5')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -294,6 +294,10 @@ def getArguments(dirname):
     elif (args.url is None and args.defaultURL is None):
         args.url = ["https://github.com/WinTeach/pykib"]
 
+    # setting enableTabs to true is required if allowManageTabs is set to true
+    if (args.allowManageTabs):
+        args.enableTabs = True
+
     args.remoteDaemonProtocolVersion = __remote_daemon_protocol_version__
     return args
 
@@ -335,9 +339,5 @@ def parseConfigFile(args, parser):
     #use the new configuration array as default values for argparse and parse again
     parser.set_defaults(**config_arguments)
     args = parser.parse_args({})
-
-    #setting enableTabs to true is required if allowManageTabs is set to true
-    if (args.allowManageTabs):
-        args.enableTabs = True
 
     return args

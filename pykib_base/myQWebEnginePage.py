@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2021 Tobias Wintrich
+# Copyright (C) 2025 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -210,7 +210,7 @@ class myQWebEnginePage(QWebEnginePage):
                 return False
             else:
                 logging.info("Certificate Error in Main Frame: " + error.url().toString())
-                 # Ask user whether to accept the certificate
+                # Ask user whether to accept the certificate
                 details = f"Error: {error.description()}\nURL: {error.url().toString()}"
                 try:
                     certificateChain = error.certificateChain()
@@ -229,31 +229,58 @@ class myQWebEnginePage(QWebEnginePage):
                     logging.error("Error getting additional information: " + str(e))
                     pass
 
-                msg = QtWidgets.QMessageBox()
-                # Set favicon if available
+
+                dialog = QtWidgets.QDialog()
+                dialog.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+                dialog.setModal(True)
+
+                dialog.setWindowTitle("Certificate Error")
+
                 try:
                     favicon = self.form.windowIcon()
                     if not favicon.isNull():
-                        msg.setWindowIcon(favicon)
+                        dialog.setWindowIcon(favicon)
                     else:
-                        msg.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))
+                        dialog.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))
                 except Exception as e:
                     logging.error("Error setting window icon: " + str(e))
                     pass
-                msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-                msg.setText("Certificate error: Do you want to proceed anyway?")
-                msg.setInformativeText(details)
-                msg.setWindowTitle("Certificate Error")
-
+                layout = QtWidgets.QVBoxLayout(dialog)
+                icon_label = QtWidgets.QLabel()
+                icon_label.setPixmap(dialog.windowIcon().pixmap(64, 64))
+                icon_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+                layout.addWidget(icon_label)
+                title_label = QtWidgets.QLabel("Certificate error: Do you want to proceed anyway?")
+                title_label.setStyleSheet("font-size: 20px; font-weight: bold;")
+                title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+                layout.addWidget(title_label)
+                details_label = QtWidgets.QLabel(details)
+                details_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+                #details_label.setStyleSheet("font-size: 16px;")
+                details_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+                layout.addWidget(details_label)
+                button_layout = QtWidgets.QHBoxLayout()
                 acceptButton = QtWidgets.QPushButton("Proceed anyway")
                 rejectButton = QtWidgets.QPushButton("Cancel")
-                msg.addButton(acceptButton, QtWidgets.QMessageBox.ButtonRole.YesRole)
-                msg.addButton(rejectButton, QtWidgets.QMessageBox.ButtonRole.NoRole)
-                msg.setDefaultButton(rejectButton)
-
-                msg.exec()
-
-                if msg.clickedButton() == acceptButton:
+                acceptButton.setMinimumSize(180, 50)
+                rejectButton.setMinimumSize(180, 50)
+                acceptButton.setStyleSheet("font-size: 18px; background: #4caf50; color: white;")
+                rejectButton.setStyleSheet("font-size: 18px; background: #c00; color: white;")
+                button_layout.addWidget(acceptButton)
+                button_layout.addWidget(rejectButton)
+                layout.addLayout(button_layout)
+                result = {'accepted': False}
+                def accept():
+                    result['accepted'] = True
+                    dialog.accept()
+                def reject():
+                    result['accepted'] = False
+                    dialog.reject()
+                acceptButton.clicked.connect(accept)
+                rejectButton.clicked.connect(reject)
+                dialog.setModal(True)
+                dialog.exec()
+                if result['accepted']:
                     error.acceptCertificate()
                     return True
                 else:

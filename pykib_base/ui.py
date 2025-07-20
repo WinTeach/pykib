@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2021 Tobias Wintrich
+# Copyright (C) 2025 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -31,6 +31,7 @@ from io import BytesIO
 from PyQt6.QtWidgets import QPushButton, QVBoxLayout, QWidget, QLabel
 
 from pykib_base.myQProgressBar import myQProgressBar
+from pykib_base.myQTabBar import MyTabBar
 
 
 def setupUi(form, args, dirname):
@@ -95,14 +96,19 @@ def addTabBar(form, args, dirname):
         form.addTabButton.clicked.connect(form.addTab)
 
         form.tabGridLayout.addWidget(form.addTabButton, 0, 0, 1, 1)
-
-    form.tabWidget = QtWidgets.QTabBar(form)
+    form.tabWidget = MyTabBar(form)
     form.tabWidget.setMaximumHeight(40)
     form.tabWidget.setObjectName("tabBar")
     form.tabWidget.setExpanding(False)
     form.tabWidget.setDocumentMode(True)
     form.tabWidget.setTabsClosable(False)
-    form.tabWidget.currentChanged.connect(form.onTabChanged)
+
+    if args.allowManageTabs:
+        form.tabWidget.middleMouseButtonClicked.connect(form.closeTab)
+        form.tabWidget.closeTabClicked.connect(form.closeTab)
+        form.tabWidget.setMovable(True)
+        form.tabWidget.tabMoved.connect(form.onTabMoved)
+        form.tabWidget.currentChanged.connect(form.onTabChanged)
 
     # set Tab height to 40px and fixed width to 60px
     form.tabWidget.setStyleSheet("QTabBar::tab {height: 32px; min-width:200px; max-width:200px;}")

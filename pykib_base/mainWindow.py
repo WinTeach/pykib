@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2021 Tobias Wintrich
+# Copyright (C) 2025 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -44,7 +44,7 @@ from pykib_base.oAuthFileHandler import OAuthFileHandler
 from PyQt6.QtWebEngineCore import QWebEnginePage
 from PyQt6 import QtCore
 from PyQt6.QtCore import QTimer, Qt, QEvent
-from PyQt6.QtGui import QGuiApplication, QIcon
+from PyQt6.QtGui import QGuiApplication, QIcon, QCursor
 
 from PyQt6.QtWidgets import QWidget, QSystemTrayIcon, QLabel, QHBoxLayout, QTabBar, QSizePolicy, QToolButton
 
@@ -741,59 +741,8 @@ class MainWindow(QWidget):
         web.setPage(page)
 
         if (self.args.enableTabs):
-            self.currentTabIndex = self.tabWidget.addTab("")
-            web.tabIndex = self.currentTabIndex
-
-            textLabel = QLabel(web.url().toString())
-            textLabel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-            textLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-
-            iconLabel = QLabel()
-
-            labelContainer = QWidget()
-            if self.args.allowManageTabs:
-                labelContainer.setMinimumWidth(160)
-                labelContainer.setMaximumWidth(160)
-            else:
-                labelContainer.setMinimumWidth(175)
-                labelContainer.setMaximumWidth(175)
-            labelContainer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-            labelLayout = QHBoxLayout(labelContainer)
-            labelLayout.setContentsMargins(4, 0, 4, 0)
-            labelLayout.setSpacing(4)
-            labelLayout.addWidget(iconLabel)
-            labelLayout.addWidget(textLabel)
-
-            tabButtonWidget = QWidget()
-            tabLayout = QHBoxLayout(tabButtonWidget)
-            tabLayout.setContentsMargins(0, 0, 4, 0)
-            tabLayout.setSpacing(0)
-            tabLayout.addWidget(labelContainer)
-            if self.args.allowManageTabs:
-                closeButton = QToolButton()
-                closeButton.setIcon(QIcon(os.path.join(self.dirname, 'icons/close.png')))
-                closeButton.setStyleSheet("QToolButton { border: none; padding: 0px; }")
-                closeButton.setCursor(Qt.CursorShape.PointingHandCursor)
-                closeButton.setFixedSize(16, 16)
-                closeButton.setStyleSheet("""
-                    QToolButton {
-                        border: none;
-                        padding: 0px;
-                        background: transparent;
-                    }
-                    QToolButton:hover {
-                        border: 1px solid #888;
-                        border-radius: 3px;
-                        background-color: #f0f0f0;
-                    }
-                """)
-                closeButton.clicked.connect(lambda: self.closeTab(web.tabIndex))
-                tabLayout.addWidget(closeButton)
-
-            self.tabWidget.setTabButton(self.currentTabIndex, QTabBar.ButtonPosition.LeftSide, tabButtonWidget)
-
-
-            self.tabWidget.setCurrentIndex(self.currentTabIndex)
+            # self.currentTabIndex = self.tabWidget.addTab("")
+            self.currentTabIndex, iconLabel, textLabel = self.tabWidget.addButtonTab(web, QIcon(os.path.join(self.dirname, 'icons/close.png')), self.args.allowManageTabs)
         else:
             self.currentTabIndex = 0
             iconLabel = QLabel()
@@ -814,11 +763,13 @@ class MainWindow(QWidget):
             web.iconUrlChanged.connect(self.adjustTitleIcon)
 
         if(self.args.enableTabs):
-            web.titleChanged.connect(partial(self.adjustTabTitle, web.tabIndex))
-            web.iconUrlChanged.connect(partial(self.adjustTabTitleIcon, web.tabIndex))
+            # web.titleChanged.connect(partial(self.adjustTabTitle, web.tabIndex))
+            # web.iconUrlChanged.connect(partial(self.adjustTabTitleIcon, web.tabIndex))
+            web.titleChanged.connect(lambda: self.adjustTabTitle(web.tabIndex))
+            web.iconUrlChanged.connect(lambda: self.adjustTabTitleIcon(web.tabIndex))
 
         # Context Menu
-        if (not self.args.enableContextMenu):
+        if not self.args.enableContextMenu:
             web.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
 
         # PDF Handling if buttons are generated
@@ -879,6 +830,18 @@ class MainWindow(QWidget):
         else:
             logging.error("Tab " + str(self.tabWidget.currentIndex()) + " not found")
 
+    def onTabMoved(self, fromPos, toPos):
+        logging.debug("Tab moved from " + str(toPos) + " to " + str(fromPos))
+
+        if fromPos in self.tabs and toPos in self.tabs:
+            self.tabs[fromPos], self.tabs[toPos] = self.tabs[toPos], self.tabs[fromPos]
+            self.tabs[fromPos]['web'].tabIndex = fromPos
+            self.tabs[toPos]['web'].tabIndex = toPos
+
+        logging.debug("Tab from Index  " + str(self.tabs[fromPos]['web'].tabIndex))
+        logging.debug("Tab to Index  " + str(self.tabs[toPos]['web'].tabIndex))
+
+
     def closeTab(self, index):
         logging.debug("Closing Tab " + str(index))
         if self.tabWidget.count() == 1:
@@ -904,7 +867,7 @@ class MainWindow(QWidget):
                 new_tabs[i] = self.tabs[key]
                 new_tabs[i]['web'].tabIndex = i
             self.tabs = new_tabs
-            logging.info("Remaining tabs: " + str(self.tabs))
+            logging.debug("Remaining tabs: " + str(self.tabs))
             # Remove Tab from TabWidget
             self.tabWidget.removeTab(index)
 
