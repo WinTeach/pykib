@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '4.0.5')
+__version_info__ = ('devel', '4.0.6')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -232,6 +232,8 @@ def getArguments(dirname):
                         help="With this Option each start of the Rangee Browser the current Process ID will be written to the file .pykibLatestProcId in the users tmp path")
     parser.add_argument("-spp", "--storePidPath", dest="storePidPath",
                         help="Path where the temporary current process id should be stored on the system. Only works in combination with --storePid")
+    parser.add_argument("-ro", "--runOnce", dest="runOnce", action='store_true',
+                        help="With this Option the browser will only run once. Only works in combination with --storePidstorePidPath. Multiple instances of the browser can started with this option when defining different pid paths with --storePidPath")
 
     # Settings for Running in Remote Browser Daemon
     parser.add_argument("-rbd", "--remoteBrowserDaemon", dest="remoteBrowserDaemon", action='store_true',

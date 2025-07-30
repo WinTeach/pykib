@@ -475,7 +475,6 @@ class myQWebEnginePage(QWebEnginePage):
             QtWidgets.QMessageBox.warning(dialog, "No selection", "Please select a screen or application.")
 
         def reject():
-            request.cancel()
             dialog.reject()
 
         button_box.accepted.connect(accept)
