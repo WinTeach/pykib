@@ -82,14 +82,17 @@ class myQWebEngineView(QWebEngineView):
 
     def setProxy(self, url):
         # Set Proxy
-        ip = socket.gethostbyname(url.split('/')[2])
-        logging.debug("IP for " + url + " is " + ip)
-        if (self.args.proxyDisabledForLocalIp and (ip.startswith('192.168.') or ip.startswith('10.') or ip.startswith('172.16.'))):
-            # No Proxy for local IPs
-            logging.debug("No Proxy for:" + url)
-            QtNetwork.QNetworkProxy.setApplicationProxy(
-                QtNetwork.QNetworkProxy(QtNetwork.QNetworkProxy.ProxyType.NoProxy))
-            return
+        try:
+            ip = socket.gethostbyname(url.split('/')[2])
+            logging.debug("IP for " + url + " is " + ip)
+            if (self.args.proxyDisabledForLocalIp and (ip.startswith('192.168.') or ip.startswith('10.') or ip.startswith('172.16.'))):
+                # No Proxy for local IPs
+                logging.debug("No Proxy for:" + url)
+                QtNetwork.QNetworkProxy.setApplicationProxy(
+                    QtNetwork.QNetworkProxy(QtNetwork.QNetworkProxy.ProxyType.NoProxy))
+                return
+        except socket.gaierror as e:
+            logging.warning(f"Unable to resolve IP for {url}: {e}")
 
         logging.debug("Set Proxy for:" + url)
         proxy = QtNetwork.QNetworkProxy()
