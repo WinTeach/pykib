@@ -56,7 +56,7 @@ class myQWebEngineView(QWebEngineView):
         # If it looks like a domain, prepend 'https://'.
         # Otherwise, use the configured search engine to build a search URL.
         parsed = urlparse(url)
-        if bool(parsed.scheme and parsed.netloc):
+        if bool(parsed.scheme and parsed.netloc) or (bool(parsed.scheme and parsed.path) and parsed.scheme == 'file'):
             return url
 
         if self.isUrl(url):
