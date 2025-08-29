@@ -290,6 +290,8 @@ class myQWebEnginePage(QWebEnginePage):
     # Download Handle
     @QtCore.pyqtSlot(QtWebEngineCore.QWebEngineDownloadRequest)
     def on_downloadRequested(self, download):
+        if not download.state() == QtWebEngineCore.QWebEngineDownloadRequest.DownloadState.DownloadRequested:
+            return
         logging.info(download.mimeType())
         logging.info(download.suggestedFileName())
         downloadHandleHit = False
@@ -302,6 +304,8 @@ class myQWebEnginePage(QWebEnginePage):
             print("Loading PDF: " + os.path.basename(download.suggestedFileName()))
             global dirname
             tempfolder = tempfile.gettempdir()+"/pykib/"
+
+
             if os.path.exists(tempfolder):
                 for the_file in os.listdir(tempfolder):
                     file_path = os.path.join(tempfolder, the_file)
@@ -309,7 +313,7 @@ class myQWebEnginePage(QWebEnginePage):
                         if os.path.isfile(file_path):
                             os.unlink(file_path)
                     except Exception as e:
-                        print(e)
+                        logging.error(e)
             else:
                 os.makedirs(tempfolder)
 
@@ -335,7 +339,7 @@ class myQWebEnginePage(QWebEnginePage):
                     download.accept()
                     download.isFinishedChanged.connect(partial(self.runProcess, handle, filepath, download))
 
-        if (args.download and not downloadHandleHit and download.state() == QtWebEngineCore.QWebEngineDownloadRequest.DownloadState.DownloadRequested):
+        if args.download and not downloadHandleHit:
             print("File Download Request " + os.path.basename(download.suggestedFileName()))
             # path, _ = QtWidgets.QFileDialog.getSaveFileName(self.view(), "Save File", old_path, "*."+suffix)
             path = ""
@@ -491,6 +495,7 @@ class myQWebEnginePage(QWebEnginePage):
 
     def openPdf(self, origUrl):
         self.pdfFile = "file:///" + self.pdfFile
+        logging.info("Opening PDF: " + self.pdfFile)
         f = {'file': self.pdfFile}
         pdfjsargs = urllib.parse.urlencode(f)
 
@@ -519,16 +524,18 @@ class myQWebEnginePage(QWebEnginePage):
 
     def loadPDFPage(self, pdfjsurl, origUrl):
         global dirname
+
+        web = self.form.tabs[self.form.currentTabIndex]['web']
         #Creates a new myQWebEnginePage
         #if args.singleProcess ist set, the old "profile" will be reused and no additional private profil will be created
         # --single-process supports only one active profile on linux
         if(args.singleProcess):
-            self.form.pdfpage = myQWebEnginePage(args, dirname, self.form, False)
+            web.pdfpage = myQWebEnginePage(args, dirname, self.form, False)
         else:
-            self.form.pdfpage = myQWebEnginePage(args, dirname, self.form, True)
+            web.pdfpage = myQWebEnginePage(args, dirname, self.form, True)
 
-        self.form.tabs[self.form.currentTabIndex]['web'].setPage(self.form.pdfpage)
-        self.form.tabs[self.form.currentTabIndex]['web'].load(pdfjsurl)
+        web.setPage(web.pdfpage)
+        web.load(pdfjsurl)
         self.form.PDFnavbar.setVisible(True)
         # self.form.navbar.hide()
         self.form.progressModal.disabled = True
@@ -539,13 +546,15 @@ class myQWebEnginePage(QWebEnginePage):
     def closePDFPage(self):
         if(args.pdfreadermode):
             self.form.closeWindow()
-        self.form.tabs[self.form.currentTabIndex]['web'].setPage(self.form.tabs[self.form.currentTabIndex]['page'])
-        self.form.PDFnavbar.hide()
+
+        web = self.form.tabs[self.form.currentTabIndex]['web']
+        web.setPage(self.form.tabs[self.form.currentTabIndex]['page'])
+
         if (args.showNavigationButtons or args.showAddressBar):
             self.form.navbar.show()
         try:
-            if (self.form.pdfpage):
-                self.form.pdfpage.deleteLater()
+            if (web.pdfpage):
+                web.pdfpage.deleteLater()
         except:
             pass
         self.form.progressModal.disabled = False

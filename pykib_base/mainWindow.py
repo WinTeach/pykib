@@ -827,6 +827,13 @@ class MainWindow(QWidget):
             self.adjustTitle()
             self.adjustAdressbar()
             self.adjustTitleIcon()
+
+            try:
+                self.tabs[self.currentTabIndex]['web'].pdfpage
+                self.PDFnavbar.show()
+            except:
+                self.PDFnavbar.hide()
+
         else:
             logging.error("Tab " + str(self.tabWidget.currentIndex()) + " not found")
 
@@ -854,12 +861,17 @@ class MainWindow(QWidget):
                 return
 
         if index in self.tabs:
+            # Close PDF if opened
+            try:
+                self.tabs[index]['web'].pdfpage
+                self.tabs[index]['page'].closePDFPage()
+            except:
+                pass
 
-            # Remove WebView from GridLayout
-            #self.pageGridLayout.removeWidget(self.tabs[index]['web'])
             # Delete WebView and Page
             self.tabs[index]['web'].deleteLater()
             self.tabs[index]['page'].deleteLater()
+
             del self.tabs[index]
 
             new_tabs = {}
