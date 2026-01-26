@@ -687,6 +687,6 @@ class MainWindow(QWidget):
     def searchOnPage(self):
         signalFrom = self.sender().objectName()
         if (signalFrom == "searchUpButton"):
-            self.page.findText(self.searchText.text(), QWebEnginePage.FindBackward)
+            self.page.findText(self.searchText.text(), QWebEnginePage.FindFlag.FindBackward)
         else:
             self.page.findText(self.searchText.text())
