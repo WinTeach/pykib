@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2021 Tobias Wintrich
+# Copyright (C) 2025 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -59,13 +59,15 @@ class PrintPdf(QtCore.QThread):
 
         page_indices = [i for i in printRange]
 
-        renderer = pdf.render(
-            pdfium.PdfBitmap.to_pil,
-            page_indices=page_indices,
-            scale=300 / 72,  # 300dpi resolution
-        )
+        # Updated rendering logic for older pypdfium2 (no return_type argument)
+        pil_images = []
+        for page_index in page_indices:
+            page = pdf[page_index]
+            pdf_bitmap = page.render(scale=300/72)  # No return_type argument
+            pil_image = pdf_bitmap.to_pil()
+            pil_images.append(pil_image)
 
-        for i, pil_image, pageNumber in zip(page_indices, renderer, count(1)):
+        for i, pil_image, pageNumber in zip(page_indices, pil_images, count(1)):
 
             if pageNumber > 1:
                 self._printer.newPage()
@@ -104,6 +106,3 @@ class PrintPdf(QtCore.QThread):
         os.remove(self.pdf_file)
 
         self.printFinished.emit()
-
-
-

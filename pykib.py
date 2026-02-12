@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt5 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2021 Tobias Wintrich
+# Copyright (C) 2025 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -142,12 +142,6 @@ class Pykib():
 
             logging.info("  Storing process id under: " + pid_path)
 
-        # Set Start URL
-        if (self.args.url is None and self.args.defaultURL):
-            self.args.url = self.args.defaultURL;
-        elif (self.args.url is None and self.args.defaultURL is None):
-            self.args.url = "https://github.com/WinTeach/pykib";
-
         # Allow Webcam and Microfon Support. Warn if PyQt Version is to old
         if (self.args.allowWebcamAccess):
             if (PYQT_VERSION_STR < "5.15.0"):
@@ -167,6 +161,16 @@ class Pykib():
                 logging.error("The folder for downloadPath (" + self.args.downloadPath + ") does not exists or is unreachable")
                 sys.exit()
 
+        # Parse Bookmarks
+        if (self.args.bookmarks):
+            tempBookmak = []
+            for x in self.args.bookmarks:
+                handle = x.split("|")
+                if (len(handle) != 0):
+                    tempBookmak.append(handle)
+            self.args.bookmarks = tempBookmak
+            logging.info("Bookmarks parsed: " + str(self.args.bookmarks))
+
         # Parse Download Handle
         if (self.args.downloadHandle):
             tempDownloadHandle = []
@@ -175,6 +179,7 @@ class Pykib():
                 if(len(handle) != 0):
                     tempDownloadHandle.append(handle)
             self.args.downloadHandle = tempDownloadHandle
+            logging.info("Download Handle parsed: " + str(self.args.downloadHandle))
 
         # Parse injectJavascript
         if (self.args.injectJavascript):
@@ -195,6 +200,19 @@ class Pykib():
                         handle[index + 2] = paramterPair
                     tempInjectJavascript.append(handle)
             self.args.injectJavascript = tempInjectJavascript
+
+        # predefined Search Engines:
+        if (self.args.addressBarSearchEngine):
+            match self.args.addressBarSearchEngine.lower():
+                case 'google':
+                    self.args.addressBarSearchEngine = "https://www.google.com/search?q={query}"
+                case 'bing':
+                    self.args.addressBarSearchEngine = "https://www.bing.com/search?q={query}"
+                case 'ecosia':
+                    self.args.addressBarSearchEngine = "https://www.ecosia.org/search?method=index&q={query}"
+                case 'duckduckgo':
+                    self.args.addressBarSearchEngine = "https://duckduckgo.com/?q={query}"
+
 
         # Check if a configred temporarySessionTokenPath Location exists
         if (self.args.temporarySessionTokenPath):
@@ -290,7 +308,7 @@ class Pykib():
                 deleteAllCookiesButton = QAction(QIcon(os.path.join(self.dirname, 'icons/cleanup.png')),
                                                  'Cleanup Browser Profile')
                 deleteAllCookiesButton.setStatusTip('Delete Cookies for Current Site')
-                deleteAllCookiesButton.triggered.connect(partial(self.view.page.enableCleanupBrowserProfileOption))
+                deleteAllCookiesButton.triggered.connect(partial(self.view.enableCleanupBrowserProfileOption))
                 advancedMenu.addAction(deleteAllCookiesButton)
                 menu.addSeparator()
 
@@ -335,6 +353,7 @@ class Pykib():
                 self.view.resize(self.args.browserWidth, self.args.browserHeight)
 
         sys.exit(self.app.exec())
+
     def bringToFront(self, reason):
         if not reason == QSystemTrayIcon.ActivationReason.Context:
             self.view.setWindowState(self.view.restoreState)

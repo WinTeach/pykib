@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2021 Tobias Wintrich
+# Copyright (C) 2025 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -22,14 +22,12 @@ import os
 import urllib.parse
 import tempfile
 import logging
-import time
-
 from functools import partial
 
-from PyQt6.QtNetwork import QAuthenticator, QNetworkCookie
-from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings, QWebEngineUrlScheme
-from PyQt6 import QtCore, QtWebEngineWidgets, QtWidgets, QtWebEngineCore
-from PyQt6.QtGui import QIcon
+from PyQt6.QtNetwork import QAuthenticator
+from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings, QWebEngineDesktopMediaRequest
+from PyQt6 import QtCore, QtWidgets, QtWebEngineCore
+from PyQt6.QtGui import QIcon, QGuiApplication
 from PyQt6.QtWidgets import QFileDialog
 from PyQt6.QtCore import QSize, QUrl, Qt
 
@@ -58,6 +56,7 @@ class myQWebEnginePage(QWebEnginePage):
         self.settings().setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True)
         if (args.allowDesktopSharing):
             self.settings().setAttribute(QWebEngineSettings.WebAttribute.ScreenCaptureEnabled, True)
+            self.desktopMediaRequested.connect(self.onDesktopMediaRequest)
 
         if (args.enablepdfsupport):
             self.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, 1)
@@ -70,12 +69,12 @@ class myQWebEnginePage(QWebEnginePage):
                 if browserProfile:
                     self.browserProfile = browserProfile
                 else:
-                    self.browserProfile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
-                QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
+                    self.browserProfile = QtWebEngineCore.QWebEngineProfile('/')
+                QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile)
             except Exception as e:
                 logging.info("Reuse of Profile failed: " + str(e))
-                self.browserProfile = QtWebEngineCore.QWebEngineProfile('/', self.form.web)
-                QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
+                self.browserProfile = QtWebEngineCore.QWebEngineProfile('/')
+                QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile)
 
             #logging.info("Using persistent Profile stored in " + args.persistentProfilePath)
             self.profile().setPersistentStoragePath(args.persistentProfilePath)
@@ -87,8 +86,8 @@ class myQWebEnginePage(QWebEnginePage):
             logging.info("Is profile in private mode:" + str(self.browserProfile.isOffTheRecord()))
         elif (createPrivateProfile):
             logging.info("Create new private Profile")
-            self.browserProfile = QtWebEngineCore.QWebEngineProfile(self.form.web)
-            QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile, self.form.web)
+            self.browserProfile = QtWebEngineCore.QWebEngineProfile()
+            QtWebEngineCore.QWebEnginePage.__init__(self, self.browserProfile)
             logging.info("Is profile in private mode:" + str(self.browserProfile.isOffTheRecord()))
         else:
             logging.info("Create no new Profile")
@@ -97,7 +96,8 @@ class myQWebEnginePage(QWebEnginePage):
 
         self.authenticationRequired.connect(self.webAuthenticationRequired)
 
-        self.newWindowRequested.connect(self.openInSameWindow)
+
+        self.newWindowRequested.connect(self.windowRequested)
         self.certificateError.connect(self.validateCertificateError)
 
         # Modify Profile
@@ -107,7 +107,7 @@ class myQWebEnginePage(QWebEnginePage):
         self.profile().downloadRequested.connect(self.on_downloadRequested)
 
         # Register workspaces URL Handler
-        self.profile().installUrlSchemeHandler(b'workspaces', myUrlSchemeHandler(self))
+        #self.profile().installUrlSchemeHandler(b'workspaces', myUrlSchemeHandler(self))
 
         #Register all URL Handlers given by parameters
         if (args.addUrlSchemeHandler):
@@ -118,7 +118,6 @@ class myQWebEnginePage(QWebEnginePage):
         # Browser Notification Popup Handler
         if args.allowBrowserNotifications:
             popup = NotificationPopup(self.form)
-
             def presentNotification(notification):
                 popup.present(notification)
 
@@ -131,6 +130,8 @@ class myQWebEnginePage(QWebEnginePage):
             self.profile().setSpellCheckEnabled(True)
 
         if (args.setBrowserLanguage):
+            # Setze Sprache
+            logging.info(args.setBrowserLanguage)
             self.profile().setHttpAcceptLanguage(args.setBrowserLanguage)
 
         # When setCitrixUserAgent is enabled, the Opera User Agent is set. This is a Workaround for Citrix Storefront Webinterfaces to skip Client detection.
@@ -142,8 +143,13 @@ class myQWebEnginePage(QWebEnginePage):
                 self.profile().setHttpUserAgent(
                     "Mozilla/5.0 (Windows; U; Windows NT 6.1; " + args.setBrowserLanguage + ") AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27")
 
-    def openInSameWindow(self, newWindowsRequest):
-        self.form.web.load(newWindowsRequest.requestedUrl().toString())
+    def windowRequested(self, newWindowsRequest):
+        if(args.allowManageTabs):
+            # If Tabs are enabled, we will open the new window in a new tab
+            logging.info("New Window Request: " + newWindowsRequest.requestedUrl().toString())
+            self.form.addTab(newWindowsRequest.requestedUrl().toString())
+        else:
+            self.form.tabs[self.form.currentTabIndex]['web'].load(newWindowsRequest.requestedUrl().toString())
 
     def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):
         # Format acceptedMimeTypes
@@ -195,61 +201,97 @@ class myQWebEnginePage(QWebEnginePage):
     # Certificate Error handling
     def validateCertificateError(self, error):
         if (args.ignoreCertificates):
-            print("Certificate Error")
+            logging.info("Certificate Error ignored: " + error.description())
             error.acceptCertificate()
             return True
-        else:
-            # Ask user whether to accept the certificate
-            details = f"Error: {error.description()}\nURL: {error.url().toString()}"
-            try:
-                certificateChain = error.certificateChain()
-                certinfo = ""
-                for idx, cert in enumerate(certificateChain):
-                    cert_details = f"Certificate {idx + 1}:\n"
-                    cert_details += f"  Issuer: {cert.issuerDisplayName()}\n"
-                    cert_details += f"  Subject: {cert.subjectDisplayName()}\n"
-                    cert_details += f"  Valid from: {cert.effectiveDate().toString()}\n"
-                    cert_details += f"  Valid until: {cert.expiryDate().toString()}\n"
-                    certinfo += cert_details + "\n"
-
-                details += "\n\nCertificate chain:\n" + certinfo
-
-            except Exception as e:
-                logging.error("Error getting additional information: " + str(e))
-                pass
-
-            msg = QtWidgets.QMessageBox()
-            # Set favicon if available
-            try:
-                favicon = self.form.windowIcon()
-                if not favicon.isNull():
-                    msg.setWindowIcon(favicon)
-                else:
-                    msg.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))
-            except Exception as e:
-                logging.error("Error setting window icon: " + str(e))
-                pass
-            msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-            msg.setText("Certificate error: Do you want to proceed anyway?")
-            msg.setInformativeText(details)
-            msg.setWindowTitle("Certificate Error")
-
-            acceptButton = QtWidgets.QPushButton("Proceed anyway")
-            rejectButton = QtWidgets.QPushButton("Cancel")
-            msg.addButton(acceptButton, QtWidgets.QMessageBox.ButtonRole.YesRole)
-            msg.addButton(rejectButton, QtWidgets.QMessageBox.ButtonRole.NoRole)
-            msg.setDefaultButton(rejectButton)
-            msg.exec()
-            if msg.clickedButton() == acceptButton:
-                error.acceptCertificate()
-                return True
-            else:
-                error.rejectCertificate()
+        elif not args.remoteBrowserDaemon:
+            if not error.isMainFrame():
+                logging.info("Certificate Error outside of Main Frame: " + error.url().toString())
                 return False
+            else:
+                logging.info("Certificate Error in Main Frame: " + error.url().toString())
+                # Ask user whether to accept the certificate
+                details = f"Error: {error.description()}\nURL: {error.url().toString()}"
+                try:
+                    certificateChain = error.certificateChain()
+                    certinfo = ""
+                    for idx, cert in enumerate(certificateChain):
+                        cert_details = f"Certificate {idx + 1}:\n"
+                        cert_details += f"  Issuer: {cert.issuerDisplayName()}\n"
+                        cert_details += f"  Subject: {cert.subjectDisplayName()}\n"
+                        cert_details += f"  Valid from: {cert.effectiveDate().toString()}\n"
+                        cert_details += f"  Valid until: {cert.expiryDate().toString()}\n"
+                        certinfo += cert_details + "\n"
+
+                    details += "\n\nCertificate chain:\n" + certinfo
+
+                except Exception as e:
+                    logging.error("Error getting additional information: " + str(e))
+                    pass
+
+
+                dialog = QtWidgets.QDialog()
+                dialog.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+                dialog.setModal(True)
+
+                dialog.setWindowTitle("Certificate Error")
+
+                try:
+                    favicon = self.form.windowIcon()
+                    if not favicon.isNull():
+                        dialog.setWindowIcon(favicon)
+                    else:
+                        dialog.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))
+                except Exception as e:
+                    logging.error("Error setting window icon: " + str(e))
+                    pass
+                layout = QtWidgets.QVBoxLayout(dialog)
+                icon_label = QtWidgets.QLabel()
+                icon_label.setPixmap(dialog.windowIcon().pixmap(64, 64))
+                icon_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+                layout.addWidget(icon_label)
+                title_label = QtWidgets.QLabel("Certificate error: Do you want to proceed anyway?")
+                title_label.setStyleSheet("font-size: 20px; font-weight: bold;")
+                title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+                layout.addWidget(title_label)
+                details_label = QtWidgets.QLabel(details)
+                details_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+                #details_label.setStyleSheet("font-size: 16px;")
+                details_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+                layout.addWidget(details_label)
+                button_layout = QtWidgets.QHBoxLayout()
+                acceptButton = QtWidgets.QPushButton("Proceed anyway")
+                rejectButton = QtWidgets.QPushButton("Cancel")
+                acceptButton.setMinimumSize(180, 50)
+                rejectButton.setMinimumSize(180, 50)
+                acceptButton.setStyleSheet("font-size: 18px; background: #4caf50; color: white;")
+                rejectButton.setStyleSheet("font-size: 18px; background: #c00; color: white;")
+                button_layout.addWidget(acceptButton)
+                button_layout.addWidget(rejectButton)
+                layout.addLayout(button_layout)
+                result = {'accepted': False}
+                def accept():
+                    result['accepted'] = True
+                    dialog.accept()
+                def reject():
+                    result['accepted'] = False
+                    dialog.reject()
+                acceptButton.clicked.connect(accept)
+                rejectButton.clicked.connect(reject)
+                dialog.setModal(True)
+                dialog.exec()
+                if result['accepted']:
+                    error.acceptCertificate()
+                    return True
+                else:
+                    error.rejectCertificate()
+                    return False
 
     # Download Handle
     @QtCore.pyqtSlot(QtWebEngineCore.QWebEngineDownloadRequest)
     def on_downloadRequested(self, download):
+        if not download.state() == QtWebEngineCore.QWebEngineDownloadRequest.DownloadState.DownloadRequested:
+            return
         logging.info(download.mimeType())
         logging.info(download.suggestedFileName())
         downloadHandleHit = False
@@ -262,6 +304,8 @@ class myQWebEnginePage(QWebEnginePage):
             print("Loading PDF: " + os.path.basename(download.suggestedFileName()))
             global dirname
             tempfolder = tempfile.gettempdir()+"/pykib/"
+
+
             if os.path.exists(tempfolder):
                 for the_file in os.listdir(tempfolder):
                     file_path = os.path.join(tempfolder, the_file)
@@ -269,7 +313,7 @@ class myQWebEnginePage(QWebEnginePage):
                         if os.path.isfile(file_path):
                             os.unlink(file_path)
                     except Exception as e:
-                        print(e)
+                        logging.error(e)
             else:
                 os.makedirs(tempfolder)
 
@@ -295,7 +339,7 @@ class myQWebEnginePage(QWebEnginePage):
                     download.accept()
                     download.isFinishedChanged.connect(partial(self.runProcess, handle, filepath, download))
 
-        if (args.download and not downloadHandleHit and download.state() == QtWebEngineCore.QWebEngineDownloadRequest.DownloadState.DownloadRequested):
+        if args.download and not downloadHandleHit:
             print("File Download Request " + os.path.basename(download.suggestedFileName()))
             # path, _ = QtWidgets.QFileDialog.getSaveFileName(self.view(), "Save File", old_path, "*."+suffix)
             path = ""
@@ -335,6 +379,115 @@ class myQWebEnginePage(QWebEnginePage):
         self.form.downloadFinished()
         print("Download finished")
 
+    def onDesktopMediaRequest(self, request: QWebEngineDesktopMediaRequest):
+        # Check if desktop sharing is allowed, otherwise cancel the request
+        if not args.allowDesktopSharing:
+            request.cancel()
+            return
+
+        # Get models for available screens and application windows
+        screens_model = request.screensModel()
+        windows_model = request.windowsModel()
+        # If neither screens nor windows are available, cancel the request
+        if (not screens_model or screens_model.rowCount() == 0) and (
+                not windows_model or windows_model.rowCount() == 0):
+            request.cancel()
+            return
+
+        # Create the selection dialog
+        dialog = QtWidgets.QDialog()
+        # Set the window icon (fallback to default if not available)
+        try:
+            dialog.setWindowIcon(self.form.windowIcon())
+        except Exception as e:
+            logging.error("Error setting window icon: " + str(e))
+            dialog.setWindowIcon(QIcon(os.path.join(dirname, 'icons/pykib.png')))
+
+        dialog.setWindowTitle("Share screen or application")
+        layout = QtWidgets.QVBoxLayout(dialog)
+        label = QtWidgets.QLabel("Please select a screen or application:")
+        layout.addWidget(label)
+
+        # Create tab widget for screens and applications
+        tab_widget = QtWidgets.QTabWidget()
+        # --- Screens Tab ---
+        screen_tab = QtWidgets.QWidget()
+        screen_layout = QtWidgets.QVBoxLayout(screen_tab)
+        screen_list = QtWidgets.QListView()
+        screen_list.setModel(screens_model)
+        screen_layout.addWidget(screen_list)
+        # Preview label for screen screenshot
+        screen_preview = QtWidgets.QLabel()
+        screen_preview.setFixedSize(320, 180)
+        screen_layout.addWidget(screen_preview)
+        tab_widget.addTab(screen_tab, "Screens")
+
+        # Prepare screenshots for all available screens
+        screen_pixmaps = []
+        for screen in QGuiApplication.screens():
+            pixmap = screen.grabWindow(0)
+            screen_pixmaps.append(pixmap)
+
+        # Update the preview when a screen is selected
+        def updateScreenPreview(index):
+            if index.isValid():
+                screen_idx = index.row()
+                if 0 <= screen_idx < len(screen_pixmaps):
+                    screen_preview.setPixmap(screen_pixmaps[screen_idx].scaled(
+                        screen_preview.size(),
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
+                    ))
+                else:
+                    screen_preview.clear()
+            else:
+                screen_preview.clear()
+
+        screen_list.selectionModel().currentChanged.connect(updateScreenPreview)
+
+        # --- Applications Tab ---
+        window_tab = QtWidgets.QWidget()
+        window_layout = QtWidgets.QVBoxLayout(window_tab)
+        window_list = QtWidgets.QListView()
+        window_list.setModel(windows_model)
+        window_layout.addWidget(window_list)
+        tab_widget.addTab(window_tab, "Applications")
+
+        layout.addWidget(tab_widget)
+
+        # Dialog buttons (OK/Cancel)
+        button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+        layout.addWidget(button_box)
+
+        # Handle OK/Cancel actions
+        def accept():
+            current_tab = tab_widget.currentIndex()
+            if current_tab == 0:
+                index = screen_list.currentIndex()
+                if index.isValid():
+                    request.selectScreen(index)
+                    dialog.accept()
+                    return
+            elif current_tab == 1:
+                index = window_list.currentIndex()
+                if index.isValid():
+                    request.selectWindow(index)
+                    dialog.accept()
+                    return
+            # Show warning if nothing is selected
+            QtWidgets.QMessageBox.warning(dialog, "No selection", "Please select a screen or application.")
+
+        def reject():
+            dialog.reject()
+
+        button_box.accepted.connect(accept)
+        button_box.rejected.connect(reject)
+
+        # Show the dialog and handle cancellation
+        if not dialog.exec():
+            request.cancel()
+
     def runProcess(self, handle, filepath, download):
         print(download.isFinished())
         print("Executing:" + "\"" + handle[1] + "\" " + filepath);
@@ -342,6 +495,7 @@ class myQWebEnginePage(QWebEnginePage):
 
     def openPdf(self, origUrl):
         self.pdfFile = "file:///" + self.pdfFile
+        logging.info("Opening PDF: " + self.pdfFile)
         f = {'file': self.pdfFile}
         pdfjsargs = urllib.parse.urlencode(f)
 
@@ -370,19 +524,21 @@ class myQWebEnginePage(QWebEnginePage):
 
     def loadPDFPage(self, pdfjsurl, origUrl):
         global dirname
+
+        web = self.form.tabs[self.form.currentTabIndex]['web']
         #Creates a new myQWebEnginePage
         #if args.singleProcess ist set, the old "profile" will be reused and no additional private profil will be created
         # --single-process supports only one active profile on linux
         if(args.singleProcess):
-            self.form.pdfpage = myQWebEnginePage(args, dirname, self.form, False)
+            web.pdfpage = myQWebEnginePage(args, dirname, self.form, False)
         else:
-            self.form.pdfpage = myQWebEnginePage(args, dirname, self.form, True)
+            web.pdfpage = myQWebEnginePage(args, dirname, self.form, True)
 
-        self.form.web.setPage(self.form.pdfpage)
-        self.form.web.load(pdfjsurl)
-        self.form.PDFnavbar.show()
+        web.setPage(web.pdfpage)
+        web.load(pdfjsurl)
+        self.form.PDFnavbar.setVisible(True)
         # self.form.navbar.hide()
-        self.form.progress.disabled = True
+        self.form.progressModal.disabled = True
 
         if args.showAddressBar:
             self.form.addressBar.setText(origUrl)
@@ -390,16 +546,18 @@ class myQWebEnginePage(QWebEnginePage):
     def closePDFPage(self):
         if(args.pdfreadermode):
             self.form.closeWindow()
-        self.form.web.setPage(self.form.page)
-        self.form.PDFnavbar.hide()
+
+        web = self.form.tabs[self.form.currentTabIndex]['web']
+        web.setPage(self.form.tabs[self.form.currentTabIndex]['page'])
+
         if (args.showNavigationButtons or args.showAddressBar):
             self.form.navbar.show()
         try:
-            if (self.form.pdfpage):
-                self.form.pdfpage.deleteLater()
+            if (web.pdfpage):
+                web.pdfpage.deleteLater()
         except:
             pass
-        self.form.progress.disabled = False
+        self.form.progressModal.disabled = False
 
         #CleanUp Tempoary PDFs
         try:
@@ -409,13 +567,14 @@ class myQWebEnginePage(QWebEnginePage):
                     os.remove(os.path.join(tempfile.gettempdir() + "/pykib/", item))
         except:
             logging.info("An exception while cleanup PDF TMP Folder")
+
     def pdfDownloadAction(self):
         # Remove Extension From URL
         try:
-            self.form.web.load((self.pdfFile + "?downloadPdfFromPykib").replace("\\", "/").replace("////", "///"))
+            self.form.tabs[self.form.currentTabIndex]['web'].load((self.pdfFile + "?downloadPdfFromPykib").replace("\\", "/").replace("////", "///"))
             print("Downloading: " + (self.pdfFile + "?downloadPdfFromPykib").replace("\\", "/").replace("////", "///"))
         except:
-            # self.form.web.load(self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib")
+            # self.form.tabs[self.form.currentTabIndex]['web'].load(self.pdfFile.replace("\\","/")+"?downloadPdfFromPykib")
             print("An exception while downloading a pdf occurred")
 
     def checkWhitelist(self, url: QUrl, is_main_frame: bool):
@@ -467,9 +626,9 @@ class myQWebEnginePage(QWebEnginePage):
         retval = msg.exec()
 
         if (retval == 0):
-            self.form.web.stop()
+            self.form.tabs[self.form.currentTabIndex]['web'].stop()
         else:
-            self.form.web.load(args.url)
+            self.form.tabs[self.form.currentTabIndex]['web'].load(args.url[0])
 
         return False
 

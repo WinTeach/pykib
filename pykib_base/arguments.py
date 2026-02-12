@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2022 Tobias Wintrich
+# Copyright (C) 2025 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '3.0.51')
+__version_info__ = ('devel', '4.0.12')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -45,9 +45,9 @@ def getArguments(dirname):
 
     parser.add_argument("-c", "--configFile", dest="configFile", help="Use this as configuration file - configured setting will override command line arguments. The ini file settings parameters are the same like the long form command line arguments")
 
-    parser.add_argument("-u", "--url", dest="url", help="Start and Home URL")
+    parser.add_argument("-u", "--url", dest="url", nargs="+", help="Start and Home URL, if enableTabs is set, mutliple starting URLs can be defined, separated by a space. ")
 
-    parser.add_argument('defaultURL', metavar='URL', nargs='?', type=str, help="alternative to -u, --url")
+    parser.add_argument('defaultURL', metavar='URL', nargs='?', type=str, help="alternative to -u, --url, supports only one URL")
 
     parser.add_argument("-p", "--proxy", dest="proxy", help="Use this as HTTP Proxy")
     parser.add_argument("-ppo", "--proxyPort", dest="proxyPort", help="Proxy Port", default=8080, type=int)
@@ -157,9 +157,19 @@ def getArguments(dirname):
 
     parser.add_argument("-sa", "--showAddressBar", dest="showAddressBar", action='store_true',
                         help="Shows a Address Bar when set")
+    parser.add_argument("-abse", "--addressBarSearchEngine", dest="addressBarSearchEngine",
+                        help="With this option, you can send text that is not directly recognized as a URL to any website (search engine). The search engines Google, Bing, Ecosia and DuckDuckGo are already preconfigured and can be activated by specifying google/bing/ecosia/duckduckgo. Other servers can be specified in this format: https://www.yourOwnServer.com/search?q={query}")
+
     parser.add_argument("-sn", "--showNavigationButtons", dest="showNavigationButtons", action='store_true', help="Shows Navigation Buttons when set")
     parser.add_argument("-slpb", "--showLoadingProgressBar", dest="showLoadingProgressBar", action='store_true',
                         help="Shows a Progress Bar on site loading.")
+    parser.add_argument("-et", "--enableTabs", dest="enableTabs", action='store_true', default=False,
+                        help="Shows a Tab Bar")
+    parser.add_argument("-amt", "--allowManageTabs", dest="allowManageTabs", action='store_true', default=False,
+                        help="Allows to close tabs and open new windows in a new Tab by clicking on the plus-symbol or hitting CTRL+T. If set, enableTabs will be set to True also")
+    parser.add_argument("-b", "--bookmarks", dest="bookmarks", nargs="+",
+                        help="Define Bookmarks which should be shown in the Bookmark Bar. Format: #name#|#url# ")
+
     parser.add_argument("-spb", "--showPrintButton", dest="showPrintButton", action='store_true',
                         help="Shows a Print Button when set. enablePrintSupport will be set to True")
     parser.add_argument("-epsu", "--enablePrintSupport", dest="enablePrintSupport", action='store_true',
@@ -192,7 +202,7 @@ def getArguments(dirname):
     parser.add_argument("-epkh", "--enablePrintKeyHandle", dest="enablePrintKeyHandle", action='store_true',
                         help="When enabled, a press on the 'Print'-Button will insert a Image of the current page to the clipboard")
     parser.add_argument("-wl", "--whiteList", dest="whiteList", nargs="+",
-                        help="Enables the white List function. Only Urls which start with elemtens from this list could be opend")
+                        help="Enables the white List function. Only Urls which start with elements from this list could be opened")
     parser.add_argument("-wlmfo", "--whiteListMainFrameOnly", dest="whiteListMainFrameOnly", action='store_true',
                         help="When set, whitelist will only be checked in mainframe navigation requests")
 
@@ -222,6 +232,8 @@ def getArguments(dirname):
                         help="With this Option each start of the Rangee Browser the current Process ID will be written to the file .pykibLatestProcId in the users tmp path")
     parser.add_argument("-spp", "--storePidPath", dest="storePidPath",
                         help="Path where the temporary current process id should be stored on the system. Only works in combination with --storePid")
+    parser.add_argument("-ro", "--runOnce", dest="runOnce", action='store_true',
+                        help="With this Option the browser will only run once. Only works in combination with --storePidstorePidPath. Multiple instances of the browser can started with this option when defining different pid paths with --storePidPath")
 
     # Settings for Running in Remote Browser Daemon
     parser.add_argument("-rbd", "--remoteBrowserDaemon", dest="remoteBrowserDaemon", action='store_true',
@@ -273,6 +285,20 @@ def getArguments(dirname):
             print("Configuration File " + args.configFile + " can't be found!")
             sys.exit()
         args = parseConfigFile(args, parser)
+    elif os.path.isfile(dirname + "/pykib.ini"):
+        #using default File pykib.ini in the current directory
+        args.configFile = dirname + "/pykib.ini"
+        args = parseConfigFile(args, parser)
+
+    # Set Start URL
+    if (args.url is None and args.defaultURL):
+        args.url = [args.defaultURL]
+    elif (args.url is None and args.defaultURL is None):
+        args.url = ["https://github.com/WinTeach/pykib"]
+
+    # setting enableTabs to true is required if allowManageTabs is set to true
+    if (args.allowManageTabs):
+        args.enableTabs = True
 
     args.remoteDaemonProtocolVersion = __remote_daemon_protocol_version__
     return args
@@ -301,9 +327,9 @@ def parseConfigFile(args, parser):
             config_arguments[key] = True
         elif(key == 'geometry'):
             config_arguments[key] = list(map(int, val.split()))
-        elif(key == 'whiteList' or key == 'addUrlSchemeHandler'):
+        elif(key == 'whiteList' or key == 'addUrlSchemeHandler' or key == 'url'):
             config_arguments[key] = val.split(" ")
-        elif(key == 'downloadHandle' or key == 'injectJavascript'):
+        elif(key == 'downloadHandle' or key == 'injectJavascript' or key == 'bookmarks'):
             config_arguments[key] = val.split("\"")
             config_arguments[key] = filter(None, config_arguments[key])
             config_arguments[key] = filter(bool, config_arguments[key])
@@ -315,4 +341,5 @@ def parseConfigFile(args, parser):
     #use the new configuration array as default values for argparse and parse again
     parser.set_defaults(**config_arguments)
     args = parser.parse_args({})
+
     return args
