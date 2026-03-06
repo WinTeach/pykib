@@ -835,7 +835,7 @@ class MainWindow(QWidget):
                 self.PDFnavbar.hide()
 
         else:
-            logging.error("Tab " + str(self.tabWidget.currentIndex()) + " not found")
+            logging.debug("Tab " + str(self.tabWidget.currentIndex()) + " not found")
 
     def onTabMoved(self, fromPos, toPos):
         logging.debug("Tab moved from " + str(toPos) + " to " + str(fromPos))
