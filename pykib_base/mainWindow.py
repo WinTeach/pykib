@@ -36,8 +36,7 @@ from pykib_base.myQWebEnginePage import myQWebEnginePage
 from pykib_base.PrintPdf import PrintPdf
 from pykib_base.memoryCap import MemoryCap
 from pykib_base.memoryDebug import MemoryDebug
-from pykib_base.autoReload import AutoReload
-from pykib_base.resetTimeout import ResetTimeout
+from pykib_base.inactivityTimer import InactivityTimer
 from pykib_base.oAuthFileHandler import OAuthFileHandler
 
 #
@@ -91,29 +90,38 @@ class MainWindow(QWidget):
             self.memoryCapThread.daemon = True  # Daemonize thread
             self.memoryCapThread.memoryCapExceeded.connect(self.closeBecauseMemoryCap)
             self.memoryCapThread.start()
-        if (self.args.memoryDebug):
+        if self.args.memoryDebug:
             logging.info("Starting memory monitoring")
             self.memoryDebugThread = MemoryDebug()
             self.memoryDebugThread.daemon = True  # Daemonize thread
             self.memoryDebugThread.memoryDebugTick.connect(self.memoryDebugUpdate)
             self.memoryDebugThread.start()
-        if (self.args.autoReloadTimer):
+        if self.args.autoReloadTimer:
             logging.info(
                 "AutoRefreshTimer is set. Going to reload the webpage each" + str(
                     self.args.autoReloadTimer) + "seconds")
-            self.autoRefresher = AutoReload(int(self.args.autoReloadTimer))
+            self.autoRefresher = InactivityTimer(int(self.args.autoReloadTimer))
             self.autoRefresher.daemon = True  # Daemonize thread
-            self.autoRefresher.autoRefresh.connect(self.autoRefresh)
+            self.autoRefresher.inactivityDetected.connect(self.autoRefresh)
             self.autoRefresher.start()
-        if (self.args.browserResetTimeout):
+        if self.args.browserResetTimeout:
             logging.info(
                 "BrowserResetTimeout is set. Going to reset the webpage after " + str(
                     self.args.browserResetTimeout) + "seconds of inactivity")
 
-            self.resetTimeout = ResetTimeout(int(self.args.browserResetTimeout))
+            self.resetTimeout = InactivityTimer(int(self.args.browserResetTimeout))
             self.resetTimeout.daemon = True  # Daemonize thread
-            self.resetTimeout.resetTimeoutExeeded.connect(self.resetTimeoutExeeded)
+            self.resetTimeout.inactivityDetected.connect(self.resetTimeoutExeeded)
             self.resetTimeout.start()
+        if self.args.enableTrayMode and self.args.leaveTrayOnInactivity:
+            logging.info(
+                "leaveTrayOnInactivity is set. Going to leave the tray after " + str(
+                    self.args.leaveTrayOnInactivity) + "seconds of inactivity")
+
+            self.leaveTrayTimeout = InactivityTimer(int(self.args.leaveTrayOnInactivity))
+            self.leaveTrayTimeout.daemon = True  # Daemonize thread
+            self.leaveTrayTimeout.inactivityDetected.connect(self.leaveTrayTimeoutExeeded)
+            self.leaveTrayTimeout.start()
 
         for url in self.args.url:
             self.addTab(url)
@@ -177,23 +185,24 @@ class MainWindow(QWidget):
             else:
                 self.tabs[self.currentTabIndex]['web'].load(restoreUrl)
 
-    def resetTimerReset(self):
+    def timerReset(self):
         logging.info(
-            "BrowserResetTimeout is set.")
-        self.resetTimeout.resetTimer()
+            "Reset inactivity timeouts")
+        if self.args.browserResetTimeout:
+            self.resetTimeout.resetTimer()
+        if self.args.enableTrayMode and self.args.leaveTrayOnInactivity:
+            self.leaveTrayTimeout.resetTimer()
 
     def resetTimeoutExeeded(self):
         # Reset Page if resetTimeoutExeeded
         python = sys.executable
-        os.execl(python, python, *sys.argv) # Restart the Browser
-        # self.tabs[self.currentTabIndex]['page'].setParent(None)
-        # self.tabs[self.currentTabIndex]['page'].deleteLater()
-        # self.tabs[self.currentTabIndex]['page'] = None
-        # self.tabs[self.currentTabIndex]['page'] = myQWebEnginePage(self.args, self.dirname, self, False)
-        # self.tabs[self.currentTabIndex]['page'].featurePermissionRequested.connect(self.onFeaturePermissionRequested)
-        # self.tabs[self.currentTabIndex]['page'].fullScreenRequested.connect(self.toggleFullscreen)
-        # self.tabs[self.currentTabIndex]['web'].setPage(self.tabs[self.currentTabIndex]['page'])
-        # self.tabs[self.currentTabIndex]['web'].load(self.args.url)
+        os.execl(python, python, *sys.argv)
+
+    def leaveTrayTimeoutExeeded(self):
+        # if hidden, leave the tray
+        if not self.isVisible():
+            logging.info("leaveTrayOnInactivity is set. Leaving Tray")
+            self.show()
 
     def applyWindowHints(self):
         if (self.args.alwaysOnTop and self.args.removeWindowControls or self.args.remoteBrowserDaemon):
@@ -338,7 +347,14 @@ class MainWindow(QWidget):
 
     def downloadProgressChanged(self, bytesReceived, bytesTotal):
         self.downloadProgress.setVisible(True)
-        percent = round(100 / bytesTotal * bytesReceived)
+        try:
+            percent = round(100 / bytesTotal * bytesReceived)
+        except Exception as e:
+            logging.warning(str(e))
+            logging.warning("Unable calculating download complete percentage. BytesTotal: " + str(bytesTotal) + " | BytesReceived: "  + str(bytesReceived))
+            percent = 0
+
+
         self.downloadProgress.setValue(percent)
 
         self.downloadProgress.setFormat(str(round(bytesReceived / 1024 / 1024, 2)) + "MB / " + str(
@@ -651,6 +667,8 @@ class MainWindow(QWidget):
         if self.args.enableTrayMode:
             logging.debug("Ignore event close and hide window because enableTrayMode is set")
             self.hide()
+            if self.args.leaveTrayOnInactivity:
+                self.leaveTrayTimeout.resetTimer()
             event.ignore()
 
     def adjustTitle(self):
@@ -799,9 +817,9 @@ class MainWindow(QWidget):
             logging.debug('closeOnUrl is set')
             web.urlChanged.connect(self.closeOnUrl)
 
-        if (self.args.browserResetTimeout):
-            web.loadProgress.connect(self.resetTimerReset)
-            web.urlChanged.connect(self.resetTimerReset)
+        if self.args.browserResetTimeout or self.args.leaveTrayOnInactivity:
+            web.loadProgress.connect(self.timerReset)
+            web.urlChanged.connect(self.timerReset)
 
         # Store initial Restore State
         self.restoreState = self.windowState()

@@ -16,27 +16,32 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import logging
 import time
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import pyqtSignal
 
-class AutoReload(QtCore.QThread):
-    autoRefresh = pyqtSignal()
-    autoReloadTimer = 0
+class InactivityTimer(QtCore.QThread):
+    inactivityDetected = pyqtSignal()
+    timer = 0
+    secondsLeft = 0
 
-    def __init__(self, autoReloadTimer):
-        super(AutoReload, self).__init__()
-        self.autoReloadTimer = autoReloadTimer
+    def __init__(self, timer):
+        super(InactivityTimer, self).__init__()
+        self.timer = timer
 
     def run(self):
-        secondsLeft = self.autoReloadTimer;
-        while(True):
-            if(secondsLeft > 0):
-                secondsLeft = secondsLeft - 1;
+        self.secondsLeft = self.timer
+        while True:
+            if self.secondsLeft > 0:
+                self.secondsLeft = self.secondsLeft - 1
                 time.sleep(1)
             else:
-                self.autoRefresh.emit()
-                secondsLeft = self.autoReloadTimer;
-                time.sleep(1);
+                self.inactivityDetected.emit()
+                self.secondsLeft = self.timer
+                time.sleep(1)
+
+    def resetTimer(self):
+        self.secondsLeft = self.timer
+        logging.debug("timer cleared")
