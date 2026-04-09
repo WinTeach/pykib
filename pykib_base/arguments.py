@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '4.0.14')
+__version_info__ = ('devel', '4.0.15')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'
@@ -177,6 +177,10 @@ def getArguments(dirname):
     parser.add_argument("-ecm", "--enableContextMenu", dest="enableContextMenu", action='store_true', help="Enables a minimal context Menu")
     parser.add_argument("-etm", "--enableTrayMode", dest="enableTrayMode", action='store_true',
                         help="when this option is set the browser will be minimized to tray instead of closed")
+    parser.add_argument("-ltoi", "--leaveTrayOnInactivity", dest="leaveTrayOnInactivity",
+                        help="when this option is set, the browser will leave the tray when inactivity is detected",
+                        default=0, type=int)
+
     parser.add_argument("-sih", "--startInTray", dest="startInTray", action='store_true',
                         help="when this option is set the browser will start to Tray.")
     parser.add_argument("-ecbpo", "--enableCleanupBrowserProfileOption", dest="enableCleanupBrowserProfileOption", action='store_true',
