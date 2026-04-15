@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2025 Tobias Wintrich
+# Copyright (C) 2026 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -155,9 +155,9 @@ class MainWindow(QWidget):
                 logging.debug("Set RestoreState = " + str(self.restoreState))
 
     def closeOnUrl(self):
-        logging.debug(self.tabs[self.currentTabIndex]['web'].url().toString().lower());
-        logging.debug(self.args.closeOnUrl.lower());
-        logging.debug(self.tabs[self.currentTabIndex]['web'].url().toString().lower().find(self.args.closeOnUrl.lower()));
+        logging.debug(self.tabs[self.currentTabIndex]['web'].url().toString().lower())
+        logging.debug(self.args.closeOnUrl.lower())
+        logging.debug(self.tabs[self.currentTabIndex]['web'].url().toString().lower().find(self.args.closeOnUrl.lower()))
         if self.tabs[self.currentTabIndex]['web'].url().toString().lower().find(self.args.closeOnUrl.lower()) != -1:
             logging.info("CloseOnUrl is set. Closing Browser")
             self.closeWindow()

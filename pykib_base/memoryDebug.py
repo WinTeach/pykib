@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2025 Tobias Wintrich
+# Copyright (C) 2026 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -37,7 +37,7 @@ class MemoryDebug(QtCore.QThread):
         is_running = True
         while(is_running):
             if (platform.system().lower() == "linux"):
-                self.memoryDebugTick.emit(int(process.memory_full_info().rss / 1024 / 1024), int(process.memory_full_info().swap / 1024 / 1024));
+                self.memoryDebugTick.emit(int(process.memory_full_info().rss / 1024 / 1024), int(process.memory_full_info().swap / 1024 / 1024))
             else:
                 self.memoryDebugTick.emit(int(process.memory_info().rss / 1024 / 1024), 0)
             time.sleep(5)

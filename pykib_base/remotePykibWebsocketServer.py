@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2025 Tobias Wintrich
+# Copyright (C) 2026 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -77,14 +77,14 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                         # self.closeInstance.emit(0,0)
                         logging.info("------------------------------------------------------------")
                         await websocket.send(json.dumps(self.config))
-                        keepOpen = False;
+                        keepOpen = False
                     elif data['action'] == 'setPixmap':
                         logging.debug(data)
                         logging.debug("Websocket:")
                         logging.debug("  Apply Pixmap on Tab: " + str(data["tabId"]))
                         self.setPixmap.emit(int(data["tabId"]), str(data['pixmap']))
                         logging.info("------------------------------------------------------------")
-                        keepOpen = False;
+                        keepOpen = False
                     elif (data['action'] == 'setTab'):
                         logging.info("Websocket:")
                         logging.info("  set Tab:")
@@ -92,7 +92,7 @@ class RemotePykibWebsocketServer(QtCore.QThread):
                         logging.info("    WindowID: " + str(data["windowId"]))
                         logging.info("    URL: " + data['url'])
                         logging.info("------------------------------------------------------------")
-                        keepOpen = False;
+                        keepOpen = False
                         self.configureInstance.emit(int(data["tabId"]), int(data["windowId"]), data['url'])
                     elif (data['action'] == 'setTabActive'):
                         logging.info("Websocket:")

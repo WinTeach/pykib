@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2025 Tobias Wintrich
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
+# Copyright (C) 2026 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -147,13 +147,13 @@ class Pykib():
             if (PYQT_VERSION_STR < "5.15.0"):
                 logging.warning(
                     "Webcam Access is only supported with PyQt5 Version 5.15.0 and will be disabled. Currently installed Version:" + PYQT_VERSION_STR)
-                self.args.allowWebcamAccess = False;
+                self.args.allowWebcamAccess = False
 
         if (self.args.allowMicAccess):
             if (PYQT_VERSION_STR < "5.15.0"):
                 logging.warning(
                     "Microfon Access is only supported with PyQt5 Version 5.15.0 and will be disabled. . Currently installed Version:" + PYQT_VERSION_STR)
-                self.args.allowMicAccess = False;
+                self.args.allowMicAccess = False
 
         # Check if a configred Download Location exists
         if (self.args.downloadPath):

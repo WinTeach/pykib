@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2025 Tobias Wintrich
+# Copyright (C) 2026 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -137,16 +137,16 @@ def addNavBar(form, args, dirname):
         navGridLayoutHorizontalPosition += 1
 
         form.forwardButton = QtWidgets.QPushButton(form)
-        form.forwardButton.setIcon(QIcon(os.path.join(dirname, 'icons/forward.png')));
-        form.forwardButton.setIconSize(QSize(24, 24));
+        form.forwardButton.setIcon(QIcon(os.path.join(dirname, 'icons/forward.png')))
+        form.forwardButton.setIconSize(QSize(24, 24))
         form.forwardButton.setObjectName("forwardButton")
 
         form.navGridLayout.addWidget(form.forwardButton, 0, navGridLayoutHorizontalPosition, 1, 1)
         navGridLayoutHorizontalPosition += 1
 
         form.homeButton = QtWidgets.QPushButton(form)
-        form.homeButton.setIcon(QIcon(os.path.join(dirname, 'icons/home.png')));
-        form.homeButton.setIconSize(QSize(24, 24));
+        form.homeButton.setIcon(QIcon(os.path.join(dirname, 'icons/home.png')))
+        form.homeButton.setIconSize(QSize(24, 24))
         form.homeButton.setObjectName("homeButton")
 
         form.navGridLayout.addWidget(form.homeButton, 0, navGridLayoutHorizontalPosition, 1, 1)
@@ -169,8 +169,8 @@ def addNavBar(form, args, dirname):
 
     if (args.showPrintButton):
         form.printButton = QtWidgets.QPushButton(form)
-        form.printButton.setIcon(QIcon(os.path.join(dirname, 'icons/print.png')));
-        form.printButton.setIconSize(QSize(24, 24));
+        form.printButton.setIcon(QIcon(os.path.join(dirname, 'icons/print.png')))
+        form.printButton.setIconSize(QSize(24, 24))
         form.printButton.setObjectName("printButton")
         form.printButton.clicked.connect(form.printSiteRequest)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# pykib - A PyQt5 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2025 Tobias Wintrich
+# pykib - A PyQt6 based kiosk browser with a minimum set of functionality
+# Copyright (C) 2026 Tobias Wintrich
 #
 # This file is part of pykib.
 #
