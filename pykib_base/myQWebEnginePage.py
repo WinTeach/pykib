@@ -160,20 +160,31 @@ class myQWebEnginePage(QWebEnginePage):
             if ('/' in x):
                 mimeFiltersString.append(x)
             else:
-                nameFiltersString.append("*" + x)
+                cleaned = x.strip()
+                if cleaned.startswith('*.'):
+                    nameFiltersString.append(cleaned)
+                elif cleaned.startswith('.'):
+                    nameFiltersString.append("*" + cleaned)
+                else:
+                    nameFiltersString.append("*." + cleaned.lstrip('*'))
 
         uploadDialog = QFileDialog()
 
         if (args.downloadPath):
             uploadDialog.setDirectory(args.downloadPath)
 
-        print(len(mimeFiltersString))
         if (len(mimeFiltersString) != 0):
             mimeFiltersString.append("application/octet-stream")
             uploadDialog.setMimeTypeFilters(mimeFiltersString)
         else:
-            nameFiltersString.append("All files (*.*)")
-            uploadDialog.setNameFilters(nameFiltersString)
+            uniqueNameFilters = list(dict.fromkeys(nameFiltersString))
+            if uniqueNameFilters:
+                # Keep all accepted extensions visible by default in one combined filter.
+                combinedFilter = "Allowed files (" + " ".join(uniqueNameFilters) + ")"
+                uploadDialog.setNameFilters([combinedFilter, "All files (*.*)"])
+                uploadDialog.selectNameFilter(combinedFilter)
+            else:
+                uploadDialog.setNameFilters(["All files (*.*)"])
 
         uploadDialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
         uploadDialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
