@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2025 Tobias Wintrich
+# Copyright (C) 2026 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -160,20 +160,31 @@ class myQWebEnginePage(QWebEnginePage):
             if ('/' in x):
                 mimeFiltersString.append(x)
             else:
-                nameFiltersString.append("*" + x)
+                cleaned = x.strip()
+                if cleaned.startswith('*.'):
+                    nameFiltersString.append(cleaned)
+                elif cleaned.startswith('.'):
+                    nameFiltersString.append("*" + cleaned)
+                else:
+                    nameFiltersString.append("*." + cleaned.lstrip('*'))
 
         uploadDialog = QFileDialog()
 
         if (args.downloadPath):
             uploadDialog.setDirectory(args.downloadPath)
 
-        print(len(mimeFiltersString));
         if (len(mimeFiltersString) != 0):
-            mimeFiltersString.append("application/octet-stream");
+            mimeFiltersString.append("application/octet-stream")
             uploadDialog.setMimeTypeFilters(mimeFiltersString)
         else:
-            nameFiltersString.append("All files (*.*)");
-            uploadDialog.setNameFilters(nameFiltersString)
+            uniqueNameFilters = list(dict.fromkeys(nameFiltersString))
+            if uniqueNameFilters:
+                # Keep all accepted extensions visible by default in one combined filter.
+                combinedFilter = "Allowed files (" + " ".join(uniqueNameFilters) + ")"
+                uploadDialog.setNameFilters([combinedFilter, "All files (*.*)"])
+                uploadDialog.selectNameFilter(combinedFilter)
+            else:
+                uploadDialog.setNameFilters(["All files (*.*)"])
 
         uploadDialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
         uploadDialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
@@ -490,7 +501,7 @@ class myQWebEnginePage(QWebEnginePage):
 
     def runProcess(self, handle, filepath, download):
         print(download.isFinished())
-        print("Executing:" + "\"" + handle[1] + "\" " + filepath);
+        print("Executing:" + "\"" + handle[1] + "\" " + filepath)
         subprocess.Popen("\"" + handle[1] + "\" " + filepath, shell=True)
 
     def openPdf(self, origUrl):
@@ -581,27 +592,30 @@ class myQWebEnginePage(QWebEnginePage):
         global dirname
         currentUrl = url.toString()
 
+        # 1) Normal whitelist check
         for x in args.whiteList:
-            if (currentUrl.startswith(x)):
-                return True;
-            elif (args.enablepdfsupport):
-                global dirname
-                # Because of Crossplatform compatibility all the slashs and backslashes of local paths are removes
-                pdfjsviewer_checkstring = ("file:///" + dirname + "/plugins/pdf.js/web/viewer.html?").replace("\\",
-                                                                                                              "/").replace(
-                    "/", "")
-                checkurl_checkstring = currentUrl.replace("\\", "/").replace("/", "")
-                if (checkurl_checkstring.startswith(pdfjsviewer_checkstring) or (
-                        currentUrl.startswith("file:///") and currentUrl.endswith("?downloadPdfFromPykib"))):
-                    return True
-                else:
-                    self.closePDFPage()
+            if currentUrl.startswith(x):
+                return True
+
+        # 2) PDF special-case check (only once, not inside whitelist loop)
+        if args.enablepdfsupport:
+            pdfjsviewer_checkstring = (
+                    "file:///" + dirname + "/plugins/pdf.js/web/viewer.html?"
+            ).replace("\\", "/").replace("/", "")
+            checkurl_checkstring = currentUrl.replace("\\", "/").replace("/", "")
+            if (
+                    checkurl_checkstring.startswith(pdfjsviewer_checkstring)
+                    or (currentUrl.startswith("file:///") and currentUrl.endswith("?downloadPdfFromPykib"))
+            ):
+                return True
+            else:
+                self.closePDFPage()
 
         logging.info("Site " + currentUrl + " is not whitelisted")
 
-        #If Remote Browser is used we will show no warning an won't open the page
-        if (args.remoteBrowserDaemon or not is_main_frame):
-            return False;
+        # If remote browser or sub-frame: block silently
+        if args.remoteBrowserDaemon or not is_main_frame:
+            return False
 
         msg = QtWidgets.QMessageBox()
         msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
@@ -609,26 +623,43 @@ class myQWebEnginePage(QWebEnginePage):
         msg.setWindowTitle("Whitelist Error")
 
         backButton = QtWidgets.QPushButton("Go Back")
-        backButton.setIcon(QIcon(os.path.join(dirname, 'icons/back.png')));
-        backButton.setIconSize(QSize(24, 24));
+        backButton.setIcon(QIcon(os.path.join(dirname, "icons/back.png")))
+        backButton.setIconSize(QSize(24, 24))
         backButton.setObjectName("backButton")
-
         msg.addButton(backButton, QtWidgets.QMessageBox.ButtonRole.NoRole)
 
         homeButton = QtWidgets.QPushButton("Go Home")
-        homeButton.setIcon(QIcon(os.path.join(dirname, 'icons/home.png')));
-        homeButton.setIconSize(QSize(24, 24));
+        homeButton.setIcon(QIcon(os.path.join(dirname, "icons/home.png")))
+        homeButton.setIconSize(QSize(24, 24))
         homeButton.setObjectName("homeButton")
-
         msg.addButton(homeButton, QtWidgets.QMessageBox.ButtonRole.NoRole)
 
-        msg.show()
-        retval = msg.exec()
+        # exec() is enough; no msg.show() needed before
+        msg.exec()
+        clicked = msg.clickedButton()
 
-        if (retval == 0):
-            self.form.tabs[self.form.currentTabIndex]['web'].stop()
+        logging.debug(self.form.currentTabIndex)
+        logging.debug("clickedButton=%s", getattr(clicked, "objectName", lambda: "None")())
+
+        if clicked is backButton:
+            logging.debug("Back Button Clicked")
+            try:
+                QtCore.QTimer.singleShot(
+                    0,
+                    lambda:  self.form.tabs[self.form.currentTabIndex]["web"].stop()
+                )
+            except Exception as e:
+                logging.debug(e)
         else:
-            self.form.tabs[self.form.currentTabIndex]['web'].load(args.url[0])
+            logging.debug("Go Home Button Clicked")
+            try:
+                # Defer navigation to avoid reentrancy while handling navigation request
+                QtCore.QTimer.singleShot(
+                    0,
+                    lambda: self.form.tabs[self.form.currentTabIndex]["web"].load(args.url[0])
+                )
+            except Exception as e:
+                logging.debug(e)
 
         return False
 

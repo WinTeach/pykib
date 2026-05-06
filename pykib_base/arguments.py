@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2025 Tobias Wintrich
+# Copyright (C) 2026 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -23,7 +23,7 @@ import configparser
 import os
 import sys
 
-__version_info__ = ('devel', '4.0.15')
+__version_info__ = ('devel', '4.0.17')
 __version__ = '-'.join(__version_info__)
 
 __remote_daemon_protocol_version__ = '1.2.0.0'

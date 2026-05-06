@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2025 Tobias Wintrich
+# Copyright (C) 2026 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -42,7 +42,7 @@ class RemotePykibUnixSocketKeepAlive(QtCore.QThread):
         while(keepRunning):
             logging.debug("------------------------------"+str(self.keepAliveCounter)+"------------------------------")
             if(self.keepAliveCounter > 0):
-                self.keepAliveCounter = self.keepAliveCounter - 1;
+                self.keepAliveCounter = self.keepAliveCounter - 1
                 time.sleep(self.keepAliveTimeout)
             else:
                 self.keepAliveExeeded.emit()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pykib - A PyQt6 based kiosk browser with a minimum set of functionality
-# Copyright (C) 2025 Tobias Wintrich
+# Copyright (C) 2026 Tobias Wintrich
 #
 # This file is part of pykib.
 #
@@ -100,8 +100,8 @@ class myQWebEngineView(QWebEngineView):
         proxy.setHostName(self.args.proxy)
         proxy.setPort(self.args.proxyPort)
         if (self.args.proxyUsername and self.args.proxyPassword):
-            proxy.setUser(self.args.proxyUsername);
-            proxy.setPassword(self.args.proxyPassword);
+            proxy.setUser(self.args.proxyUsername)
+            proxy.setPassword(self.args.proxyPassword)
         elif (self.args.proxyUsername or self.args.proxyPassword):
             logging.error("It is not possible to use a proxy username without password")
         QtNetwork.QNetworkProxy.setApplicationProxy(proxy)
