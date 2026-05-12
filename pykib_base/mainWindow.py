@@ -589,7 +589,7 @@ class MainWindow(QWidget):
 
         logging.debug("Show Print Dialog")
         dialogResult = dialog.exec()
-        if(dialogResult == QPrintDialog.DialogCode.Accepted):
+        if dialogResult == QPrintDialog.DialogCode.Accepted:
             #Printing in Background Thread
             self.printPdfThread = PrintPdf(tempPdfFile, printer)
             self.printPdfThread.daemon = True
@@ -611,21 +611,21 @@ class MainWindow(QWidget):
         logging.debug("Progress Changed" + str(percent))
         self.tabs[self.currentTabIndex]['web'].setZoomFactor(self.args.setZoomFactor / 100)
 
-        if (not self.args.showLoadingProgressBar):
+        if not self.args.showLoadingProgressBar:
             self.progressModal.hide()
-        elif (not self.progressModal.disabled):
+        elif not self.progressModal.disabled:
             self.progressModal.show()
             self.progressModal.setValue(percent)
             self.progressModal.changeStyle("loading")
 
-            if (percent == 100):
+            if percent == 100:
                 self.progressModal.hide()
 
     # catch defined Shortcuts
 
     def keyPressEvent(self, event):
-        if (self.args.browserResetTimeout):
-            self.resetTimerReset()
+        if self.args.browserResetTimeout:
+            self.timerReset()
 
         keyEvent = event
 
@@ -633,31 +633,31 @@ class MainWindow(QWidget):
         ctrl = event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier
         alt = event.modifiers() & QtCore.Qt.KeyboardModifier.AltModifier
 
-        if (self.args.allowManageTabs and ctrl and keyEvent.key() == QtCore.Qt.Key.Key_T):
+        if self.args.allowManageTabs and ctrl and keyEvent.key() == QtCore.Qt.Key.Key_T:
             self.addTab()
-        if(self.args.enablePrintSupport and ctrl and keyEvent.key() == QtCore.Qt.Key.Key_P):
+        if self.args.enablePrintSupport and ctrl and keyEvent.key() == QtCore.Qt.Key.Key_P:
             logging.info("Print")
             self.printSiteRequest()
-        if (shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_B):
+        if shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_B:
             logging.info("leave by shortcut")
             os._exit(0)
-        if ((keyEvent.key() == QtCore.Qt.Key.Key_F5) or (ctrl and keyEvent.key() == QtCore.Qt.Key.Key_R)):
+        if (keyEvent.key() == QtCore.Qt.Key.Key_F5) or (ctrl and keyEvent.key() == QtCore.Qt.Key.Key_R):
             self.tabs[self.currentTabIndex]['web'].reload()
             logging.info("Refresh")
-        if (self.args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_A):
+        if self.args.adminKey and shift and ctrl and alt and keyEvent.key() == QtCore.Qt.Key.Key_A:
             logging.info("Hit admin key")
             subprocess.Popen([self.args.adminKey])
-        if (self.args.enablePrintKeyHandle and keyEvent.key() == QtCore.Qt.Key.Key_Print):
+        if self.args.enablePrintKeyHandle and keyEvent.key() == QtCore.Qt.Key.Key_Print:
             logging.info("Saving image to clipboard")
             clipboard = QGuiApplication.clipboard()
             clipboard.setPixmap(self.grab())
             # self.grab().save("d:\\test.png", b'PNG')
-        if (keyEvent.key() == QtCore.Qt.Key.Key_F4 and alt):
+        if keyEvent.key() == QtCore.Qt.Key.Key_F4 and alt:
             logging.info("Alt +F4 is disabled")
-        if (ctrl and keyEvent.key() == QtCore.Qt.Key.Key_F):
+        if ctrl and keyEvent.key() == QtCore.Qt.Key.Key_F:
             self.openSearchBar()
             logging.debug("Open Search Bar")
-        if (keyEvent.key() == QtCore.Qt.Key.Key_Escape):
+        if keyEvent.key() == QtCore.Qt.Key.Key_Escape:
             self.closeSearchBar()
 
     def closeEvent(self, event):
