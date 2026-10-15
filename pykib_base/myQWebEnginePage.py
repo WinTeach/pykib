@@ -300,19 +300,23 @@ class myQWebEnginePage(QWebEnginePage):
 
     # Download Handle
     @QtCore.pyqtSlot(QtWebEngineCore.QWebEngineDownloadRequest)
-    def on_downloadRequested(self, download):
+    def on_downloadRequested(self, download: QtWebEngineCore.QWebEngineDownloadRequest):
         if not download.state() == QtWebEngineCore.QWebEngineDownloadRequest.DownloadState.DownloadRequested:
             return
         logging.info(download.mimeType())
         logging.info(download.suggestedFileName())
         downloadHandleHit = False
 
-        suffix = QtCore.QFileInfo(download.suggestedFileName()).suffix()
+        downloadFileName = os.path.basename(download.suggestedFileName())
+        suffix = QtCore.QFileInfo(downloadFileName).suffix()
+        if not suffix and download.mimeType().split(';', 1)[0].strip().lower() == 'application/x-ica':
+            downloadFileName += '.ica'
+            suffix = 'ica'
         logging.info(suffix)
         # If PDF Support is enabled
         if (args.enablepdfsupport and suffix.lower() == 'pdf' and not download.url().toString().startswith(
                 "blob:file://") and not download.url().toString().endswith("?downloadPdfFromPykib")):
-            print("Loading PDF: " + os.path.basename(download.suggestedFileName()))
+            print("Loading PDF: " + downloadFileName)
             global dirname
             tempfolder = tempfile.gettempdir()+"/pykib/"
 
@@ -328,7 +332,7 @@ class myQWebEnginePage(QWebEnginePage):
             else:
                 os.makedirs(tempfolder)
 
-            self.pdfFile = tempfolder + "/" + os.path.basename(download.suggestedFileName()).replace("////", "///")
+            self.pdfFile = tempfolder + "/" + downloadFileName.replace("////", "///")
 
             #if (download.url().toString().startswith("blob:")):
             download.setDownloadFileName(self.pdfFile)
@@ -338,7 +342,7 @@ class myQWebEnginePage(QWebEnginePage):
 
             # If Download Handle is hit
         if (args.downloadHandle):
-            print("Download Handle Hit " + os.path.basename(download.suggestedFileName()))
+            print("Download Handle Hit " + downloadFileName)
             for handle in args.downloadHandle:
                 if (suffix == handle[0]):
                     downloadHandleHit = True
@@ -351,10 +355,9 @@ class myQWebEnginePage(QWebEnginePage):
                     download.isFinishedChanged.connect(partial(self.runProcess, handle, filepath, download))
 
         if args.download and not downloadHandleHit:
-            print("File Download Request " + os.path.basename(download.suggestedFileName()))
+            print("File Download Request " + downloadFileName)
             # path, _ = QtWidgets.QFileDialog.getSaveFileName(self.view(), "Save File", old_path, "*."+suffix)
             path = ""
-            suffix = QtCore.QFileInfo(download.suggestedFileName()).suffix()
             downloadDialog = QFileDialog()
 
             if ((args.alwaysOnTop or args.remoteBrowserDaemon) and args.remoteBrowserIgnoreX11):
@@ -362,9 +365,9 @@ class myQWebEnginePage(QWebEnginePage):
 
             if (args.downloadPath):
                 downloadDialog.setDirectory(args.downloadPath)
-                downloadDialog.selectFile(os.path.basename(download.suggestedFileName()))
+                downloadDialog.selectFile(downloadFileName)
             else:
-                downloadDialog.selectFile(os.path.basename(download.suggestedFileName()))
+                downloadDialog.selectFile(downloadFileName)
 
             downloadDialog.setFileMode(QFileDialog.FileMode.AnyFile)
             downloadDialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
@@ -678,4 +681,3 @@ class myQWebEnginePage(QWebEnginePage):
         self.runJavaScript("sessionStorage.clear();")
         self.runJavaScript("location.reload();")
         logging.info("Cleanup Browser Profile")
-
